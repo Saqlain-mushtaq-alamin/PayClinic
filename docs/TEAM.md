@@ -1,10 +1,10 @@
 # Team
 
-| Track                    | Name | GitHub | Strengths | Hours per day | Backup for                                   |
-| ------------------------ | ---- | ------ | --------- | ------------- | -------------------------------------------- |
-| A: Engine                |   Md Al Amin   | https://github.com/Saqlain-mushtaq-alamin       |           |               | B (engine, invariants, verify loop)          |
-| B: Brain & Agent         |  Rifat Sarkar    | https://github.com/rifat-sarkar01       |           |               | A (AI layer, agent, firewall)                |
-| C: Experience & Delivery |  Tamim Syeedur  | https://github.com/syeedur-01         |           |               | A (deploy, CI), B (README AI/agent sections) |
+| Track                    | Name          | GitHub                                    | Strengths | Hours per day | Backup for                                   |
+| ------------------------ | ------------- | ----------------------------------------- | --------- | ------------- | -------------------------------------------- |
+| A: Engine                | Md Al Amin    | https://github.com/Saqlain-mushtaq-alamin |           |               | B (engine, invariants, verify loop)          |
+| B: Brain & Agent         | Rifat Sarkar  | https://github.com/rifat-sarkar01         |           |               | A (AI layer, agent, firewall)                |
+| C: Experience & Delivery | Tamim Syeedur | https://github.com/syeedur-01             |           |               | A (deploy, CI), B (README AI/agent sections) |
 
 **Daily sync (15 minutes):** ______ (time zone: ______)
 **Chat:** ______ **Board:** ______ **Repo:** ______
