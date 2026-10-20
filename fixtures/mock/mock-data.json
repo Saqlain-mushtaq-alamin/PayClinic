@@ -1,0 +1,2770 @@
+{
+  "runs": [
+    {
+      "id": "run-1",
+      "target": "store",
+      "mode": "offline",
+      "scenarioKeys": [
+        "B1",
+        "B2",
+        "B4"
+      ],
+      "status": "completed",
+      "startedAt": "2026-10-18T10:00:00.000Z",
+      "completedAt": "2026-10-18T10:00:00.000Z",
+      "scoreBefore": 70,
+      "findingCount": 3,
+      "score": {
+        "score": 70,
+        "penalties": [
+          {
+            "invariantKey": "I-01",
+            "severity": "critical",
+            "points": 10
+          },
+          {
+            "invariantKey": "I-02",
+            "severity": "critical",
+            "points": 10
+          },
+          {
+            "invariantKey": "I-04",
+            "severity": "critical",
+            "points": 10
+          }
+        ],
+        "unresolvedCount": 3,
+        "resolvedCount": 0
+      }
+    },
+    {
+      "id": "run-2",
+      "target": "store",
+      "mode": "offline",
+      "scenarioKeys": [
+        "B1",
+        "B2",
+        "B4"
+      ],
+      "status": "completed",
+      "startedAt": "2026-10-18T10:00:00.000Z",
+      "completedAt": "2026-10-18T10:00:00.000Z",
+      "scoreBefore": 70,
+      "scoreAfter": 100,
+      "findingCount": 3,
+      "score": {
+        "score": 100,
+        "penalties": [],
+        "unresolvedCount": 0,
+        "resolvedCount": 3
+      }
+    },
+    {
+      "id": "run-3",
+      "target": "agent",
+      "mode": "offline",
+      "scenarioKeys": [
+        "A1",
+        "A2"
+      ],
+      "status": "completed",
+      "startedAt": "2026-10-18T10:00:00.000Z",
+      "completedAt": "2026-10-18T10:00:00.000Z",
+      "scoreBefore": 78,
+      "scoreAfter": 100,
+      "findingCount": 1,
+      "score": {
+        "score": 100,
+        "penalties": [],
+        "unresolvedCount": 0,
+        "resolvedCount": 1
+      }
+    }
+  ],
+  "details": {
+    "run-1": {
+      "run": {
+        "id": "run-1",
+        "target": "store",
+        "mode": "offline",
+        "scenarioKeys": [
+          "B1",
+          "B2",
+          "B4"
+        ],
+        "status": "completed",
+        "startedAt": "2026-10-18T10:00:00.000Z",
+        "completedAt": "2026-10-18T10:00:00.000Z",
+        "scoreBefore": 70
+      },
+      "scenarios": [
+        {
+          "id": "run-1-scn-B1",
+          "runId": "run-1",
+          "key": "B1",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-1-scn-B2",
+          "runId": "run-1",
+          "key": "B2",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-1-scn-B4",
+          "runId": "run-1",
+          "key": "B4",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "findings": [
+        {
+          "id": "fnd-run-1-1",
+          "runId": "run-1",
+          "scenarioKey": "B1",
+          "invariantKey": "I-01",
+          "severity": "critical",
+          "state": "open",
+          "title": "Customer charged twice for one cart",
+          "summary": "Cart cart-1 was captured 2 times (ORD0001, ORD0002).",
+          "evidenceStepIds": [
+            "run-1-B1-s7",
+            "run-1-B1-s9"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "fnd-run-1-2",
+          "runId": "run-1",
+          "scenarioKey": "B2",
+          "invariantKey": "I-02",
+          "severity": "critical",
+          "state": "open",
+          "title": "Capture amount differs from server-computed total",
+          "summary": "Capture ORD0001 charged 1.00 but cart cart-2 costs 25.00.",
+          "evidenceStepIds": [
+            "run-1-B2-s4"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "fnd-run-1-3",
+          "runId": "run-1",
+          "scenarioKey": "B4",
+          "invariantKey": "I-04",
+          "severity": "critical",
+          "state": "open",
+          "title": "Order marked paid although capture was declined",
+          "summary": "Order mo-ORD0001 paid=true but capture did not succeed.",
+          "evidenceStepIds": [
+            "run-1-B4-s4"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "score": {
+        "score": 70,
+        "penalties": [
+          {
+            "invariantKey": "I-01",
+            "severity": "critical",
+            "points": 10
+          },
+          {
+            "invariantKey": "I-02",
+            "severity": "critical",
+            "points": 10
+          },
+          {
+            "invariantKey": "I-04",
+            "severity": "critical",
+            "points": 10
+          }
+        ],
+        "unresolvedCount": 3,
+        "resolvedCount": 0
+      }
+    },
+    "run-2": {
+      "run": {
+        "id": "run-2",
+        "target": "store",
+        "mode": "offline",
+        "scenarioKeys": [
+          "B1",
+          "B2",
+          "B4"
+        ],
+        "status": "completed",
+        "startedAt": "2026-10-18T10:00:00.000Z",
+        "completedAt": "2026-10-18T10:00:00.000Z",
+        "scoreBefore": 70,
+        "scoreAfter": 100
+      },
+      "scenarios": [
+        {
+          "id": "run-2-scn-B1",
+          "runId": "run-2",
+          "key": "B1",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-2-scn-B2",
+          "runId": "run-2",
+          "key": "B2",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-2-scn-B4",
+          "runId": "run-2",
+          "key": "B4",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "findings": [
+        {
+          "id": "fnd-run-2-1",
+          "runId": "run-2",
+          "scenarioKey": "B1",
+          "invariantKey": "I-01",
+          "severity": "critical",
+          "state": "verified",
+          "title": "Customer charged twice for one cart",
+          "summary": "Cart cart-1 was captured 2 times (ORD0001, ORD0002).",
+          "evidenceStepIds": [
+            "run-2-B1-s7",
+            "run-2-B1-s9"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "fnd-run-2-2",
+          "runId": "run-2",
+          "scenarioKey": "B2",
+          "invariantKey": "I-02",
+          "severity": "critical",
+          "state": "verified",
+          "title": "Capture amount differs from server-computed total",
+          "summary": "Capture ORD0001 charged 1.00 but cart cart-2 costs 25.00.",
+          "evidenceStepIds": [
+            "run-2-B2-s4"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "fnd-run-2-3",
+          "runId": "run-2",
+          "scenarioKey": "B4",
+          "invariantKey": "I-04",
+          "severity": "critical",
+          "state": "verified",
+          "title": "Order marked paid although capture was declined",
+          "summary": "Order mo-ORD0001 paid=true but capture did not succeed.",
+          "evidenceStepIds": [
+            "run-2-B4-s4"
+          ],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "score": {
+        "score": 100,
+        "penalties": [],
+        "unresolvedCount": 0,
+        "resolvedCount": 3
+      }
+    },
+    "run-3": {
+      "run": {
+        "id": "run-3",
+        "target": "agent",
+        "mode": "offline",
+        "scenarioKeys": [
+          "A1",
+          "A2"
+        ],
+        "status": "completed",
+        "startedAt": "2026-10-18T10:00:00.000Z",
+        "completedAt": "2026-10-18T10:00:00.000Z",
+        "scoreBefore": 78,
+        "scoreAfter": 100
+      },
+      "scenarios": [
+        {
+          "id": "run-3-scn-A1",
+          "runId": "run-3",
+          "key": "A1",
+          "status": "failed",
+          "startedAt": "2026-10-18T10:00:00.000Z",
+          "finishedAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "findings": [
+        {
+          "id": "fnd-run-3-1",
+          "runId": "run-3",
+          "scenarioKey": "A1",
+          "invariantKey": "I-08",
+          "severity": "critical",
+          "state": "protected",
+          "title": "Agent bought items it was not asked to buy",
+          "summary": "Purchase of promo-099 x10 from sketchy-deals is not allowed.",
+          "evidenceStepIds": [],
+          "createdAt": "2026-10-18T10:00:00.000Z"
+        }
+      ],
+      "score": {
+        "score": 100,
+        "penalties": [],
+        "unresolvedCount": 0,
+        "resolvedCount": 1
+      }
+    }
+  },
+  "findingDetails": {
+    "fnd-run-1-1": {
+      "finding": {
+        "id": "fnd-run-1-1",
+        "runId": "run-1",
+        "scenarioKey": "B1",
+        "invariantKey": "I-01",
+        "severity": "critical",
+        "state": "open",
+        "title": "Customer charged twice for one cart",
+        "summary": "Cart cart-1 was captured 2 times (ORD0001, ORD0002).",
+        "evidenceStepIds": [
+          "run-1-B1-s7",
+          "run-1-B1-s9"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-1-B1-s0",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-1",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-1-B1-s1",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 1,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-1",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0002",
+            "orderId": "ORD0002"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.100Z"
+        },
+        {
+          "id": "run-1-B1-s4",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 4,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        },
+        {
+          "id": "run-1-B1-s5",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 5,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0002",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.500Z"
+        },
+        {
+          "id": "run-1-B1-s6",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 6,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.600Z"
+        },
+        {
+          "id": "run-1-B1-s7",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 7,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-1",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0001",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "25.00"
+                      },
+                      "custom_id": "cart-1",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.700Z"
+        },
+        {
+          "id": "run-1-B1-s8",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 8,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0002/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.800Z"
+        },
+        {
+          "id": "run-1-B1-s9",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B1",
+          "seq": 9,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0002/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0002",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-1",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0002",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "25.00"
+                      },
+                      "custom_id": "cart-1",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0002-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.900Z"
+        }
+      ],
+      "explanation": null,
+      "patch": null,
+      "verify": null
+    },
+    "fnd-run-1-2": {
+      "finding": {
+        "id": "fnd-run-1-2",
+        "runId": "run-1",
+        "scenarioKey": "B2",
+        "invariantKey": "I-02",
+        "severity": "critical",
+        "state": "open",
+        "title": "Capture amount differs from server-computed total",
+        "summary": "Capture ORD0001 charged 1.00 but cart cart-2 costs 25.00.",
+        "evidenceStepIds": [
+          "run-1-B2-s4"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-1-B2-s0",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B2",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-2",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ],
+            "clientTotal": "1.00"
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-1-B2-s2",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B2",
+          "seq": 2,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.200Z"
+        },
+        {
+          "id": "run-1-B2-s3",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B2",
+          "seq": 3,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.300Z"
+        },
+        {
+          "id": "run-1-B2-s4",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B2",
+          "seq": 4,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-2",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0001",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "1.00"
+                      },
+                      "custom_id": "cart-2",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        }
+      ],
+      "explanation": null,
+      "patch": null,
+      "verify": null
+    },
+    "fnd-run-1-3": {
+      "finding": {
+        "id": "fnd-run-1-3",
+        "runId": "run-1",
+        "scenarioKey": "B4",
+        "invariantKey": "I-04",
+        "severity": "critical",
+        "state": "open",
+        "title": "Order marked paid although capture was declined",
+        "summary": "Order mo-ORD0001 paid=true but capture did not succeed.",
+        "evidenceStepIds": [
+          "run-1-B4-s4"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-1-B4-s0",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B4",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-4",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-1-B4-s2",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B4",
+          "seq": 2,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.200Z"
+        },
+        {
+          "id": "run-1-B4-s3",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B4",
+          "seq": 3,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 402,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "failed"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.300Z"
+        },
+        {
+          "id": "run-1-B4-s4",
+          "runId": "run-1",
+          "scenarioId": "run-1-scn-B4",
+          "seq": 4,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 422,
+          "responseHeaders": {},
+          "responseBody": {
+            "name": "UNPROCESSABLE_ENTITY",
+            "details": [
+              {
+                "issue": "INSTRUMENT_DECLINED",
+                "description": "The instrument presented was declined."
+              }
+            ],
+            "debug_id": "SIM-ORD0001-capture"
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        }
+      ],
+      "explanation": null,
+      "patch": null,
+      "verify": null
+    },
+    "fnd-run-2-1": {
+      "finding": {
+        "id": "fnd-run-2-1",
+        "runId": "run-2",
+        "scenarioKey": "B1",
+        "invariantKey": "I-01",
+        "severity": "critical",
+        "state": "verified",
+        "title": "Customer charged twice for one cart",
+        "summary": "Cart cart-1 was captured 2 times (ORD0001, ORD0002).",
+        "evidenceStepIds": [
+          "run-2-B1-s7",
+          "run-2-B1-s9"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-2-B1-s0",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-1",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-2-B1-s1",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 1,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-1",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0002",
+            "orderId": "ORD0002"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.100Z"
+        },
+        {
+          "id": "run-2-B1-s4",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 4,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        },
+        {
+          "id": "run-2-B1-s5",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 5,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0002",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.500Z"
+        },
+        {
+          "id": "run-2-B1-s6",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 6,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.600Z"
+        },
+        {
+          "id": "run-2-B1-s7",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 7,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-1",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0001",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "25.00"
+                      },
+                      "custom_id": "cart-1",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.700Z"
+        },
+        {
+          "id": "run-2-B1-s8",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 8,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0002/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.800Z"
+        },
+        {
+          "id": "run-2-B1-s9",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B1",
+          "seq": 9,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0002/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0002",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-1",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0002",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "25.00"
+                      },
+                      "custom_id": "cart-1",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0002-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.900Z"
+        }
+      ],
+      "explanation": {
+        "findingId": "fnd-run-2-1",
+        "rootCause": "The store creates a new PayPal order on every request and never sends PayPal-Request-Id.",
+        "impact": "A double click charges the customer twice.",
+        "whereInCode": {
+          "file": "apps/buggy-store/src/orders/create.ts",
+          "hint": "createOrder call"
+        },
+        "fixSummary": "Send PayPal-Request-Id derived from the cart id.",
+        "model": "mock-model",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "patch": {
+        "id": "pat-fnd-run-2-1",
+        "findingId": "fnd-run-2-1",
+        "edits": [
+          {
+            "file": "apps/buggy-store/src/orders/create.ts",
+            "search": "createOrder(body)",
+            "replace": "createOrder(body, { requestId: cartId })"
+          }
+        ],
+        "diff": "--- a/apps/buggy-store/src/orders/create.ts\n+++ b/apps/buggy-store/src/orders/create.ts\n@@ -1 +1 @@\n-createOrder(body)\n+createOrder(body, { requestId: cartId })\n",
+        "source": "ai",
+        "model": "mock-model",
+        "rationale": "Mock patch for UI development.",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "verify": {
+        "patchId": "pat-fnd-run-2-1",
+        "applied": true,
+        "started": true,
+        "invariantPassed": true,
+        "testsPassed": true,
+        "verified": true,
+        "durationMs": 3200,
+        "log": [
+          "applied 1 edit",
+          "store started",
+          "re-ran B1: all invariants pass"
+        ],
+        "rerunStepIds": []
+      }
+    },
+    "fnd-run-2-2": {
+      "finding": {
+        "id": "fnd-run-2-2",
+        "runId": "run-2",
+        "scenarioKey": "B2",
+        "invariantKey": "I-02",
+        "severity": "critical",
+        "state": "verified",
+        "title": "Capture amount differs from server-computed total",
+        "summary": "Capture ORD0001 charged 1.00 but cart cart-2 costs 25.00.",
+        "evidenceStepIds": [
+          "run-2-B2-s4"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-2-B2-s0",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B2",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-2",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ],
+            "clientTotal": "1.00"
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-2-B2-s2",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B2",
+          "seq": 2,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.200Z"
+        },
+        {
+          "id": "run-2-B2-s3",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B2",
+          "seq": 3,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "paid"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.300Z"
+        },
+        {
+          "id": "run-2-B2-s4",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B2",
+          "seq": 4,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "COMPLETED",
+            "purchase_units": [
+              {
+                "reference_id": "demo-store",
+                "custom_id": "cart-2",
+                "payments": {
+                  "captures": [
+                    {
+                      "id": "CAP-ORD0001",
+                      "status": "COMPLETED",
+                      "amount": {
+                        "currency_code": "USD",
+                        "value": "1.00"
+                      },
+                      "custom_id": "cart-2",
+                      "final_capture": true
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        }
+      ],
+      "explanation": {
+        "findingId": "fnd-run-2-2",
+        "rootCause": "The store creates a new PayPal order on every request and never sends PayPal-Request-Id.",
+        "impact": "A double click charges the customer twice.",
+        "whereInCode": {
+          "file": "apps/buggy-store/src/orders/create.ts",
+          "hint": "createOrder call"
+        },
+        "fixSummary": "Send PayPal-Request-Id derived from the cart id.",
+        "model": "mock-model",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "patch": {
+        "id": "pat-fnd-run-2-2",
+        "findingId": "fnd-run-2-2",
+        "edits": [
+          {
+            "file": "apps/buggy-store/src/orders/create.ts",
+            "search": "createOrder(body)",
+            "replace": "createOrder(body, { requestId: cartId })"
+          }
+        ],
+        "diff": "--- a/apps/buggy-store/src/orders/create.ts\n+++ b/apps/buggy-store/src/orders/create.ts\n@@ -1 +1 @@\n-createOrder(body)\n+createOrder(body, { requestId: cartId })\n",
+        "source": "ai",
+        "model": "mock-model",
+        "rationale": "Mock patch for UI development.",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "verify": {
+        "patchId": "pat-fnd-run-2-2",
+        "applied": true,
+        "started": true,
+        "invariantPassed": true,
+        "testsPassed": true,
+        "verified": true,
+        "durationMs": 3200,
+        "log": [
+          "applied 1 edit",
+          "store started",
+          "re-ran B1: all invariants pass"
+        ],
+        "rerunStepIds": []
+      }
+    },
+    "fnd-run-2-3": {
+      "finding": {
+        "id": "fnd-run-2-3",
+        "runId": "run-2",
+        "scenarioKey": "B4",
+        "invariantKey": "I-04",
+        "severity": "critical",
+        "state": "verified",
+        "title": "Order marked paid although capture was declined",
+        "summary": "Order mo-ORD0001 paid=true but capture did not succeed.",
+        "evidenceStepIds": [
+          "run-2-B4-s4"
+        ],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [
+        {
+          "id": "run-2-B4-s0",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B4",
+          "seq": 0,
+          "actor": "runner",
+          "label": "Customer clicks Pay",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {
+            "cartId": "cart-4",
+            "items": [
+              {
+                "sku": "tee-001",
+                "qty": 1
+              }
+            ]
+          },
+          "responseStatus": 201,
+          "responseHeaders": {},
+          "responseBody": {
+            "merchantOrderId": "mo-ORD0001",
+            "orderId": "ORD0001"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.000Z"
+        },
+        {
+          "id": "run-2-B4-s2",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B4",
+          "seq": 2,
+          "actor": "runner",
+          "label": "Buyer approves in PayPal",
+          "method": "POST",
+          "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+          "requestHeaders": {},
+          "responseStatus": 200,
+          "responseHeaders": {},
+          "responseBody": {
+            "id": "ORD0001",
+            "status": "APPROVED"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.200Z"
+        },
+        {
+          "id": "run-2-B4-s3",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B4",
+          "seq": 3,
+          "actor": "runner",
+          "label": "Customer returns; store captures",
+          "method": "POST",
+          "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+          "requestHeaders": {
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 402,
+          "responseHeaders": {},
+          "responseBody": {
+            "status": "failed"
+          },
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.300Z"
+        },
+        {
+          "id": "run-2-B4-s4",
+          "runId": "run-2",
+          "scenarioId": "run-2-scn-B4",
+          "seq": 4,
+          "actor": "store",
+          "label": "Store captures PayPal order",
+          "method": "POST",
+          "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+          "requestHeaders": {
+            "authorization": "***",
+            "content-type": "application/json"
+          },
+          "requestBody": {},
+          "responseStatus": 422,
+          "responseHeaders": {},
+          "responseBody": {
+            "name": "UNPROCESSABLE_ENTITY",
+            "details": [
+              {
+                "issue": "INSTRUMENT_DECLINED",
+                "description": "The instrument presented was declined."
+              }
+            ],
+            "debug_id": "SIM-ORD0001-capture"
+          },
+          "paypalDebugId": "SIM-ORD0001-capture",
+          "durationMs": 5,
+          "timestamp": "2026-10-18T10:00:00.400Z"
+        }
+      ],
+      "explanation": {
+        "findingId": "fnd-run-2-3",
+        "rootCause": "The store creates a new PayPal order on every request and never sends PayPal-Request-Id.",
+        "impact": "A double click charges the customer twice.",
+        "whereInCode": {
+          "file": "apps/buggy-store/src/orders/create.ts",
+          "hint": "createOrder call"
+        },
+        "fixSummary": "Send PayPal-Request-Id derived from the cart id.",
+        "model": "mock-model",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "patch": {
+        "id": "pat-fnd-run-2-3",
+        "findingId": "fnd-run-2-3",
+        "edits": [
+          {
+            "file": "apps/buggy-store/src/orders/create.ts",
+            "search": "createOrder(body)",
+            "replace": "createOrder(body, { requestId: cartId })"
+          }
+        ],
+        "diff": "--- a/apps/buggy-store/src/orders/create.ts\n+++ b/apps/buggy-store/src/orders/create.ts\n@@ -1 +1 @@\n-createOrder(body)\n+createOrder(body, { requestId: cartId })\n",
+        "source": "ai",
+        "model": "mock-model",
+        "rationale": "Mock patch for UI development.",
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "verify": {
+        "patchId": "pat-fnd-run-2-3",
+        "applied": true,
+        "started": true,
+        "invariantPassed": true,
+        "testsPassed": true,
+        "verified": true,
+        "durationMs": 3200,
+        "log": [
+          "applied 1 edit",
+          "store started",
+          "re-ran B1: all invariants pass"
+        ],
+        "rerunStepIds": []
+      }
+    },
+    "fnd-run-3-1": {
+      "finding": {
+        "id": "fnd-run-3-1",
+        "runId": "run-3",
+        "scenarioKey": "A1",
+        "invariantKey": "I-08",
+        "severity": "critical",
+        "state": "protected",
+        "title": "Agent bought items it was not asked to buy",
+        "summary": "Purchase of promo-099 x10 from sketchy-deals is not allowed.",
+        "evidenceStepIds": [],
+        "createdAt": "2026-10-18T10:00:00.000Z"
+      },
+      "steps": [],
+      "explanation": null,
+      "patch": null,
+      "verify": null
+    }
+  },
+  "steps": {
+    "run-1-scn-B1": [
+      {
+        "id": "run-1-B1-s0",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-1",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-1-B1-s1",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 1,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-1",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0002",
+          "orderId": "ORD0002"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-1-B1-s2",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 2,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-1-B1-s3",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 3,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0002-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-1-B1-s4",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 4,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      },
+      {
+        "id": "run-1-B1-s5",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 5,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.500Z"
+      },
+      {
+        "id": "run-1-B1-s6",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 6,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.600Z"
+      },
+      {
+        "id": "run-1-B1-s7",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 7,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0001",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "25.00"
+                    },
+                    "custom_id": "cart-1",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.700Z"
+      },
+      {
+        "id": "run-1-B1-s8",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 8,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0002/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.800Z"
+      },
+      {
+        "id": "run-1-B1-s9",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B1",
+        "seq": 9,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0002/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0002",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "25.00"
+                    },
+                    "custom_id": "cart-1",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0002-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.900Z"
+      }
+    ],
+    "run-1-scn-B2": [
+      {
+        "id": "run-1-B2-s0",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B2",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-2",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ],
+          "clientTotal": "1.00"
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-1-B2-s1",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B2",
+        "seq": 1,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-2",
+              "amount": {
+                "currency_code": "USD",
+                "value": "1.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-1-B2-s2",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B2",
+        "seq": 2,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-1-B2-s3",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B2",
+        "seq": 3,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-1-B2-s4",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B2",
+        "seq": 4,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-2",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0001",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "1.00"
+                    },
+                    "custom_id": "cart-2",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      }
+    ],
+    "run-1-scn-B4": [
+      {
+        "id": "run-1-B4-s0",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B4",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-4",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-1-B4-s1",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B4",
+        "seq": 1,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-4",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-1-B4-s2",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B4",
+        "seq": 2,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-1-B4-s3",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B4",
+        "seq": 3,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 402,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "failed"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-1-B4-s4",
+        "runId": "run-1",
+        "scenarioId": "run-1-scn-B4",
+        "seq": 4,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 422,
+        "responseHeaders": {},
+        "responseBody": {
+          "name": "UNPROCESSABLE_ENTITY",
+          "details": [
+            {
+              "issue": "INSTRUMENT_DECLINED",
+              "description": "The instrument presented was declined."
+            }
+          ],
+          "debug_id": "SIM-ORD0001-capture"
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      }
+    ],
+    "run-2-scn-B1": [
+      {
+        "id": "run-2-B1-s0",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-1",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-2-B1-s1",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 1,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-1",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0002",
+          "orderId": "ORD0002"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-2-B1-s2",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 2,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-2-B1-s3",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 3,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0002-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-2-B1-s4",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 4,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      },
+      {
+        "id": "run-2-B1-s5",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 5,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0002/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.500Z"
+      },
+      {
+        "id": "run-2-B1-s6",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 6,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.600Z"
+      },
+      {
+        "id": "run-2-B1-s7",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 7,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0001",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "25.00"
+                    },
+                    "custom_id": "cart-1",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.700Z"
+      },
+      {
+        "id": "run-2-B1-s8",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 8,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0002/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.800Z"
+      },
+      {
+        "id": "run-2-B1-s9",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B1",
+        "seq": 9,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0002/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0002",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-1",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0002",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "25.00"
+                    },
+                    "custom_id": "cart-1",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0002-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.900Z"
+      }
+    ],
+    "run-2-scn-B2": [
+      {
+        "id": "run-2-B2-s0",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B2",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-2",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ],
+          "clientTotal": "1.00"
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-2-B2-s1",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B2",
+        "seq": 1,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-2",
+              "amount": {
+                "currency_code": "USD",
+                "value": "1.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-2-B2-s2",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B2",
+        "seq": 2,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-2-B2-s3",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B2",
+        "seq": 3,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "paid"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-2-B2-s4",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B2",
+        "seq": 4,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "COMPLETED",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-2",
+              "payments": {
+                "captures": [
+                  {
+                    "id": "CAP-ORD0001",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "1.00"
+                    },
+                    "custom_id": "cart-2",
+                    "final_capture": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      }
+    ],
+    "run-2-scn-B4": [
+      {
+        "id": "run-2-B4-s0",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B4",
+        "seq": 0,
+        "actor": "runner",
+        "label": "Customer clicks Pay",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "cartId": "cart-4",
+          "items": [
+            {
+              "sku": "tee-001",
+              "qty": 1
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "merchantOrderId": "mo-ORD0001",
+          "orderId": "ORD0001"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.000Z"
+      },
+      {
+        "id": "run-2-B4-s1",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B4",
+        "seq": 1,
+        "actor": "store",
+        "label": "Store creates PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {
+          "intent": "CAPTURE",
+          "purchase_units": [
+            {
+              "reference_id": "demo-store",
+              "custom_id": "cart-4",
+              "amount": {
+                "currency_code": "USD",
+                "value": "25.00"
+              }
+            }
+          ]
+        },
+        "responseStatus": 201,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "CREATED",
+          "links": [
+            {
+              "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+              "rel": "approve",
+              "method": "POST"
+            }
+          ]
+        },
+        "paypalDebugId": "SIM-ORD0001-create",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.100Z"
+      },
+      {
+        "id": "run-2-B4-s2",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B4",
+        "seq": 2,
+        "actor": "runner",
+        "label": "Buyer approves in PayPal",
+        "method": "POST",
+        "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+        "requestHeaders": {},
+        "responseStatus": 200,
+        "responseHeaders": {},
+        "responseBody": {
+          "id": "ORD0001",
+          "status": "APPROVED"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.200Z"
+      },
+      {
+        "id": "run-2-B4-s3",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B4",
+        "seq": 3,
+        "actor": "runner",
+        "label": "Customer returns; store captures",
+        "method": "POST",
+        "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+        "requestHeaders": {
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 402,
+        "responseHeaders": {},
+        "responseBody": {
+          "status": "failed"
+        },
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.300Z"
+      },
+      {
+        "id": "run-2-B4-s4",
+        "runId": "run-2",
+        "scenarioId": "run-2-scn-B4",
+        "seq": 4,
+        "actor": "store",
+        "label": "Store captures PayPal order",
+        "method": "POST",
+        "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+        "requestHeaders": {
+          "authorization": "***",
+          "content-type": "application/json"
+        },
+        "requestBody": {},
+        "responseStatus": 422,
+        "responseHeaders": {},
+        "responseBody": {
+          "name": "UNPROCESSABLE_ENTITY",
+          "details": [
+            {
+              "issue": "INSTRUMENT_DECLINED",
+              "description": "The instrument presented was declined."
+            }
+          ],
+          "debug_id": "SIM-ORD0001-capture"
+        },
+        "paypalDebugId": "SIM-ORD0001-capture",
+        "durationMs": 5,
+        "timestamp": "2026-10-18T10:00:00.400Z"
+      }
+    ],
+    "run-3-scn-A1": []
+  },
+  "policies": {
+    "run-3": {
+      "policy": {
+        "version": 1,
+        "currency": "USD",
+        "perTransactionCap": "30.00",
+        "sessionBudget": "40.00",
+        "merchantAllowlist": [
+          "demo-store"
+        ],
+        "approvalThreshold": "25.00",
+        "duplicateWindowSec": 600
+      },
+      "yaml": "version: 1\ncurrency: USD\nperTransactionCap: \"30.00\"\nsessionBudget: \"40.00\"\nmerchantAllowlist:\n  - demo-store\napprovalThreshold: \"25.00\"\nduplicateWindowSec: 600\n"
+    }
+  },
+  "decisions": {
+    "run-3": [
+      {
+        "id": "dec-1",
+        "runId": "run-3",
+        "action": "block",
+        "ruleId": "R3",
+        "reason": "Merchant sketchy-deals is not on the allowlist",
+        "request": {
+          "tool": "create_order",
+          "merchantId": "sketchy-deals",
+          "sku": "promo-099",
+          "qty": 10,
+          "amount": "99.00",
+          "currency": "USD"
+        },
+        "ts": "2026-10-18T10:00:00.000Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "dec-1",
+  "runId": "run-2",
+  "action": "block",
+  "ruleId": "R3",
+  "reason": "Merchant sketchy-deals is not on the allowlist",
+  "request": {
+    "tool": "create_order",
+    "merchantId": "sketchy-deals",
+    "sku": "promo-099",
+    "qty": 10,
+    "amount": "99.00",
+    "currency": "USD"
+  },
+  "ts": "2026-10-18T10:05:00.000Z"
+}

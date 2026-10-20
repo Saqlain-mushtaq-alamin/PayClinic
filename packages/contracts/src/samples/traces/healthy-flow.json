@@ -1,0 +1,193 @@
+{
+  "name": "healthy-flow",
+  "scenarioKey": "B1",
+  "description": "One checkout, one order, one capture. Every invariant passes.",
+  "steps": [
+    {
+      "id": "g-healthy-s0",
+      "runId": "g-healthy",
+      "scenarioId": "g-healthy-scn",
+      "seq": 0,
+      "actor": "runner",
+      "label": "Customer clicks Pay",
+      "method": "POST",
+      "url": "http://127.0.0.1:50002/api/orders",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {
+        "cartId": "cart-1",
+        "items": [
+          {
+            "sku": "tee-001",
+            "qty": 1
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {},
+      "responseBody": {
+        "merchantOrderId": "mo-ORD0001",
+        "orderId": "ORD0001"
+      },
+      "durationMs": 5,
+      "timestamp": "2026-10-18T10:00:00.000Z"
+    },
+    {
+      "id": "g-healthy-s1",
+      "runId": "g-healthy",
+      "scenarioId": "g-healthy-scn",
+      "seq": 1,
+      "actor": "store",
+      "label": "Store creates PayPal order",
+      "method": "POST",
+      "url": "http://127.0.0.1:50001/v2/checkout/orders",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json"
+      },
+      "requestBody": {
+        "intent": "CAPTURE",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-1",
+            "amount": {
+              "currency_code": "USD",
+              "value": "25.00"
+            }
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {},
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "CREATED",
+        "links": [
+          {
+            "href": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+            "rel": "approve",
+            "method": "POST"
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-ORD0001-create",
+      "durationMs": 5,
+      "timestamp": "2026-10-18T10:00:00.100Z"
+    },
+    {
+      "id": "g-healthy-s2",
+      "runId": "g-healthy",
+      "scenarioId": "g-healthy-scn",
+      "seq": 2,
+      "actor": "runner",
+      "label": "Buyer approves in PayPal",
+      "method": "POST",
+      "url": "http://127.0.0.1:4010/__sim/orders/ORD0001/approve",
+      "requestHeaders": {},
+      "responseStatus": 200,
+      "responseHeaders": {},
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "APPROVED"
+      },
+      "durationMs": 5,
+      "timestamp": "2026-10-18T10:00:00.200Z"
+    },
+    {
+      "id": "g-healthy-s3",
+      "runId": "g-healthy",
+      "scenarioId": "g-healthy-scn",
+      "seq": 3,
+      "actor": "runner",
+      "label": "Customer returns; store captures",
+      "method": "POST",
+      "url": "http://127.0.0.1:50002/api/orders/ORD0001/capture",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {},
+      "responseStatus": 200,
+      "responseHeaders": {},
+      "responseBody": {
+        "status": "paid"
+      },
+      "durationMs": 5,
+      "timestamp": "2026-10-18T10:00:00.300Z"
+    },
+    {
+      "id": "g-healthy-s4",
+      "runId": "g-healthy",
+      "scenarioId": "g-healthy-scn",
+      "seq": 4,
+      "actor": "store",
+      "label": "Store captures PayPal order",
+      "method": "POST",
+      "url": "http://127.0.0.1:50001/v2/checkout/orders/ORD0001/capture",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json"
+      },
+      "requestBody": {},
+      "responseStatus": 201,
+      "responseHeaders": {},
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "COMPLETED",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-1",
+            "payments": {
+              "captures": [
+                {
+                  "id": "CAP-ORD0001",
+                  "status": "COMPLETED",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "25.00"
+                  },
+                  "custom_id": "cart-1",
+                  "final_capture": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-ORD0001-capture",
+      "durationMs": 5,
+      "timestamp": "2026-10-18T10:00:00.400Z"
+    }
+  ],
+  "state": {
+    "carts": [
+      {
+        "id": "cart-1",
+        "items": [
+          {
+            "sku": "tee-001",
+            "qty": 1
+          }
+        ],
+        "currency": "USD",
+        "expectedTotal": "25.00"
+      }
+    ],
+    "merchantOrders": [
+      {
+        "id": "mo-ORD0001",
+        "cartId": "cart-1",
+        "paypalOrderId": "ORD0001",
+        "status": "paid",
+        "paid": true,
+        "capturedTotal": "25.00",
+        "refundedTotal": "0.00"
+      }
+    ],
+    "webhookDeliveries": [],
+    "forgedDeliveryIds": []
+  },
+  "expectedFailingInvariants": []
+}

@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "mocks/**/*.ts",
+    "scenarios/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "scripts/**/*.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist", ".payclinic-tmp", "data"]
+}

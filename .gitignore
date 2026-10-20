@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+.env
+.env.*
+!.env.example
+.payclinic-tmp/
+*.db
+*.db-journal
+.DS_Store
+coverage/

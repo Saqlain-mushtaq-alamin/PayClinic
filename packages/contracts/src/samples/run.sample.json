@@ -1,0 +1,11 @@
+{
+  "id": "run-1",
+  "target": "store",
+  "mode": "offline",
+  "scenarioKeys": ["B1", "B2", "B3", "B4", "B5"],
+  "status": "completed",
+  "startedAt": "2026-10-18T10:00:00.000Z",
+  "completedAt": "2026-10-18T10:00:42.000Z",
+  "scoreBefore": 61,
+  "scoreAfter": 100
+}

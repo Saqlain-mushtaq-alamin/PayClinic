@@ -1,0 +1,15 @@
+{
+  "id": "pat-1",
+  "findingId": "fnd-1",
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/orders/create.ts",
+      "search": "const order = await paypal.createOrder(body);",
+      "replace": "const order = await paypal.createOrder(body, { requestId: cartId });"
+    }
+  ],
+  "diff": "--- a/apps/buggy-store/src/orders/create.ts\n+++ b/apps/buggy-store/src/orders/create.ts\n@@ -1 +1 @@\n-const order = await paypal.createOrder(body);\n+const order = await paypal.createOrder(body, { requestId: cartId });\n",
+  "source": "template",
+  "rationale": "Send PayPal-Request-Id so retries and double-clicks return the same order.",
+  "createdAt": "2026-10-18T10:00:20.000Z"
+}

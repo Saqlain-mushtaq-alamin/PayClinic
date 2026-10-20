@@ -1,0 +1,12 @@
+{
+  "id": "fnd-1",
+  "runId": "run-1",
+  "scenarioKey": "B1",
+  "invariantKey": "I-01",
+  "severity": "critical",
+  "state": "open",
+  "title": "Customer charged twice for one cart",
+  "summary": "Cart cart-1 produced 2 successful captures (ORD0001, ORD0002).",
+  "evidenceStepIds": ["g-b1-s7", "g-b1-s9"],
+  "createdAt": "2026-10-18T10:00:10.000Z"
+}

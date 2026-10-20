@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "currency": "USD",
+  "perTransactionCap": "50.00",
+  "sessionBudget": "100.00",
+  "merchantAllowlist": ["demo-store"],
+  "approvalThreshold": "25.00",
+  "duplicateWindowSec": 600
+}

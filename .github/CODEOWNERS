@@ -1,0 +1,16 @@
+# Replace @member-x with real GitHub usernames. Used for clarity/notifications; only
+# packages/contracts requires a review (see AGENTS.md "Git rules").
+/apps/buggy-store/        @member-a
+/packages/core/           @member-a
+/packages/cli/            @member-a
+/packages/sim/            @member-a
+/scenarios/               @member-a
+/packages/ai/             @member-b
+/packages/firewall/       @member-b
+/apps/shopping-agent/     @member-b
+/apps/dashboard/          @member-c
+/mocks/                   @member-c
+/.github/                 @member-c
+/docs/                    @member-c
+/fixtures/                @member-a @member-b
+/packages/contracts/      @member-a @member-b @member-c
