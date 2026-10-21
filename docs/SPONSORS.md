@@ -16,15 +16,14 @@ Source pages: Devpost Rules tab, FAQ, sponsor prize pages. Summarize requirement
 
 ## Sponsor prizes: decision per prize
 
-| Sponsor  | Requirement (own words) | Natural fit in PayClinic                             | Decision (pursue / skip) | Evidence we must show |
-| -------- | ----------------------- | ---------------------------------------------------- | ------------------------ | --------------------- |
-| AG Grid  | Integrate AG Grid with interactive data displays, sorting, filtering, custom renderers | Findings grid and decision log use AG Grid Community | pursue | Live AG Grid in `apps/dashboard` displaying invariant findings, severity badges, and firewall decision log |
-| APIMatic | Integrate APIMatic SDKs or OpenAPI metadata for API consumption/validation | PayPal API context for the AI layer                  | pursue | APIMatic / PayPal API spec definitions fed into prompt evidence builders for accurate patch generation |
-| Render   | Deploy functioning web application / backend on Render platform | Free-tier deployment of the offline demo             | pursue | `render.yaml` configuration in repo and live running deployment link on Render |
-| Channel3 | Integrate Channel3 commerce catalog/feed tools | None                                                 | skip                     | N/A |
-| Bryntum  | Integrate Bryntum scheduling/Gantt components | None                                                 | skip                     | N/A |
+| Sponsor  | Requirement (own words)                                                                | Natural fit in PayClinic                             | Decision (pursue / skip) | Evidence we must show                                                                                      |
+| -------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| AG Grid  | Integrate AG Grid with interactive data displays, sorting, filtering, custom renderers | Findings grid and decision log use AG Grid Community | pursue                   | Live AG Grid in `apps/dashboard` displaying invariant findings, severity badges, and firewall decision log |
+| APIMatic | Integrate APIMatic SDKs or OpenAPI metadata for API consumption/validation             | PayPal API context for the AI layer                  | pursue                   | APIMatic / PayPal API spec definitions fed into prompt evidence builders for accurate patch generation     |
+| Render   | Deploy functioning web application / backend on Render platform                        | Free-tier deployment of the offline demo             | pursue                   | `render.yaml` configuration in repo and live running deployment link on Render                             |
+| Channel3 | Integrate Channel3 commerce catalog/feed tools                                         | None                                                 | skip                     | N/A                                                                                                        |
+| Bryntum  | Integrate Bryntum scheduling/Gantt components                                          | None                                                 | skip                     | N/A                                                                                                        |
 
 ## Blocking issues (tell the team the same day)
 
 - None. All eligibility criteria, sponsor requirements, and tool stacks are fully aligned with the technical design.
-
