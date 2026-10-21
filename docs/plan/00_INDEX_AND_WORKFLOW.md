@@ -61,11 +61,11 @@ Everything in Phase 2 depends on **IC1** (Phase 1 exit). Tracks never wait for e
 
 ### Phase 0: Oct 18 to 19
 
-- [ ] P0-X01 Install the kit and verify the scaffold (all)
-- [ ] P0-X02 Review and freeze contracts v1 (all)
-- [ ] P0-X03 Accounts and credentials (each)
-- [ ] P0-X04 Human spikes S1 to S5 (A: S1, S2, S5; B: S3, S4; C: S0)
-- [ ] P0-C01 Repo hygiene, CODEOWNERS, board, branch protection (C)
+- [x] P0-X01 Install the kit and verify the scaffold (all)
+- [x] P0-X02 Review and freeze contracts v1 (all)
+- [x] P0-X03 Accounts and credentials (each)
+- [x] P0-X04 Human spikes S1 to S5 (A: S1, S2, S5; B: S3, S4; C: S0)
+- [x] P0-C01 Repo hygiene, CODEOWNERS, board, branch protection (C)
 
 ### Phase 1: Oct 19 to 23
 
