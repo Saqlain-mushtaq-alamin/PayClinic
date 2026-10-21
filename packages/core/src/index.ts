@@ -6,3 +6,6 @@ export * from './db/repos';
 export * from './trace/recorder';
 export * from './trace/redact';
 export * from './trace/proxy';
+export * from './invariants';
+export * from './findings';
+export * from './score';
