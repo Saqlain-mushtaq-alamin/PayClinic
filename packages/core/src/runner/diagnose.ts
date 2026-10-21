@@ -2,6 +2,7 @@ import { createInterface } from 'node:readline/promises';
 import { MerchantOrder, Product, SCENARIO_META, WebhookDelivery } from '@payclinic/contracts';
 import type {
   Finding,
+  InvariantResult,
   Product as ProductModel,
   Run,
   RunEvent,
@@ -10,6 +11,7 @@ import type {
   ScenarioKey,
   ScenarioResult,
   Score,
+  Step,
 } from '@payclinic/contracts';
 import { startSim } from '@payclinic/sim';
 import type { Config } from '../config';
@@ -32,6 +34,10 @@ export interface DiagnoseDeps {
   now: () => Date;
   emit?: (e: RunEvent) => void;
   scenarioTimeoutMs?: number;
+  onScenarioFinished?: (
+    key: ScenarioKey,
+    info: { steps: Step[]; state: RunState; results: InvariantResult[] },
+  ) => void | Promise<void>;
 }
 
 export interface DiagnoseRequest {
@@ -234,10 +240,12 @@ export async function runDiagnose(
         const invariantKeys = SCENARIO_META[key].invariantKeys.filter(
           (invariantKey) => INVARIANTS[invariantKey] !== undefined,
         );
-        const results = runInvariants(invariantKeys, { trace: recorder.steps(), state });
+        const scenarioSteps = recorder.drain();
+        const results = runInvariants(invariantKeys, { trace: scenarioSteps, state });
 
-        deps.repos.insertSteps(recorder.drain());
+        deps.repos.insertSteps(scenarioSteps);
         deps.repos.insertInvariantResults(runId, scenario.id, results);
+        await deps.onScenarioFinished?.(key, { steps: scenarioSteps, state, results });
 
         const scenarioFindings = findingsFromResults({
           runId,
