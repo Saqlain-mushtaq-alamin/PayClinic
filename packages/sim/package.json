@@ -1,0 +1,15 @@
+{
+  "name": "@payclinic/sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@payclinic/core": "*",
+    "fastify": "^5.0.0"
+  }
+}
