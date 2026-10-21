@@ -9,6 +9,10 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@payclinic/contracts": "*"
+    "@payclinic/contracts": "*",
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0"
   }
 }
