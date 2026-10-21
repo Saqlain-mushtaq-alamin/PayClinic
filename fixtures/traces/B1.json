@@ -1,0 +1,586 @@
+{
+  "scenarioKey": "B1",
+  "steps": [
+    {
+      "id": "93f1aa1b-5885-4191-8a8c-f057a68f4c03",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 0,
+      "actor": "runner",
+      "label": "Customer clicks Pay",
+      "method": "POST",
+      "url": "http://127.0.0.1:54577/api/orders",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {
+        "cartId": "cart-b1",
+        "items": [
+          {
+            "sku": "tee-001",
+            "qty": 1
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "119",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72"
+      },
+      "responseBody": {
+        "merchantOrderId": "mo-ORD0001",
+        "orderId": "ORD0001",
+        "approveUrl": "http://127.0.0.1:54575/__sim/orders/ORD0001/approve"
+      },
+      "durationMs": 24,
+      "timestamp": "2026-10-21T19:54:31.881Z"
+    },
+    {
+      "id": "8b1ae7c3-a664-4296-9e7c-447482ee6b50",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 1,
+      "actor": "runner",
+      "label": "Customer clicks Pay",
+      "method": "POST",
+      "url": "http://127.0.0.1:54577/api/orders",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {
+        "cartId": "cart-b1",
+        "items": [
+          {
+            "sku": "tee-001",
+            "qty": 1
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "119",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72"
+      },
+      "responseBody": {
+        "merchantOrderId": "mo-ORD0002",
+        "orderId": "ORD0002",
+        "approveUrl": "http://127.0.0.1:54575/__sim/orders/ORD0002/approve"
+      },
+      "durationMs": 23,
+      "timestamp": "2026-10-21T19:54:31.882Z"
+    },
+    {
+      "id": "9cc71421-6d61-49cf-8773-e341d801bf39",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 2,
+      "actor": "store",
+      "label": "POST /v1/oauth2/token",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v1/oauth2/token",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/x-www-form-urlencoded",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": "grant_type=client_credentials",
+      "responseStatus": 200,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "69",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0001"
+      },
+      "responseBody": {
+        "access_token": "***",
+        "token_type": "Bearer",
+        "expires_in": 32400
+      },
+      "paypalDebugId": "SIM-0001",
+      "durationMs": 2,
+      "timestamp": "2026-10-21T19:54:31.892Z"
+    },
+    {
+      "id": "515fb2e4-b461-4bc5-84a7-21a200a22645",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 3,
+      "actor": "store",
+      "label": "POST /v2/checkout/orders",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v2/checkout/orders",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": {
+        "intent": "CAPTURE",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "amount": {
+              "currency_code": "USD",
+              "value": "25.00"
+            }
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "260",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0002"
+      },
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "CREATED",
+        "links": [
+          {
+            "href": "http://127.0.0.1:54575/__sim/orders/ORD0001/approve",
+            "rel": "approve",
+            "method": "POST"
+          }
+        ],
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "amount": {
+              "currency_code": "USD",
+              "value": "25.00"
+            }
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-0002",
+      "durationMs": 3,
+      "timestamp": "2026-10-21T19:54:31.900Z"
+    },
+    {
+      "id": "f8e146f6-86cf-4813-807f-212f247fbd7f",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 4,
+      "actor": "store",
+      "label": "POST /v2/checkout/orders",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v2/checkout/orders",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": {
+        "intent": "CAPTURE",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "amount": {
+              "currency_code": "USD",
+              "value": "25.00"
+            }
+          }
+        ]
+      },
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "260",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0003"
+      },
+      "responseBody": {
+        "id": "ORD0002",
+        "status": "CREATED",
+        "links": [
+          {
+            "href": "http://127.0.0.1:54575/__sim/orders/ORD0002/approve",
+            "rel": "approve",
+            "method": "POST"
+          }
+        ],
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "amount": {
+              "currency_code": "USD",
+              "value": "25.00"
+            }
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-0003",
+      "durationMs": 3,
+      "timestamp": "2026-10-21T19:54:31.901Z"
+    },
+    {
+      "id": "b835cb04-a8d4-4ad3-8330-43ebec4a758a",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 5,
+      "actor": "runner",
+      "label": "Buyer approves in PayPal",
+      "method": "POST",
+      "url": "http://127.0.0.1:54575/__sim/orders/ORD0001/approve",
+      "requestHeaders": {},
+      "responseStatus": 200,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0004"
+      },
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "APPROVED"
+      },
+      "paypalDebugId": "SIM-0004",
+      "durationMs": 1,
+      "timestamp": "2026-10-21T19:54:31.906Z"
+    },
+    {
+      "id": "99e29c54-ace1-4a83-932c-5bc0a01b0b25",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 6,
+      "actor": "runner",
+      "label": "Customer returns; store captures",
+      "method": "POST",
+      "url": "http://127.0.0.1:54577/api/orders/ORD0001/capture",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {},
+      "responseStatus": 200,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "48",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72"
+      },
+      "responseBody": {
+        "merchantOrderId": "mo-ORD0001",
+        "status": "paid"
+      },
+      "durationMs": 4,
+      "timestamp": "2026-10-21T19:54:31.907Z"
+    },
+    {
+      "id": "5d858061-c14f-4930-bc05-59056780299d",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 7,
+      "actor": "store",
+      "label": "POST /v2/checkout/orders/ORD0001/capture",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v2/checkout/orders/ORD0001/capture",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": {},
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "264",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0005"
+      },
+      "responseBody": {
+        "id": "ORD0001",
+        "status": "COMPLETED",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "payments": {
+              "captures": [
+                {
+                  "id": "CAP0001",
+                  "status": "COMPLETED",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "25.00"
+                  },
+                  "custom_id": "cart-b1",
+                  "final_capture": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-0005",
+      "durationMs": 2,
+      "timestamp": "2026-10-21T19:54:31.908Z"
+    },
+    {
+      "id": "65d9cd92-0f84-4596-bacd-df773e6145f8",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 8,
+      "actor": "runner",
+      "label": "Buyer approves in PayPal",
+      "method": "POST",
+      "url": "http://127.0.0.1:54575/__sim/orders/ORD0002/approve",
+      "requestHeaders": {},
+      "responseStatus": 200,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "36",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0006"
+      },
+      "responseBody": {
+        "id": "ORD0002",
+        "status": "APPROVED"
+      },
+      "paypalDebugId": "SIM-0006",
+      "durationMs": 0,
+      "timestamp": "2026-10-21T19:54:31.911Z"
+    },
+    {
+      "id": "c584f3bb-25fa-4911-93d7-cd7fab080449",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 9,
+      "actor": "runner",
+      "label": "Customer returns; store captures",
+      "method": "POST",
+      "url": "http://127.0.0.1:54577/api/orders/ORD0002/capture",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {},
+      "responseStatus": 200,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "48",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72"
+      },
+      "responseBody": {
+        "merchantOrderId": "mo-ORD0002",
+        "status": "paid"
+      },
+      "durationMs": 3,
+      "timestamp": "2026-10-21T19:54:31.912Z"
+    },
+    {
+      "id": "b44cdcbb-0b81-43b1-839e-1d2adced0d23",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 10,
+      "actor": "store",
+      "label": "POST /v2/checkout/orders/ORD0002/capture",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v2/checkout/orders/ORD0002/capture",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": {},
+      "responseStatus": 201,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "264",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0007"
+      },
+      "responseBody": {
+        "id": "ORD0002",
+        "status": "COMPLETED",
+        "purchase_units": [
+          {
+            "reference_id": "demo-store",
+            "custom_id": "cart-b1",
+            "payments": {
+              "captures": [
+                {
+                  "id": "CAP0002",
+                  "status": "COMPLETED",
+                  "amount": {
+                    "currency_code": "USD",
+                    "value": "25.00"
+                  },
+                  "custom_id": "cart-b1",
+                  "final_capture": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-0007",
+      "durationMs": 1,
+      "timestamp": "2026-10-21T19:54:31.913Z"
+    },
+    {
+      "id": "2c333b04-8714-4ca3-b5ca-8f10c7fca074",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 11,
+      "actor": "runner",
+      "label": "Customer returns; store captures",
+      "method": "POST",
+      "url": "http://127.0.0.1:54577/api/orders/ORD0001/capture",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": {},
+      "responseStatus": 402,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "227",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72"
+      },
+      "responseBody": {
+        "status": "failed",
+        "paypal": {
+          "name": "UNPROCESSABLE_ENTITY",
+          "message": "Order ORD0001 was already captured",
+          "debug_id": "SIM-0008",
+          "details": [
+            {
+              "issue": "ORDER_ALREADY_CAPTURED",
+              "description": "Order ORD0001 was already captured"
+            }
+          ]
+        }
+      },
+      "durationMs": 3,
+      "timestamp": "2026-10-21T19:54:31.915Z"
+    },
+    {
+      "id": "5d42ee04-bfff-4893-acb0-5c8736437c51",
+      "runId": "b248ebb0-9ba8-4788-9f67-1ab5ba124020",
+      "scenarioId": "8f579ffe-c9e2-4e60-ac8a-6ae0cfe974c7",
+      "seq": 12,
+      "actor": "store",
+      "label": "POST /v2/checkout/orders/ORD0001/capture",
+      "method": "POST",
+      "url": "http://127.0.0.1:54576/v2/checkout/orders/ORD0001/capture",
+      "requestHeaders": {
+        "authorization": "***",
+        "content-type": "application/json",
+        "accept": "*/*",
+        "accept-language": "*",
+        "sec-fetch-mode": "cors",
+        "user-agent": "node",
+        "accept-encoding": "gzip, deflate"
+      },
+      "requestBody": {},
+      "responseStatus": 422,
+      "responseHeaders": {
+        "connection": "keep-alive",
+        "content-length": "198",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 19:54:31 GMT",
+        "keep-alive": "timeout=72",
+        "paypal-debug-id": "SIM-0008"
+      },
+      "responseBody": {
+        "name": "UNPROCESSABLE_ENTITY",
+        "message": "Order ORD0001 was already captured",
+        "debug_id": "SIM-0008",
+        "details": [
+          {
+            "issue": "ORDER_ALREADY_CAPTURED",
+            "description": "Order ORD0001 was already captured"
+          }
+        ]
+      },
+      "paypalDebugId": "SIM-0008",
+      "durationMs": 1,
+      "timestamp": "2026-10-21T19:54:31.916Z"
+    }
+  ],
+  "state": {
+    "carts": [
+      {
+        "id": "cart-b1",
+        "items": [
+          {
+            "sku": "tee-001",
+            "qty": 1
+          }
+        ],
+        "currency": "USD",
+        "expectedTotal": "25.00"
+      }
+    ],
+    "merchantOrders": [
+      {
+        "id": "mo-ORD0001",
+        "cartId": "cart-b1",
+        "paypalOrderId": "ORD0001",
+        "status": "paid",
+        "paid": true,
+        "capturedTotal": "25.00",
+        "refundedTotal": "0.00"
+      },
+      {
+        "id": "mo-ORD0002",
+        "cartId": "cart-b1",
+        "paypalOrderId": "ORD0002",
+        "status": "paid",
+        "paid": true,
+        "capturedTotal": "25.00",
+        "refundedTotal": "0.00"
+      }
+    ],
+    "webhookDeliveries": [],
+    "forgedDeliveryIds": []
+  }
+}
