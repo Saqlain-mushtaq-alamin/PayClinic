@@ -73,9 +73,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const buyerApprover = z
     .enum(['sim', 'manual', 'playwright', 'card'])
     .parse(env.BUYER_APPROVER ?? 'sim');
-  const aiProvider = z
-    .enum(['fixture', 'gemini', 'fake'])
-    .parse(env.AI_PROVIDER ?? 'fixture');
+  const aiProvider = z.enum(['fixture', 'gemini', 'fake']).parse(env.AI_PROVIDER ?? 'fixture');
 
   const paypalClientId = env.PAYPAL_CLIENT_ID;
   const paypalClientSecret = env.PAYPAL_CLIENT_SECRET;
@@ -84,8 +82,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     throw new ConfigError('online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
   }
 
-  const paypalBaseUrl =
-    env.PAYPAL_BASE_URL ?? (mode === 'online' ? SANDBOX_BASE_URL : null);
+  const paypalBaseUrl = env.PAYPAL_BASE_URL ?? (mode === 'online' ? SANDBOX_BASE_URL : null);
   if (paypalBaseUrl !== null) {
     assertSafePayPalBase(paypalBaseUrl);
   }
