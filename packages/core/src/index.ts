@@ -12,3 +12,4 @@ export * from './score';
 export * from './runner/store-process';
 export * from './runner/approvers';
 export * from './runner/context';
+export * from './runner/diagnose';
