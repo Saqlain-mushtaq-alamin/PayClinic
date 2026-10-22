@@ -1,0 +1,329 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.layout__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.layout__brand {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.layout__tagline {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.02em;
+}
+
+.layout__main {
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-5);
+}
+
+.layout__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Layout owns the brand link, so the original App nav would duplicate it. */
+.app > nav {
+  display: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.1rem var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.badge--critical {
+  color: var(--severity-critical);
+}
+
+.badge--high {
+  color: var(--severity-high);
+}
+
+.badge--medium {
+  color: var(--severity-medium);
+}
+
+.badge--low {
+  color: var(--severity-low);
+}
+
+.badge--ok {
+  color: var(--color-ok);
+}
+
+.badge--neutral {
+  color: var(--color-muted);
+}
+
+.button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button--primary {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.button--secondary {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.button:hover {
+  filter: brightness(1.05);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card {
+  padding: var(--space-4);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+}
+
+.spinner__dot {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner__dot {
+    animation: none;
+  }
+}
+
+.empty-state,
+.error-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  color: var(--color-muted);
+  text-align: center;
+  background: var(--color-surface-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.error-state {
+  color: var(--color-danger);
+  border-style: solid;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.run-page__summary {
+  margin-bottom: var(--space-4);
+}
+
+.score-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.score-gauge__ring {
+  width: 140px;
+  height: 140px;
+}
+
+.score-gauge__track {
+  fill: none;
+  stroke: var(--color-surface-muted);
+  stroke-width: 10;
+}
+
+.score-gauge__progress {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.score-gauge__value {
+  fill: var(--color-text);
+  font-family: var(--font-family);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.score-gauge__change {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.ag-theme-quartz,
+[data-testid='findings-grid'] .ag-root-wrapper {
+  --ag-font-family: var(--font-family);
+  --ag-font-size: var(--font-size-sm);
+}
+
+[data-testid='findings-grid'] .ag-root,
+[data-testid='findings-grid'] .ag-root-wrapper,
+[data-testid='findings-grid'] .ag-root-wrapper-body,
+[data-testid='findings-grid'] .ag-body,
+[data-testid='findings-grid'] .ag-body-viewport,
+[data-testid='findings-grid'] .ag-center-cols-clipper,
+[data-testid='findings-grid'] .ag-center-cols-viewport,
+[data-testid='findings-grid'] .ag-center-cols-container,
+[data-testid='findings-grid'] .ag-grid-pinned-top-rows,
+[data-testid='findings-grid'] .ag-grid-scrolling-rows,
+[data-testid='findings-grid'] .ag-body-horizontal-scroll-viewport,
+[data-testid='findings-grid'] .ag-row,
+[data-testid='findings-grid'] .ag-cell {
+  color: var(--color-text);
+  background-color: var(--color-surface-raised);
+}
+
+[data-testid='findings-grid'] .ag-header,
+[data-testid='findings-grid'] .ag-header-row,
+[data-testid='findings-grid'] .ag-header-cell {
+  color: var(--color-muted);
+  background-color: var(--color-surface-muted);
+}
+
+[data-testid='findings-grid'] .ag-header-cell-text {
+  color: var(--color-muted);
+}
+
+[data-testid='findings-grid'] .ag-row,
+[data-testid='findings-grid'] .ag-header-row,
+[data-testid='findings-grid'] .ag-header-cell {
+  border-color: var(--color-border);
+}
+
+[data-testid='findings-grid'] .ag-row:hover .ag-cell {
+  background-color: var(--color-surface-muted);
+}
+
+.runs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.runs-table th,
+.runs-table td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.runs-table th {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.runs-table tbody tr:hover {
+  background: var(--color-surface-muted);
+}
+
+.severity-badge {
+  font-weight: 600;
+}
