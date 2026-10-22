@@ -201,26 +201,29 @@ export function createMockApi(opts: { dataPath?: string } = {}): FastifyInstance
     ];
     schedule(runId, events, 300);
 
-    const finish = setTimeout(() => {
-      const detail = data.details[runId];
-      if (!detail) return;
-      const finishedScenarios = detail.scenarios.map((scenario) => ({
-        ...scenario,
-        status: findings.some((finding) => finding.scenarioKey === scenario.key)
-          ? ('failed' as const)
-          : ('passed' as const),
-        finishedAt: completedRun.completedAt,
-      }));
-      data.details[runId] = { ...detail, run: completedRun, scenarios: finishedScenarios };
-      const index = data.runs.findIndex((summary) => summary.id === runId);
-      if (index >= 0) {
-        data.runs[index] = RunSummary.parse({
-          ...completedRun,
-          findingCount: findings.length,
-          score,
-        });
-      }
-    }, 300 * Math.max(1, events.length - 1));
+    const finish = setTimeout(
+      () => {
+        const detail = data.details[runId];
+        if (!detail) return;
+        const finishedScenarios = detail.scenarios.map((scenario) => ({
+          ...scenario,
+          status: findings.some((finding) => finding.scenarioKey === scenario.key)
+            ? ('failed' as const)
+            : ('passed' as const),
+          finishedAt: completedRun.completedAt,
+        }));
+        data.details[runId] = { ...detail, run: completedRun, scenarios: finishedScenarios };
+        const index = data.runs.findIndex((summary) => summary.id === runId);
+        if (index >= 0) {
+          data.runs[index] = RunSummary.parse({
+            ...completedRun,
+            findingCount: findings.length,
+            score,
+          });
+        }
+      },
+      300 * Math.max(1, events.length - 1),
+    );
     finish.unref();
     channelFor(runId).timers.push(finish);
 
