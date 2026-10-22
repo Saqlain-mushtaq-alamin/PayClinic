@@ -155,6 +155,6 @@ describe('findings', () => {
     });
   });
   it('runInvariants throws for an invariant that is not registered yet', () => {
-    expect(() => runInvariants(['I-09'], { trace: [], state: buildState() })).toThrow();
+    expect(() => runInvariants(['I-06'], { trace: [], state: buildState() })).toThrow();
   });
 });
