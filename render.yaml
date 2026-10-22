@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: payclinic
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build --if-present
+    startCommand: node --import tsx scripts/hello-render.ts
+    healthCheckPath: /healthz
