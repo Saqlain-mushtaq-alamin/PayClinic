@@ -1,0 +1,58 @@
+:root {
+  color-scheme: light dark;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-muted: #f3f5f8;
+  --color-text: #16181d;
+  --color-muted: #5a6270;
+  --color-border: #d8dde5;
+  --color-accent: #2457d6;
+  --color-accent-contrast: #ffffff;
+  --color-danger: #b42318;
+  --color-warn: #a15c07;
+  --color-ok: #18794e;
+  --severity-critical: #b42318;
+  --severity-high: #c2410c;
+  --severity-medium: #a15c07;
+  --severity-low: #52606d;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+  --line-height: 1.5;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-surface: #101216;
+    --color-surface-raised: #171a20;
+    --color-surface-muted: #1e222a;
+    --color-text: #eef1f6;
+    --color-muted: #a3adbd;
+    --color-border: #2b313c;
+    --color-accent: #7ba7ff;
+    --color-accent-contrast: #0b0d10;
+    --color-danger: #ff8a80;
+    --color-warn: #f2b45c;
+    --color-ok: #6fdb9e;
+    --severity-critical: #ff8a80;
+    --severity-high: #ffab70;
+    --severity-medium: #f2b45c;
+    --severity-low: #b6c2d2;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
+}
