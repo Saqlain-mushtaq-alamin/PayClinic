@@ -12,7 +12,8 @@ export function createHelloApp(): FastifyInstance {
     status: 'online',
     phase: 'phase-1-foundations',
     healthCheck: '/healthz',
-    message: 'PayClinic Render hello-world is operational. Dashboard and API will be deployed in Phase 2/3.',
+    message:
+      'PayClinic Render hello-world is operational. Dashboard and API will be deployed in Phase 2/3.',
   }));
   return app;
 }

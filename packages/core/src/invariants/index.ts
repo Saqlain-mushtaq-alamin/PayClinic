@@ -6,11 +6,13 @@ import type {
 } from '@payclinic/contracts';
 import { i07, i08, i09 } from './agent';
 import { i01, i02, i04 } from './store';
+import { i05 } from './webhooks';
 
 export const INVARIANTS: Partial<InvariantRegistry> = {
   'I-01': i01,
   'I-02': i02,
   'I-04': i04,
+  'I-05': i05,
   'I-07': i07,
   'I-08': i08,
   'I-09': i09,
