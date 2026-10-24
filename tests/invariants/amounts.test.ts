@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCart,
   buildMerchantOrder,
   buildState,
   paypalCreateStep,
@@ -72,5 +73,20 @@ describe('I-03', () => {
     const r = i03([buildMerchantOrder({ capturedTotal: '25.00', refundedTotal: '40.00' })]);
     expect(r.passed).toBe(false);
     expect(r.message).toBe('Order mo-1 refunded 40.00 of 25.00');
+  });
+  it('uses the declared cart currency when there is no capture step', () => {
+    const state = buildState({
+      carts: [buildCart({ id: 'cart-jp', currency: 'JPY', expectedTotal: '2400' })],
+      merchantOrders: [
+        buildMerchantOrder({
+          cartId: 'cart-jp',
+          capturedTotal: '2400',
+          refundedTotal: '2400.00',
+        }),
+      ],
+    });
+    const r = INVARIANTS['I-03']!({ trace: [], state });
+    expect(r.passed).toBe(false);
+    expect(r.message).toBe('Order mo-1 has unparseable money');
   });
 });

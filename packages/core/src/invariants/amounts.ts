@@ -97,7 +97,9 @@ export const i03: InvariantFn = ({ trace, state }: InvariantContext) => {
 
   for (const order of state.merchantOrders) {
     const capture = captures.find((candidate) => candidate.orderId === order.paypalOrderId);
-    const currency = capture?.currency ?? 'USD';
+    const cart = state.carts.find((candidate) => candidate.id === order.cartId);
+    const currency = capture?.currency ?? cart?.currency;
+    if (!currency) return fail('I-03', `Order ${order.id} has unparseable money`);
 
     let captured: bigint;
     let refunded: bigint;
