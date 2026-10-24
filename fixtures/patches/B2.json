@@ -1,0 +1,10 @@
+{
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/orders/pricing.ts",
+      "search": "  return clientTotal ?? serverTotal;",
+      "replace": "  return serverTotal;"
+    }
+  ],
+  "rationale": "Ignore the browser-supplied clientTotal and always charge the server-computed cart total."
+}
