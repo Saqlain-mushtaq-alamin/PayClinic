@@ -7,6 +7,6 @@ export function finalizeCapture(db: StoreDb, merchantOrderId: string, res: PayPa
   if (!res.ok || res.body?.status !== 'COMPLETED' || !capture) {
     return { ok: false as const };
   }
-  db.recordCapture(merchantOrderId, capture.amount.value);
+  db.recordCapture(merchantOrderId, capture.amount.value, capture.id);
   return { ok: true as const };
 }

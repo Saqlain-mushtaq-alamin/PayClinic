@@ -5,6 +5,7 @@ import { b2 } from './b2';
 import { b3 } from './b3';
 import { b4 } from './b4';
 import { b5 } from './b5';
+import { b6 } from './b6';
 
 export const SCENARIOS: Partial<Record<ScenarioKey, ScenarioFn>> = {
   B1: b1,
@@ -12,4 +13,5 @@ export const SCENARIOS: Partial<Record<ScenarioKey, ScenarioFn>> = {
   B3: b3,
   B4: b4,
   B5: b5,
+  B6: b6,
 };

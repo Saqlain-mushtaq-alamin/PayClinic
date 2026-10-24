@@ -49,6 +49,7 @@ interface MerchantRow {
   paid: number;
   captured_total: string;
   refunded_total: string;
+  capture_id: string | null;
 }
 
 interface DeliveryRow {
@@ -66,7 +67,8 @@ CREATE TABLE IF NOT EXISTS merchant_orders (
   status TEXT NOT NULL,
   paid INTEGER NOT NULL,
   captured_total TEXT NOT NULL,
-  refunded_total TEXT NOT NULL
+  refunded_total TEXT NOT NULL,
+  capture_id TEXT
 );
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   delivery_id TEXT PRIMARY KEY,
@@ -111,6 +113,12 @@ export class StoreDb {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.db = new BetterSqlite3(path);
     this.db.exec(SCHEMA_SQL);
+    const columns = this.db.prepare('PRAGMA table_info(merchant_orders)').all() as Array<{
+      name: string;
+    }>;
+    if (!columns.some((column) => column.name === 'capture_id')) {
+      this.db.exec('ALTER TABLE merchant_orders ADD COLUMN capture_id TEXT');
+    }
   }
 
   upsertMerchantOrderByPaypalId(order: NewMerchantOrder): MerchantOrderRecord {
@@ -145,8 +153,16 @@ export class StoreDb {
       .run(id);
   }
 
-  recordCapture(id: string, amount: string): void {
-    this.db.prepare('UPDATE merchant_orders SET captured_total = ? WHERE id = ?').run(amount, id);
+  recordCapture(id: string, amount: string, captureId: string): void {
+    this.db
+      .prepare('UPDATE merchant_orders SET captured_total = ?, capture_id = ? WHERE id = ?')
+      .run(amount, captureId, id);
+  }
+
+  recordRefund(id: string, refundedTotal: string): void {
+    this.db
+      .prepare('UPDATE merchant_orders SET refunded_total = ? WHERE id = ?')
+      .run(refundedTotal, id);
   }
 
   getByPaypalOrderId(id: string): MerchantOrderRecord | null {
@@ -154,6 +170,13 @@ export class StoreDb {
       .prepare('SELECT * FROM merchant_orders WHERE paypal_order_id = ?')
       .get(id) as MerchantRow | undefined;
     return row ? toMerchantOrder(row) : null;
+  }
+
+  getCaptureId(id: string): string | null {
+    const row = this.db
+      .prepare('SELECT capture_id FROM merchant_orders WHERE paypal_order_id = ?')
+      .get(id) as { capture_id: string | null } | undefined;
+    return row?.capture_id ?? null;
   }
 
   hasLedgerEvent(eventId: string): boolean {
