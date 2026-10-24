@@ -1,0 +1,10 @@
+{
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/money.ts",
+      "search": "  return total.toFixed(2);",
+      "replace": "  const exponents: Record<string, number> = { JPY: 0, HUF: 0, TWD: 0 };\n  return total.toFixed(exponents[_currency] ?? 2);"
+    }
+  ],
+  "rationale": "Format amounts with the currency exponent: JPY, HUF and TWD use zero decimals and all other supported currencies use two."
+}
