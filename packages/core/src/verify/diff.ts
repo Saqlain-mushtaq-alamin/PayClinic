@@ -6,9 +6,7 @@ function applyToString(original: string, edits: PatchEdit[], file: string): stri
   for (const [index, edit] of edits.entries()) {
     const matches = next.split(edit.search).length - 1;
     if (matches !== 1) {
-      throw new Error(
-        `Edit ${index + 1} for ${file} must match exactly once (found ${matches})`,
-      );
+      throw new Error(`Edit ${index + 1} for ${file} must match exactly once (found ${matches})`);
     }
     next = next.replace(edit.search, edit.replace);
   }

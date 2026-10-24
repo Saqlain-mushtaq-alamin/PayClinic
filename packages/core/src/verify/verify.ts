@@ -11,14 +11,14 @@ import type {
 } from '@payclinic/contracts';
 import type { VerifyFn, VerifyOptions } from '@payclinic/contracts';
 import type { Config } from '../config';
-import { executeScenarios } from '../runner/diagnose';
+import { executeScenarios } from '../runner/execute-scenarios';
 import { startStore } from '../runner/store-process';
 import type { ScenarioFn } from '../runner/context';
 import { applyEditsToDir } from './apply';
 import { checkEditsSafety } from './safety';
 
 const TEST_TIMEOUT_MS = 60_000;
-const PREFLIGHT_PAYPAL_URL = 'http://127.0.0.1:1';
+const TEST_CHILD_PAYPAL_URL = 'http://127.0.0.1:1';
 
 export interface WithPatchedStoreDeps {
   repoRoot: string;
@@ -64,7 +64,7 @@ function childEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH ?? process.env.Path ?? '',
     PORT: '0',
-    PAYPAL_BASE_URL: PREFLIGHT_PAYPAL_URL,
+    PAYPAL_BASE_URL: TEST_CHILD_PAYPAL_URL,
     PAYPAL_CLIENT_ID: 'id',
     PAYPAL_CLIENT_SECRET: 'secret',
     STORE_DB_PATH: ':memory:',
@@ -203,23 +203,6 @@ export function createVerify(deps: CreateVerifyDeps): {
           log.push(`Applied ${patch.edits.length} edit(s)`);
 
           try {
-            const probe = await startStore({
-              sourceDir: storeDir,
-              paypalBaseUrl: PREFLIGHT_PAYPAL_URL,
-              paypalClientId: deps.config.paypalClientId,
-              paypalClientSecret: deps.config.paypalClientSecret,
-            });
-            await probe.stop();
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            log.push(`Store failed to start: ${message}`);
-            return { done: true as const };
-          }
-
-          started = true;
-          log.push('Store started from the patched copy');
-
-          try {
             const executed = await executeScenarios(
               {
                 config: { ...deps.config, mode: opts.mode },
@@ -231,6 +214,18 @@ export function createVerify(deps: CreateVerifyDeps): {
                   ? {}
                   : { scenarioTimeoutMs: deps.scenarioTimeoutMs }),
                 runId: opts.runId,
+                storeFactory: async (options) => {
+                  try {
+                    const running = await startStore(options);
+                    started = true;
+                    log.push('Store started from the patched copy');
+                    return running;
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : String(error);
+                    log.push(`Store failed to start: ${message}`);
+                    throw error;
+                  }
+                },
               },
               [finding.scenarioKey],
             );
@@ -240,9 +235,7 @@ export function createVerify(deps: CreateVerifyDeps): {
               scenario !== undefined &&
               scenario.status !== 'error' &&
               scenario.results.every((result) => result.passed);
-            log.push(
-              `Scenario ${finding.scenarioKey} ${invariantPassed ? 'passed' : 'failed'}`,
-            );
+            log.push(`Scenario ${finding.scenarioKey} ${invariantPassed ? 'passed' : 'failed'}`);
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             log.push(`Scenario ${finding.scenarioKey} could not run: ${message}`);
