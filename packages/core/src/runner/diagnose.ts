@@ -5,6 +5,7 @@ import type {
   RunEvent,
   RunMode,
   RunState,
+  RunTarget,
   ScenarioKey,
   ScenarioResult,
   Score,
@@ -36,7 +37,7 @@ export interface DiagnoseDeps {
 }
 
 export interface DiagnoseRequest {
-  target: 'store';
+  target: RunTarget;
   mode: RunMode;
   scenarios: ScenarioKey[];
   runId?: string;
@@ -66,7 +67,18 @@ export async function runDiagnose(
     status: 'running',
     startedAt: deps.now().toISOString(),
   };
-  deps.repos.insertRun(run);
+  const existing = deps.repos.getRun(runId);
+  if (existing?.status === 'queued') {
+    deps.repos.updateRun(runId, {
+      target: run.target,
+      mode: run.mode,
+      scenarioKeys: run.scenarioKeys,
+      status: 'running',
+      startedAt: run.startedAt,
+    });
+  } else {
+    deps.repos.insertRun(run);
+  }
   deps.emit?.({ type: 'run.started', run });
 
   const findings: Finding[] = [];
