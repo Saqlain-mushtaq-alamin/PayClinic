@@ -19,11 +19,7 @@ function pass(key: InvariantKey): InvariantResult {
   };
 }
 
-function fail(
-  key: InvariantKey,
-  message: string,
-  evidenceStepIds: string[] = [],
-): InvariantResult {
+function fail(key: InvariantKey, message: string, evidenceStepIds: string[] = []): InvariantResult {
   return {
     key,
     passed: false,
