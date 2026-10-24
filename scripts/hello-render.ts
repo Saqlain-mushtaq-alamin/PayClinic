@@ -6,6 +6,14 @@ import Fastify, { type FastifyInstance } from 'fastify';
 export function createHelloApp(): FastifyInstance {
   const app = Fastify({ logger: false });
   app.get('/healthz', async () => ({ ok: true }));
+  app.get('/', async () => ({
+    ok: true,
+    service: 'payclinic',
+    status: 'online',
+    phase: 'phase-1-foundations',
+    healthCheck: '/healthz',
+    message: 'PayClinic Render hello-world is operational. Dashboard and API will be deployed in Phase 2/3.',
+  }));
   return app;
 }
 

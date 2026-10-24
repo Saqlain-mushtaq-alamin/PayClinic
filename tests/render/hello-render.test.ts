@@ -15,6 +15,17 @@ describe('render hello-world', () => {
     }
   });
 
+  it('answers GET / with 200 and service info', async () => {
+    const app = createHelloApp();
+    try {
+      const response = await app.inject({ method: 'GET', url: '/' });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ ok: true, service: 'payclinic' });
+    } finally {
+      await app.close();
+    }
+  });
+
   it('declares a free web service with the build, start and health check', () => {
     const path = fileURLToPath(new URL('../../render.yaml', import.meta.url));
     const config = readFileSync(path, 'utf8');
