@@ -10,6 +10,7 @@ import type {
   RunState,
   ScenarioKey,
   ScenarioResult,
+  ScenarioStatus,
   Score,
   Step,
 } from '@payclinic/contracts';
@@ -19,7 +20,7 @@ import type { Repos } from '../db/repos';
 import { findingsFromResults } from '../findings';
 import { INVARIANTS, runInvariants } from '../invariants';
 import { computeScore } from '../score';
-import { createRecorder } from '../trace/recorder';
+import { createRecorder, type StepRecorder } from '../trace/recorder';
 import { startTraceProxy, type TraceProxy } from '../trace/proxy';
 import { createManualApprover, createSimApprover, type BuyerApprover } from './approvers';
 import { buildContext, createRecordedHttp, type RecordedHttp, type ScenarioFn } from './context';
@@ -38,6 +39,39 @@ export interface DiagnoseDeps {
     key: ScenarioKey,
     info: { steps: Step[]; state: RunState; results: InvariantResult[] },
   ) => void | Promise<void>;
+}
+
+export interface ExecuteScenariosEnv {
+  config: Config;
+  scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
+  storeSourceDir: string;
+  newId: () => string;
+  now: () => Date;
+  scenarioTimeoutMs?: number;
+  runId: string;
+  onStep?: (step: Step) => void;
+  onScenarioStart?: (key: ScenarioKey, scenarioId: string) => void | Promise<void>;
+  onScenario?: (
+    key: ScenarioKey,
+    info: {
+      scenarioId: string;
+      status: ScenarioStatus;
+      error?: string;
+      steps: Step[];
+      state: RunState;
+      results: InvariantResult[];
+    },
+  ) => void | Promise<void>;
+}
+
+export interface ExecutedScenario {
+  key: ScenarioKey;
+  scenarioId: string;
+  status: ScenarioStatus;
+  error?: string;
+  steps: Step[];
+  state: RunState;
+  results: InvariantResult[];
 }
 
 export interface DiagnoseRequest {
@@ -75,6 +109,10 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function emptyState(): RunState {
+  return { carts: [], merchantOrders: [], webhookDeliveries: [], forgedDeliveryIds: [] };
 }
 
 async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
@@ -121,25 +159,13 @@ function withTimeout<T>(promise: Promise<T>, key: ScenarioKey, timeoutMs: number
   });
 }
 
-/** Runs the selected merchant scenarios end to end and persists their traces and findings. */
-export async function runDiagnose(
-  deps: DiagnoseDeps,
-  req: DiagnoseRequest,
-): Promise<DiagnoseResult> {
-  const runId = req.runId ?? deps.newId();
-  const run: Run = {
-    id: runId,
-    target: req.target,
-    mode: req.mode,
-    scenarioKeys: req.scenarios,
-    status: 'running',
-    startedAt: deps.now().toISOString(),
-  };
-  deps.repos.insertRun(run);
-  deps.emit?.({ type: 'run.started', run });
-
-  const recorder = createRecorder({ runId, newId: deps.newId, now: deps.now });
-  recorder.onStep((step) => deps.emit?.({ type: 'step.recorded', step }));
+/** Runs scenarios without touching the database, starting and stopping all child processes. */
+export async function executeScenarios(
+  env: ExecuteScenariosEnv,
+  keys: ScenarioKey[],
+): Promise<ExecutedScenario[]> {
+  const recorder = createRecorder({ runId: env.runId, newId: env.newId, now: env.now });
+  recorder.onStep((step) => env.onStep?.(step));
 
   let sim: Awaited<ReturnType<typeof startSim>> | undefined;
   let proxy: TraceProxy | undefined;
@@ -147,39 +173,41 @@ export async function runDiagnose(
   let http: RecordedHttp | undefined;
   let approver: BuyerApprover | undefined;
   let catalog: ProductModel[] = [];
-  const findings: Finding[] = [];
+  const executed: ExecutedScenario[] = [];
 
   const createApprover = (httpClient: RecordedHttp): BuyerApprover => {
     if (sim) return createSimApprover({ simUrl: sim.url, http: httpClient });
-    if (deps.config.buyerApprover === 'manual') {
+    if (env.config.buyerApprover === 'manual') {
       return createManualApprover({ ask: askInTerminal });
     }
     throw new DiagnoseError(
-      `Buyer approver "${deps.config.buyerApprover}" is not available for this run`,
+      `Buyer approver "${env.config.buyerApprover}" is not available for this run`,
     );
   };
 
   const launchStore = async (): Promise<void> => {
     if (!proxy) throw new DiagnoseError('Trace proxy is not running');
     const running = await startStore({
-      sourceDir: deps.storeSourceDir,
+      sourceDir: env.storeSourceDir,
       paypalBaseUrl: proxy.url,
-      paypalClientId: deps.config.paypalClientId,
-      paypalClientSecret: deps.config.paypalClientSecret,
+      paypalClientId: env.config.paypalClientId,
+      paypalClientSecret: env.config.paypalClientSecret,
     });
     store = running;
     http = createRecordedHttp({ recorder, baseUrl: running.url });
     approver = createApprover(http);
   };
 
+  const drain = (recorderRef: StepRecorder): Step[] => recorderRef.drain();
+
   try {
-    if (req.mode === 'offline') {
+    if (env.config.mode === 'offline') {
       sim = await startSim();
-    } else if (!deps.config.paypalBaseUrl) {
+    } else if (!env.config.paypalBaseUrl) {
       throw new DiagnoseError('Online mode requires PAYPAL_BASE_URL');
     }
 
-    const paypalTarget = sim?.url ?? deps.config.paypalBaseUrl;
+    const paypalTarget = sim?.url ?? env.config.paypalBaseUrl;
     if (!paypalTarget) throw new DiagnoseError('No PayPal target is available');
     proxy = await startTraceProxy({ target: paypalTarget, recorder });
     await launchStore();
@@ -187,21 +215,19 @@ export async function runDiagnose(
     if (!store || !http || !approver) throw new DiagnoseError('Store did not start');
     catalog = Product.array().parse(await fetchJson(`${store.url}/api/products`));
 
-    const timeoutMs = deps.scenarioTimeoutMs ?? 60_000;
+    const timeoutMs = env.scenarioTimeoutMs ?? 60_000;
 
-    for (const key of req.scenarios) {
-      const scenarioFn = deps.scenarios[key];
+    for (const key of keys) {
+      const scenarioFn = env.scenarios[key];
       if (!scenarioFn) throw new DiagnoseError(`No scenario registered for ${key}`);
 
-      const scenario: ScenarioResult = {
-        id: deps.newId(),
-        runId,
-        key,
-        status: 'running',
-        startedAt: deps.now().toISOString(),
-      };
-      deps.repos.insertScenario(scenario);
-      deps.emit?.({ type: 'scenario.started', scenario });
+      const scenarioId = env.newId();
+      await env.onScenarioStart?.(key, scenarioId);
+
+      let status: ScenarioStatus;
+      let error: string | undefined;
+      let state = emptyState();
+      let results: InvariantResult[] = [];
 
       try {
         if (sim) await fetchJson(`${sim.url}/__sim/reset`, { method: 'POST' });
@@ -209,10 +235,10 @@ export async function runDiagnose(
         await fetchJson(`${store.url}/__admin/reset`, { method: 'POST' });
 
         if (!proxy) throw new DiagnoseError('Trace proxy is not running');
-        proxy.setScenario({ runId, scenarioId: scenario.id });
+        proxy.setScenario({ runId: env.runId, scenarioId });
 
         const ctx = buildContext({
-          runId,
+          runId: env.runId,
           scenarioKey: key,
           storeUrl: store.url,
           catalog,
@@ -230,7 +256,7 @@ export async function runDiagnose(
         if (!adminState) throw new DiagnoseError('Store admin state was not an object');
 
         const declared = ctx.getDeclared();
-        const state: RunState = {
+        state = {
           carts: declared.carts,
           merchantOrders: MerchantOrder.array().parse(adminState.merchantOrders),
           webhookDeliveries: WebhookDelivery.array().parse(adminState.webhookDeliveries),
@@ -240,53 +266,145 @@ export async function runDiagnose(
         const invariantKeys = SCENARIO_META[key].invariantKeys.filter(
           (invariantKey) => INVARIANTS[invariantKey] !== undefined,
         );
-        const scenarioSteps = recorder.drain();
-        const results = runInvariants(invariantKeys, { trace: scenarioSteps, state });
+        const scenarioSteps = drain(recorder);
+        results = runInvariants(invariantKeys, { trace: scenarioSteps, state });
+        status = results.some((result) => !result.passed) ? 'failed' : 'passed';
 
-        deps.repos.insertSteps(scenarioSteps);
-        deps.repos.insertInvariantResults(runId, scenario.id, results);
-        await deps.onScenarioFinished?.(key, { steps: scenarioSteps, state, results });
-
-        const scenarioFindings = findingsFromResults({
-          runId,
-          scenarioKey: key,
-          results,
-          newId: deps.newId,
-          now: () => deps.now().toISOString(),
-        });
-        for (const finding of scenarioFindings) {
-          deps.repos.insertFinding(finding);
-          findings.push(finding);
-          deps.emit?.({ type: 'finding.created', finding });
-        }
-
-        const status = results.some((result) => !result.passed) ? 'failed' : 'passed';
-        const finishedAt = deps.now().toISOString();
-        const finished: ScenarioResult = { ...scenario, status, finishedAt };
-        deps.repos.updateScenario(scenario.id, { status, finishedAt });
-        deps.emit?.({ type: 'scenario.finished', scenario: finished });
-      } catch (error) {
-        const timedOut = error instanceof ScenarioTimeoutError;
+        const info = { scenarioId, status, steps: scenarioSteps, state, results };
+        await env.onScenario?.(key, info);
+        executed.push({ key, ...info });
+      } catch (caught) {
+        const timedOut = caught instanceof ScenarioTimeoutError;
         try {
           if (timedOut) {
             if (store) await store.stop();
             await launchStore();
           }
         } finally {
-          deps.repos.insertSteps(recorder.drain());
-          const finishedAt = deps.now().toISOString();
-          const message = errorMessage(error);
-          const finished: ScenarioResult = {
-            ...scenario,
-            status: 'error',
-            finishedAt,
-            error: message,
-          };
-          deps.repos.updateScenario(scenario.id, { status: 'error', finishedAt, error: message });
-          deps.emit?.({ type: 'scenario.finished', scenario: finished });
+          const steps = drain(recorder);
+          error = errorMessage(caught);
+          const info = { scenarioId, status: 'error' as const, error, steps, state, results };
+          await env.onScenario?.(key, info);
+          executed.push({ key, ...info });
         }
       }
     }
+
+    return executed;
+  } finally {
+    try {
+      if (store) await store.stop();
+    } finally {
+      try {
+        if (proxy) await proxy.stop();
+      } finally {
+        if (sim) await sim.close();
+      }
+    }
+  }
+}
+
+/** Runs the selected merchant scenarios end to end and persists their traces and findings. */
+export async function runDiagnose(
+  deps: DiagnoseDeps,
+  req: DiagnoseRequest,
+): Promise<DiagnoseResult> {
+  const runId = req.runId ?? deps.newId();
+  const run: Run = {
+    id: runId,
+    target: req.target,
+    mode: req.mode,
+    scenarioKeys: req.scenarios,
+    status: 'running',
+    startedAt: deps.now().toISOString(),
+  };
+  deps.repos.insertRun(run);
+  deps.emit?.({ type: 'run.started', run });
+
+  const findings: Finding[] = [];
+  const startedAt = new Map<string, string>();
+
+  try {
+    await executeScenarios(
+      {
+        config: deps.config,
+        scenarios: deps.scenarios,
+        storeSourceDir: deps.storeSourceDir,
+        newId: deps.newId,
+        now: deps.now,
+        ...(deps.scenarioTimeoutMs === undefined
+          ? {}
+          : { scenarioTimeoutMs: deps.scenarioTimeoutMs }),
+        runId,
+        onStep: (step) => deps.emit?.({ type: 'step.recorded', step }),
+        onScenarioStart: (key, scenarioId) => {
+          const scenario: ScenarioResult = {
+            id: scenarioId,
+            runId,
+            key,
+            status: 'running',
+            startedAt: deps.now().toISOString(),
+          };
+          startedAt.set(scenarioId, scenario.startedAt!);
+          deps.repos.insertScenario(scenario);
+          deps.emit?.({ type: 'scenario.started', scenario });
+        },
+        onScenario: async (key, info) => {
+          const scenario: ScenarioResult = {
+            id: info.scenarioId,
+            runId,
+            key,
+            status: info.status,
+            ...(startedAt.has(info.scenarioId)
+              ? { startedAt: startedAt.get(info.scenarioId) }
+              : {}),
+          };
+          deps.repos.insertSteps(info.steps);
+
+          if (info.status === 'error') {
+            const finishedAt = deps.now().toISOString();
+            deps.repos.updateScenario(info.scenarioId, {
+              status: 'error',
+              finishedAt,
+              error: info.error,
+            });
+            deps.emit?.({
+              type: 'scenario.finished',
+              scenario: { ...scenario, finishedAt, error: info.error },
+            });
+            return;
+          }
+
+          deps.repos.insertInvariantResults(runId, info.scenarioId, info.results);
+          await deps.onScenarioFinished?.(key, {
+            steps: info.steps,
+            state: info.state,
+            results: info.results,
+          });
+
+          const scenarioFindings = findingsFromResults({
+            runId,
+            scenarioKey: key,
+            results: info.results,
+            newId: deps.newId,
+            now: () => deps.now().toISOString(),
+          });
+          for (const finding of scenarioFindings) {
+            deps.repos.insertFinding(finding);
+            findings.push(finding);
+            deps.emit?.({ type: 'finding.created', finding });
+          }
+
+          const finishedAt = deps.now().toISOString();
+          deps.repos.updateScenario(info.scenarioId, { status: info.status, finishedAt });
+          deps.emit?.({
+            type: 'scenario.finished',
+            scenario: { ...scenario, finishedAt },
+          });
+        },
+      },
+      req.scenarios,
+    );
 
     const score = computeScore(findings);
     const completedAt = deps.now().toISOString();
@@ -305,15 +423,5 @@ export async function runDiagnose(
     deps.repos.updateRun(runId, { status: 'failed', completedAt, error: message });
     deps.emit?.({ type: 'run.failed', runId, error: message });
     throw error;
-  } finally {
-    try {
-      if (store) await store.stop();
-    } finally {
-      try {
-        if (proxy) await proxy.stop();
-      } finally {
-        if (sim) await sim.close();
-      }
-    }
   }
 }

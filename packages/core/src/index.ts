@@ -13,3 +13,7 @@ export * from './runner/store-process';
 export * from './runner/approvers';
 export * from './runner/context';
 export * from './runner/diagnose';
+export * from './verify/safety';
+export * from './verify/apply';
+export * from './verify/diff';
+export * from './verify/verify';
