@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { GoldenTrace } from '@payclinic/contracts';
+import { GoldenTrace, type InvariantKey } from '@payclinic/contracts';
 import {
   buildCart,
   buildMerchantOrder,
@@ -155,6 +155,8 @@ describe('findings', () => {
     });
   });
   it('runInvariants throws for an invariant that is not registered yet', () => {
-    expect(() => runInvariants(['I-06'], { trace: [], state: buildState() })).toThrow();
+    expect(() =>
+      runInvariants(['I-99' as InvariantKey], { trace: [], state: buildState() }),
+    ).toThrow();
   });
 });

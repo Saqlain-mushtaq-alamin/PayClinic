@@ -154,7 +154,7 @@ it('B3 produces exactly one I-05 finding and three webhook deliveries', async ()
 
 **Read:** TECH_DESIGN §5 (B5), §6 (I-03, I-06), `money.ts`.
 
-**Files:** create `scenarios/b5.ts`, `scenarios/b6.ts` (optional, see below), `packages/core/src/invariants/amounts.ts`, `tests/invariants/amounts.test.ts`, `tests/runner/b5.test.ts`; edit `scenarios/index.ts`, `invariants/index.ts`; for B6 only: complete `apps/buggy-store/src/orders/refund.ts` and its route registration, plus `tests/store/refund.test.ts`.
+**Files:** create `scenarios/b5.ts`, `scenarios/b6.ts` (optional, see below), `packages/core/src/invariants/amounts.ts`, `tests/invariants/amounts.test.ts`, `tests/runner/b5.test.ts`; edit `scenarios/index.ts`, `invariants/index.ts`; for B6 only: complete `apps/buggy-store/src/orders/refund.ts`, persist the capture id in `apps/buggy-store/src/db.ts` and `apps/buggy-store/src/orders/finalize.ts`, keep its route registration, plus `tests/store/refund.test.ts`.
 
 **Spec:**
 
