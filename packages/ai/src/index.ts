@@ -7,6 +7,7 @@ export * from './prescribe';
 export * from './prompts';
 export * from './retry';
 export * from './template';
+export * from './variations';
 export * from './providers/cached';
 export * from './providers/fake';
 export * from './providers/fixture';
