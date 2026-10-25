@@ -215,6 +215,7 @@ export async function executeScenarios(
             mockNext: (rule) => proxy!.mockNext(rule),
             clear: () => proxy!.clearMocks(),
           },
+          now: () => env.now().getTime(),
         });
 
         await withTimeout(scenarioFn(ctx), key, timeoutMs);
@@ -228,6 +229,7 @@ export async function executeScenarios(
           merchantOrders: MerchantOrder.array().parse(adminState.merchantOrders),
           webhookDeliveries: WebhookDelivery.array().parse(adminState.webhookDeliveries),
           forgedDeliveryIds: declared.forgedDeliveryIds,
+          ...(declared.agent === undefined ? {} : { agent: declared.agent }),
         };
 
         const invariantKeys = SCENARIO_META[key].invariantKeys.filter(
