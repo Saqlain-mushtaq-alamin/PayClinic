@@ -19,10 +19,7 @@ export interface VariationsDeps {
  * Builds the deterministic prompt that asks the model to propose extra carts
  * (alternative items, currencies) for an existing merchant scenario.
  */
-export function buildVariationsPrompt(
-  scenarioKey: ScenarioKey,
-  catalog: Product[],
-): Prompt {
+export function buildVariationsPrompt(scenarioKey: ScenarioKey, catalog: Product[]): Prompt {
   const meta = SCENARIO_META[scenarioKey];
   const catalogJson = JSON.stringify(
     catalog.map((p) => ({ sku: p.sku, name: p.name, currency: p.currency, price: p.price })),
@@ -54,10 +51,7 @@ export function buildVariationsPrompt(
  * - agent scenario key (A1 or A2)
  * Caps the resulting list at 5 entries.
  */
-export function validateVariations(
-  output: VariationEntry[],
-  catalog: Product[],
-): VariationEntry[] {
+export function validateVariations(output: VariationEntry[], catalog: Product[]): VariationEntry[] {
   const skuMap = new Map<string, Product>(catalog.map((p) => [p.sku, p]));
 
   const isAgentScenario = (key: string): boolean => key === 'A1' || key === 'A2';

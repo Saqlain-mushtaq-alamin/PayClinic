@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AIProvider, GenerateJsonOptions, Product, ScenarioKey } from '@payclinic/contracts';
 import { AIOutputError } from '@payclinic/ai';
-import {
-  buildVariationsPrompt,
-  generateVariations,
-  validateVariations,
-} from '@payclinic/ai';
+import { buildVariationsPrompt, generateVariations, validateVariations } from '@payclinic/ai';
 
 // ─── Shared catalog fixtures ───────────────────────────────────────────────
 
@@ -31,12 +27,7 @@ const catalog: Product[] = [usdProduct, jpyProduct];
 
 // ─── Helper: make a variation entry ───────────────────────────────────────
 
-const v = (
-  scenarioKey: ScenarioKey,
-  sku: string,
-  currency: string,
-  qty = 1,
-) => ({
+const v = (scenarioKey: ScenarioKey, sku: string, currency: string, qty = 1) => ({
   scenarioKey,
   title: `Variation for ${scenarioKey}`,
   params: { currency, items: [{ sku, qty }] },
@@ -46,44 +37,29 @@ const v = (
 
 describe('validateVariations', () => {
   it('keeps a valid entry that matches catalog sku and currency', () => {
-    const result = validateVariations(
-      [v('B1', 'tee-001', 'USD')],
-      catalog,
-    );
+    const result = validateVariations([v('B1', 'tee-001', 'USD')], catalog);
     expect(result).toHaveLength(1);
     expect(result[0]!.params.items[0]!.sku).toBe('tee-001');
   });
 
   it('drops an entry whose sku is not in the catalog', () => {
-    const result = validateVariations(
-      [v('B1', 'unknown-sku', 'USD')],
-      catalog,
-    );
+    const result = validateVariations([v('B1', 'unknown-sku', 'USD')], catalog);
     expect(result).toHaveLength(0);
   });
 
   it('drops an entry whose currency differs from the product currency', () => {
     // tee-001 is USD; providing GBP is a mismatch
-    const result = validateVariations(
-      [v('B1', 'tee-001', 'GBP')],
-      catalog,
-    );
+    const result = validateVariations([v('B1', 'tee-001', 'GBP')], catalog);
     expect(result).toHaveLength(0);
   });
 
   it('drops an entry whose scenarioKey is an agent scenario (A1)', () => {
-    const result = validateVariations(
-      [v('A1', 'tee-001', 'USD')],
-      catalog,
-    );
+    const result = validateVariations([v('A1', 'tee-001', 'USD')], catalog);
     expect(result).toHaveLength(0);
   });
 
   it('drops an entry whose scenarioKey is an agent scenario (A2)', () => {
-    const result = validateVariations(
-      [v('A2', 'tee-001', 'USD')],
-      catalog,
-    );
+    const result = validateVariations([v('A2', 'tee-001', 'USD')], catalog);
     expect(result).toHaveLength(0);
   });
 
@@ -99,27 +75,19 @@ describe('validateVariations', () => {
       title: 'Multi-item variation',
       params: {
         currency: 'USD',
-        items: [
-          { sku: 'tee-001', qty: 1 },
-        ],
+        items: [{ sku: 'tee-001', qty: 1 }],
       },
     };
     expect(validateVariations([multi], catalog)).toHaveLength(1);
   });
 
   it('keeps a JPY variation when currency matches catalog', () => {
-    const result = validateVariations(
-      [v('B5', 'jp-pen-01', 'JPY')],
-      catalog,
-    );
+    const result = validateVariations([v('B5', 'jp-pen-01', 'JPY')], catalog);
     expect(result).toHaveLength(1);
   });
 
   it('drops a JPY-sku variation when currency is provided as USD', () => {
-    const result = validateVariations(
-      [v('B5', 'jp-pen-01', 'USD')],
-      catalog,
-    );
+    const result = validateVariations([v('B5', 'jp-pen-01', 'USD')], catalog);
     expect(result).toHaveLength(0);
   });
 
@@ -175,8 +143,7 @@ describe('generateVariations', () => {
   it('returns validated variations on success', async () => {
     const provider: AIProvider = {
       name: 'ok',
-      generateJSON: async () =>
-        ({ variations: [v('B1', 'tee-001', 'USD')] }) as never,
+      generateJSON: async () => ({ variations: [v('B1', 'tee-001', 'USD')] }) as never,
     };
     const result = await generateVariations({ provider }, 'B1', catalog);
     expect(result).toHaveLength(1);
@@ -211,8 +178,8 @@ describe('generateVariations', () => {
       generateJSON: async () =>
         ({
           variations: [
-            v('B1', 'tee-001', 'USD'),   // valid
-            v('A1', 'tee-001', 'USD'),   // agent scenario – must be dropped
+            v('B1', 'tee-001', 'USD'), // valid
+            v('A1', 'tee-001', 'USD'), // agent scenario – must be dropped
             v('B2', 'not-a-sku', 'USD'), // unknown sku – must be dropped
           ],
         }) as never,
