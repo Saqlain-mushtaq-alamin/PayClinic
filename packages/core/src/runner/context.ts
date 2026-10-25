@@ -1,4 +1,4 @@
-import type { Cart, CartItem, Product, ScenarioKey } from '@payclinic/contracts';
+import type { AgentRunState, Cart, CartItem, Product, ScenarioKey } from '@payclinic/contracts';
 import type { MockRule } from '../trace/proxy';
 import type { StepRecorder } from '../trace/recorder';
 import type { BuyerApprover } from './approvers';
@@ -44,8 +44,10 @@ export interface ScenarioContext {
     clear(): void;
   };
   approver: BuyerApprover;
+  now(): number;
   declareCart(cart: Cart): void;
   declareForgedDelivery(deliveryId: string): void;
+  declareAgent(state: AgentRunState): void;
   checkout(o: {
     cartId: string;
     items: CartItem[];
@@ -54,7 +56,7 @@ export interface ScenarioContext {
   }): Promise<{ status: number; orderId?: string; merchantOrderId?: string; body: any }>;
   approve(orderId: string): Promise<void>;
   capture(orderId: string): Promise<{ status: number; body: any }>;
-  getDeclared(): { carts: Cart[]; forgedDeliveryIds: string[] };
+  getDeclared(): { carts: Cart[]; forgedDeliveryIds: string[]; agent?: AgentRunState };
 }
 
 export type ScenarioFn = (ctx: ScenarioContext) => Promise<void>;
@@ -67,6 +69,7 @@ export interface BuildContextOptions {
   approver: BuyerApprover;
   chaos: ScenarioContext['chaos'];
   catalog?: Product[];
+  now?: () => number;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -168,6 +171,7 @@ export function buildContext(o: BuildContextOptions): ScenarioContext {
   const carts = new Map<string, Cart>();
   const forgedDeliveryIds = new Set<string>();
   const approveUrls = new Map<string, string>();
+  let agent: AgentRunState | undefined;
 
   return {
     runId: o.runId,
@@ -177,6 +181,16 @@ export function buildContext(o: BuildContextOptions): ScenarioContext {
     http: o.http,
     chaos: o.chaos,
     approver: o.approver,
+    now: o.now ?? (() => Date.now()),
+
+    declareAgent(state: AgentRunState): void {
+      agent = {
+        ...state,
+        intent: { ...state.intent, skus: [...state.intent.skus] },
+        allowedMerchants: [...state.allowedMerchants],
+        purchases: state.purchases.map((purchase) => ({ ...purchase })),
+      };
+    },
 
     declareCart(cart: Cart): void {
       carts.set(cart.id, {
@@ -243,6 +257,7 @@ export function buildContext(o: BuildContextOptions): ScenarioContext {
           items: cart.items.map((item) => ({ ...item })),
         })),
         forgedDeliveryIds: [...forgedDeliveryIds],
+        ...(agent === undefined ? {} : { agent }),
       };
     },
   };
