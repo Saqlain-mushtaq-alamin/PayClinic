@@ -1,0 +1,9 @@
+{
+  "rootCause": "The store marks orders paid prior to checking the actual capture outcome from PayPal.",
+  "impact": "Declined or failed payment attempts are erroneously treated as paid and fulfilled.",
+  "whereInCode": {
+    "file": "apps/buggy-store/src/orders/finalize.ts",
+    "hint": "finalizeOrder"
+  },
+  "fixSummary": "Inspect capture status and only mark paid upon success; mark failed when declined."
+}
