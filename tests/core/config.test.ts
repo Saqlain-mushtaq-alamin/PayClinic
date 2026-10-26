@@ -33,13 +33,14 @@ describe('loadConfig', () => {
   it('online mode requires sandbox credentials', () => {
     expect(() => loadConfig({ PAYCLINIC_MODE: 'online' })).toThrow();
   });
-  it('online mode defaults to the sandbox base URL', () => {
+  it('online mode defaults to the sandbox base URL and manual buyer approval', () => {
     const c = loadConfig({
       PAYCLINIC_MODE: 'online',
       PAYPAL_CLIENT_ID: 'a',
       PAYPAL_CLIENT_SECRET: 'b',
     });
     expect(c.paypalBaseUrl).toBe('https://api-m.sandbox.paypal.com');
+    expect(c.buyerApprover).toBe('manual');
   });
   it('refuses a live PayPal URL even in online mode', () => {
     expect(() =>

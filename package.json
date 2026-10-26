@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "payclinic": "tsx packages/cli/src/cli.ts",
     "serve": "tsx packages/cli/src/serve.ts",
+    "record:online": "tsx scripts/record-online.ts",
     "check": "npm run typecheck && npm run lint && npm run test"
   },
   "devDependencies": {

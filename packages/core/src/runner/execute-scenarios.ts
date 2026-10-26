@@ -13,7 +13,7 @@ import type { Config } from '../config';
 import { INVARIANTS, runInvariants } from '../invariants';
 import { createRecorder, type StepRecorder } from '../trace/recorder';
 import { startTraceProxy, type TraceProxy } from '../trace/proxy';
-import { createManualApprover, createSimApprover, type BuyerApprover } from './approvers';
+import { createApprover as selectApprover, type BuyerApprover } from './approvers';
 import { buildContext, createRecordedHttp, type RecordedHttp, type ScenarioFn } from './context';
 import { startStore, type RunningStore, type StartStoreOptions } from './store-process';
 
@@ -142,15 +142,15 @@ export async function executeScenarios(
   let catalog: ProductModel[] = [];
   const executed: ExecutedScenario[] = [];
 
-  const createApprover = (httpClient: RecordedHttp): BuyerApprover => {
-    if (sim) return createSimApprover({ simUrl: sim.url, http: httpClient });
-    if (env.config.buyerApprover === 'manual') {
-      return createManualApprover({ ask: askInTerminal });
-    }
-    throw new DiagnoseError(
-      `Buyer approver "${env.config.buyerApprover}" is not available for this run`,
-    );
-  };
+  const createApprover = (httpClient: RecordedHttp): BuyerApprover =>
+    selectApprover({
+      config: env.config,
+      http: httpClient,
+      ...(sim === undefined ? {} : { simUrl: sim.url }),
+      ask: askInTerminal,
+      buyerEmail: process.env.PAYPAL_BUYER_EMAIL,
+      buyerPassword: process.env.PAYPAL_BUYER_PASSWORD,
+    });
 
   const launchStore = async (): Promise<void> => {
     if (!proxy) throw new DiagnoseError('Trace proxy is not running');

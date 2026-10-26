@@ -72,7 +72,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const mode = z.enum(['offline', 'online']).parse(env.PAYCLINIC_MODE ?? 'offline');
   const buyerApprover = z
     .enum(['sim', 'manual', 'playwright', 'card'])
-    .parse(env.BUYER_APPROVER ?? 'sim');
+    .parse(env.BUYER_APPROVER ?? (mode === 'online' ? 'manual' : 'sim'));
   const aiProvider = z.enum(['fixture', 'gemini', 'fake']).parse(env.AI_PROVIDER ?? 'fixture');
 
   const paypalClientId = env.PAYPAL_CLIENT_ID;
