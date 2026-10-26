@@ -18,6 +18,7 @@ import {
   SCENARIO_META,
   SEVERITY_POINTS,
   ScenarioInfo,
+  Step,
   StepList,
   type Finding,
   type FirewallDecision,
@@ -26,7 +27,6 @@ import {
   type ScenarioKey,
   type ScenarioResult,
   type Score,
-  type Step,
 } from '@payclinic/contracts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -171,6 +171,19 @@ export function createMockApi(opts: { dataPath?: string } = {}): FastifyInstance
         startedAt: existing?.startedAt ?? nowIso(),
       };
     });
+    const scenarioSteps = new Map<ScenarioKey, Step[]>();
+    const stepIds = new Map<string, string>();
+    for (const scenario of scenarios) {
+      const baseScenario = base.scenarios.find((candidate) => candidate.key === scenario.key);
+      const steps = (baseScenario ? (data.steps[baseScenario.id] ?? []) : []).map((step) => {
+        const id = `${runId}-${scenario.key}-s${step.seq}`;
+        stepIds.set(step.id, id);
+        return Step.parse({ ...step, id, runId, scenarioId: scenario.id });
+      });
+      data.steps[scenario.id] = steps;
+      scenarioSteps.set(scenario.key, steps);
+    }
+
     const findings: Finding[] = base.findings
       .filter((finding) => requestBody.scenarios.includes(finding.scenarioKey))
       .map((finding, index) => ({
@@ -190,6 +203,31 @@ export function createMockApi(opts: { dataPath?: string } = {}): FastifyInstance
     };
     data.details[runId] = RunDetail.parse({ run, scenarios, findings, score });
     data.runs.push(RunSummary.parse({ ...run, findingCount: findings.length, score }));
+
+    for (const finding of findings) {
+      const sourceFinding = base.findings.find(
+        (candidate) =>
+          candidate.scenarioKey === finding.scenarioKey &&
+          candidate.invariantKey === finding.invariantKey,
+      );
+      const source = sourceFinding ? data.findingDetails[sourceFinding.id] : undefined;
+      const scenario = scenarios.find((candidate) => candidate.key === finding.scenarioKey);
+      const remapped = source?.steps.flatMap((step) => {
+        const id = stepIds.get(step.id);
+        if (id === undefined || scenario === undefined) return [];
+        return [Step.parse({ ...step, id, runId, scenarioId: scenario.id })];
+      });
+      data.findingDetails[finding.id] = FindingDetail.parse({
+        finding,
+        steps:
+          remapped && remapped.length > 0
+            ? remapped
+            : (scenarioSteps.get(finding.scenarioKey) ?? []),
+        explanation: null,
+        patch: null,
+        verify: null,
+      });
+    }
 
     const completedRun: Run = { ...run, status: 'completed', completedAt: nowIso() };
     const events: RunEvent[] = [

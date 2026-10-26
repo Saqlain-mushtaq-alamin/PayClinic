@@ -5,6 +5,9 @@
   "type": "module",
   "main": "src/api.ts",
   "types": "src/api.ts",
+  "bin": {
+    "payclinic": "src/cli.ts"
+  },
   "exports": {
     ".": "./src/api.ts",
     "./wire": "./src/wire.ts"
