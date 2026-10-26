@@ -1,0 +1,17 @@
+{
+  "name": "@payclinic/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/api.ts",
+  "types": "src/api.ts",
+  "exports": {
+    ".": "./src/api.ts",
+    "./wire": "./src/wire.ts"
+  },
+  "dependencies": {
+    "@payclinic/contracts": "*",
+    "@payclinic/core": "*",
+    "fastify": "^5.0.0"
+  }
+}
