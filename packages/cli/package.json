@@ -6,7 +6,8 @@
   "main": "src/api.ts",
   "types": "src/api.ts",
   "exports": {
-    ".": "./src/api.ts"
+    ".": "./src/api.ts",
+    "./wire": "./src/wire.ts"
   },
   "dependencies": {
     "@payclinic/contracts": "*",
