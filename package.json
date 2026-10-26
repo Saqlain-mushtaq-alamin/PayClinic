@@ -17,6 +17,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "payclinic": "tsx packages/cli/src/cli.ts",
+    "serve": "tsx packages/cli/src/serve.ts",
     "check": "npm run typecheck && npm run lint && npm run test"
   },
   "devDependencies": {
