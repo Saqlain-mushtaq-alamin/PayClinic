@@ -115,7 +115,8 @@ describe('verifyPatch', () => {
     await verify(finding, patch([fix]), opts);
     expect(hashDir(join(repoRoot, 'apps/buggy-store'))).toBe(before);
     const tmp = join(repoRoot, '.payclinic-tmp');
-    expect(existsSync(tmp) ? readdirSync(tmp).filter((x) => x.startsWith('verify-')) : []).toEqual(
+    // Only this suite's temp dirs: other test files verify concurrently in the same repo.
+    expect(existsSync(tmp) ? readdirSync(tmp).filter((x) => x.startsWith('verify-v')) : []).toEqual(
       [],
     );
   }, 90_000);

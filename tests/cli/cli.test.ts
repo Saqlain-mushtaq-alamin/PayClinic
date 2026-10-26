@@ -61,6 +61,14 @@ describe('payclinic cli', () => {
     expect(report.findings[0]).toMatchObject({ invariant: 'I-02', state: 'open' });
   }, 180_000);
 
+  it('prescribes with --fix and reports scoreAfter 100 with the finding verified', async () => {
+    const result = await runCli(['run', '--scenarios', 'B2', '--offline', '--fix', '--json']);
+    expect(result.code, result.stderr).toBe(0);
+    const report = CliReport.parse(JSON.parse(result.stdout.trim()));
+    expect(report.scoreAfter).toBe(100);
+    expect(report.findings[0]).toMatchObject({ invariant: 'I-02', state: 'verified' });
+  }, 180_000);
+
   it('rejects an unknown scenario on stderr', async () => {
     const result = await runCli(['run', '--scenarios', 'B9', '--offline', '--json']);
     expect(result.code).not.toBe(0);
@@ -80,13 +88,5 @@ describe('payclinic cli', () => {
     expect(result.code, result.stderr).toBe(2);
     const report = CliReport.parse(JSON.parse(result.stdout.trim()));
     expect(report.findings[0]).toMatchObject({ state: 'open' });
-  }, 180_000);
-
-  it('prescribes with --fix and reports scoreAfter 100 with the finding verified', async () => {
-    const result = await runCli(['run', '--scenarios', 'B2', '--offline', '--fix', '--json']);
-    expect(result.code, result.stderr).toBe(0);
-    const report = CliReport.parse(JSON.parse(result.stdout.trim()));
-    expect(report.scoreAfter).toBe(100);
-    expect(report.findings[0]).toMatchObject({ invariant: 'I-02', state: 'verified' });
   }, 180_000);
 });
