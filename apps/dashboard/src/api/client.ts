@@ -120,4 +120,10 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
   };
 }
 
-export const api = createApiClient(import.meta.env.VITE_API_URL ?? 'http://localhost:4001');
+/** Base URL the dashboard talks to: `VITE_API_URL` or the mock at :4001. */
+export const API_BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:4001').replace(
+  /\/+$/,
+  '',
+);
+
+export const api = createApiClient(API_BASE_URL);

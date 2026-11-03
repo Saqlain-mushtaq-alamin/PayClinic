@@ -19,6 +19,8 @@
     "format:check": "prettier --check .",
     "payclinic": "tsx packages/cli/src/cli.ts",
     "serve": "tsx packages/cli/src/serve.ts",
+    "dev:mock": "npx vite apps/dashboard --host 127.0.0.1",
+    "dev:real": "npx vite apps/dashboard --mode real --host 127.0.0.1",
     "record:online": "tsx scripts/record-online.ts",
     "check": "npm run typecheck && npm run lint && npm run test"
   },

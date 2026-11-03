@@ -1,18 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import type { RunSummary } from '@payclinic/contracts';
+import type { Health, RunSummary } from '@payclinic/contracts';
 import mockData from '../../../../fixtures/mock/mock-data.json';
 import { ApiError } from '../api/client';
 import { RunsPage } from './RunsPage';
 import '../test-setup';
 
 const runs = mockData.runs as unknown as RunSummary[];
+const offline: Health = { ok: true, mode: 'offline', version: 'mock', aiProvider: 'fixture' };
 
 const renderPage = (listRuns: () => Promise<RunSummary[]>) =>
   render(
     <MemoryRouter>
-      <RunsPage client={{ listRuns }} />
+      <RunsPage
+        client={{
+          listRuns,
+          getScenarios: async () => [],
+          health: async () => offline,
+          createRun: async () => ({ runId: 'run-1' }),
+        }}
+      />
     </MemoryRouter>,
   );
 
