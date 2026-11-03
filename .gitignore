@@ -4,6 +4,7 @@ data/
 .env
 .env.*
 !.env.example
+!.env.real
 .payclinic-tmp/
 *.db
 *.db-journal

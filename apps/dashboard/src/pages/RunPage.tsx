@@ -1,7 +1,9 @@
 import { useParams } from 'react-router-dom';
 import { useRun } from '../api/hooks';
+import { useRunEvents } from '../api/useRunEvents';
 import type { ApiClient } from '../api/client';
 import { FindingsGrid } from '../components/FindingsGrid';
+import { RunProgress } from '../components/RunProgress';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { Badge, type BadgeTone } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
@@ -22,6 +24,7 @@ function statusTone(status: string): BadgeTone {
 export function RunPage({ client }: RunPageProps) {
   const { id = '' } = useParams();
   const { data, error, loading, reload } = useRun(id, client);
+  const { events } = useRunEvents(id);
 
   if (loading) return <Spinner label="Loading run..." />;
   if (error)
@@ -41,6 +44,9 @@ export function RunPage({ client }: RunPageProps) {
           scoreAfter={data.run.scoreAfter}
         />
       </div>
+      <Card>
+        <RunProgress events={events} />
+      </Card>
       <Card>
         <FindingsGrid runId={data.run.id} findings={data.findings} />
       </Card>

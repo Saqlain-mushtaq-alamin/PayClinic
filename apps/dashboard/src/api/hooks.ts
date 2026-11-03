@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RunDetail, RunSummary } from '@payclinic/contracts';
+import type { Health, RunDetail, RunSummary, ScenarioInfo } from '@payclinic/contracts';
 import { api, type ApiClient } from './client';
 
 export interface AsyncState<T> {
@@ -53,4 +53,18 @@ export function useRun(id: string, client: Pick<ApiClient, 'getRun'> = api): Asy
   const clientRef = useRef(client);
   clientRef.current = client;
   return useAsync(() => clientRef.current.getRun(id), [id]);
+}
+
+export function useHealth(client: Pick<ApiClient, 'health'> = api): AsyncState<Health> {
+  const clientRef = useRef(client);
+  clientRef.current = client;
+  return useAsync(() => clientRef.current.health(), []);
+}
+
+export function useScenarios(
+  client: Pick<ApiClient, 'getScenarios'> = api,
+): AsyncState<ScenarioInfo[]> {
+  const clientRef = useRef(client);
+  clientRef.current = client;
+  return useAsync(() => clientRef.current.getScenarios(), []);
 }
