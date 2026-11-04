@@ -90,10 +90,14 @@ describe('format-pr-comment CLI', () => {
 
   it('exits non-zero when the file does not exist', () => {
     expect(() =>
-      execFileSync('node', ['--import', 'tsx', scriptPath, join('.payclinic-tmp', 'missing-report.json')], {
-        stdio: 'pipe',
-        encoding: 'utf8',
-      }),
+      execFileSync(
+        'node',
+        ['--import', 'tsx', scriptPath, join('.payclinic-tmp', 'missing-report.json')],
+        {
+          stdio: 'pipe',
+          encoding: 'utf8',
+        },
+      ),
     ).toThrowError();
   });
 });

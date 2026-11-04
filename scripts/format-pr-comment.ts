@@ -11,7 +11,10 @@ export function formatPrComment(report: CliReport): string {
   const lines: string[] = [];
   lines.push('<!-- payclinic-report -->');
   lines.push('### PayClinic payment-safety report');
-  const score = report.scoreAfter === undefined ? `**${report.score}** / 100` : `**${report.score}** → **${report.scoreAfter}** / 100`;
+  const score =
+    report.scoreAfter === undefined
+      ? `**${report.score}** / 100`
+      : `**${report.score}** → **${report.scoreAfter}** / 100`;
   lines.push(`Score: ${score}`);
 
   if (report.findings.length === 0) {
@@ -41,7 +44,9 @@ function main(): void {
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch (error) {
-    console.error(`format-pr-comment: invalid JSON in ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `format-pr-comment: invalid JSON in ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(1);
   }
 
@@ -54,6 +59,9 @@ function main(): void {
   process.stdout.write(formatPrComment(result.data));
 }
 
-if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('scripts/format-pr-comment.ts')) {
+if (
+  process.argv[1] &&
+  process.argv[1].replace(/\\/g, '/').endsWith('scripts/format-pr-comment.ts')
+) {
   main();
 }
