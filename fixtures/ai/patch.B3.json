@@ -1,0 +1,20 @@
+{
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/webhooks.ts",
+      "search": "export function handleWebhook(",
+      "replace": "export async function handleWebhook("
+    },
+    {
+      "file": "apps/buggy-store/src/webhooks.ts",
+      "search": "  // BUG B3: no signature verification and no deduplication; every delivery credits the ledger",
+      "replace": "  const verified = await deps.paypal.verifyWebhook(headers, event);\n  if (!verified.ok || verified.body?.verification_status !== 'SUCCESS') {\n    deps.db.recordDelivery({\n      deliveryId,\n      eventId: event.id,\n      eventType: event.event_type,\n      applied: 0,\n    });\n    return { status: 400, body: { error: 'invalid signature' } };\n  }\n  if (deps.db.hasLedgerEvent(event.id)) {\n    deps.db.recordDelivery({\n      deliveryId,\n      eventId: event.id,\n      eventType: event.event_type,\n      applied: 0,\n    });\n    return { status: 200, body: { received: true } };\n  }"
+    },
+    {
+      "file": "apps/buggy-store/src/app.ts",
+      "search": "    const result = handleWebhook({ db, paypal }, deliveryId, req.headers, event);",
+      "replace": "    const result = await handleWebhook({ db, paypal }, deliveryId, req.headers, event);"
+    }
+  ],
+  "rationale": "Verify the PayPal signature before applying a delivery, reject forged events with 400, and skip already-recorded event ids so a replay applies zero times."
+}

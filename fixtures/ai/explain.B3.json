@@ -1,0 +1,9 @@
+{
+  "rootCause": "Incoming webhooks are neither cryptographically verified nor deduplicated against previous ledger entries.",
+  "impact": "Attackers can replay webhook events or spoof events to credit arbitrary store balances.",
+  "whereInCode": {
+    "file": "apps/buggy-store/src/webhooks.ts",
+    "hint": "handleWebhook"
+  },
+  "fixSummary": "Verify webhook signature with PayPal and check for duplicate events before modifying the ledger."
+}

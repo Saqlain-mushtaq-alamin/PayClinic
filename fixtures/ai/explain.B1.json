@@ -1,0 +1,9 @@
+{
+  "rootCause": "The store creates a new PayPal order per checkout request without an idempotency request ID.",
+  "impact": "Concurrent customer clicks on the Pay button create duplicate orders and charge twice.",
+  "whereInCode": {
+    "file": "apps/buggy-store/src/orders/create.ts",
+    "hint": "deps.paypal.createOrder"
+  },
+  "fixSummary": "Pass cartId as the requestId option to PayPal createOrder to deduplicate concurrent checkouts."
+}

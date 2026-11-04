@@ -1,0 +1,9 @@
+{
+  "rootCause": "The pricing calculation falls back to the client-provided total if present instead of computing it securely.",
+  "impact": "A malicious client can tamper with cart total amounts and underpay for items.",
+  "whereInCode": {
+    "file": "apps/buggy-store/src/orders/pricing.ts",
+    "hint": "resolveAmount"
+  },
+  "fixSummary": "Always return the server-calculated total and ignore any client-provided amount."
+}

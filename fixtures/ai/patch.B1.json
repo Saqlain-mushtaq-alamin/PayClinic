@@ -1,0 +1,10 @@
+{
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/orders/create.ts",
+      "search": "  const order = await deps.paypal.createOrder(body); // BUG B1: no requestId, so a double click creates two PayPal orders",
+      "replace": "  const order = await deps.paypal.createOrder(body, { requestId: cartId });"
+    }
+  ],
+  "rationale": "Pass the cart id as PayPal-Request-Id so duplicate concurrent checkouts for the same cart replay one PayPal order instead of creating two."
+}

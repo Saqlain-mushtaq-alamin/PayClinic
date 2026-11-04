@@ -1,5 +1,6 @@
 export * from './cache-key';
 export * from './errors';
+export * from './eval';
 export * from './evidence';
 export * from './explain';
 export * from './patch';

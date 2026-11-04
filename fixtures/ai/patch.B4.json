@@ -1,0 +1,20 @@
+{
+  "edits": [
+    {
+      "file": "apps/buggy-store/src/orders/finalize.ts",
+      "search": "  db.markPaid(merchantOrderId); // BUG B4: marks paid before the capture result is inspected",
+      "replace": ""
+    },
+    {
+      "file": "apps/buggy-store/src/orders/finalize.ts",
+      "search": "    return { ok: false as const };",
+      "replace": "    db.markFailedIfUnpaid(merchantOrderId);\n    return { ok: false as const };"
+    },
+    {
+      "file": "apps/buggy-store/src/orders/finalize.ts",
+      "search": "  db.recordCapture(merchantOrderId, capture.amount.value, capture.id);",
+      "replace": "  db.markPaid(merchantOrderId);\n  db.recordCapture(merchantOrderId, capture.amount.value, capture.id);"
+    }
+  ],
+  "rationale": "Only mark the merchant order paid after a completed capture, and mark it failed when the capture is declined."
+}
