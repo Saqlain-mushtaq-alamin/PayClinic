@@ -30,7 +30,7 @@ import {
   type Repos,
 } from '@payclinic/core';
 
-const ALLOWED_ORIGINS = new Set(['http://localhost:5173', 'http://127.0.0.1:5173']);
+const ALLOWED_ORIGIN_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const DEFAULT_ORIGIN = 'http://localhost:5173';
 
 export type OpenPr = (finding: Finding) => Promise<z.infer<typeof OpenPrResponse>>;
@@ -59,7 +59,7 @@ function notFound(reply: FastifyReply) {
 }
 
 function outputOrigin(origin: string | undefined): string {
-  return origin !== undefined && ALLOWED_ORIGINS.has(origin) ? origin : DEFAULT_ORIGIN;
+  return origin !== undefined && ALLOWED_ORIGIN_PATTERN.test(origin) ? origin : DEFAULT_ORIGIN;
 }
 
 function eventRunId(event: RunEvent, repos: Repos): string | null {
