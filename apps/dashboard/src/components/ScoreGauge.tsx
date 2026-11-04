@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 export interface ScoreGaugeProps {
   score: number;
   scoreBefore?: number;
@@ -6,10 +8,48 @@ export interface ScoreGaugeProps {
 
 const RADIUS = 52;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const ANIMATION_MS = 600;
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
 
 export function ScoreGauge({ score, scoreBefore, scoreAfter }: ScoreGaugeProps) {
+  const [displayed, setDisplayed] = useState(score);
+  const previousRef = useRef(score);
+
+  useEffect(() => {
+    const from = previousRef.current;
+    if (from === score) return;
+    previousRef.current = score;
+
+    // Without rAF (or when the user prefers reduced motion) jump straight to
+    // the new value; the accessible label always carries the final score.
+    if (prefersReducedMotion() || typeof window.requestAnimationFrame !== 'function') {
+      setDisplayed(score);
+      return;
+    }
+
+    let startedAt: number | null = null;
+    let frame = 0;
+    const tick = (now: number) => {
+      // Anchor on the rAF clock itself: its timestamps are not guaranteed to
+      // share an origin with performance.now() (jsdom differs).
+      if (startedAt === null) startedAt = now;
+      const progress = Math.min(1, (now - startedAt) / ANIMATION_MS);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayed(Math.round(from + (score - from) * eased));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [score]);
+
   const showChange = scoreBefore !== undefined && scoreAfter !== undefined;
-  const safeScore = Math.max(0, Math.min(100, score));
+  const safeScore = Math.max(0, Math.min(100, displayed));
   const offset = CIRCUMFERENCE * (1 - safeScore / 100);
 
   return (
@@ -37,7 +77,7 @@ export function ScoreGauge({ score, scoreBefore, scoreAfter }: ScoreGaugeProps) 
           textAnchor="middle"
           dominantBaseline="central"
         >
-          {score}
+          {displayed}
         </text>
       </svg>
       {showChange && (

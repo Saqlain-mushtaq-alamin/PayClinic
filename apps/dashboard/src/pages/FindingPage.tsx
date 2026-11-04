@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import type { FindingDetail } from '@payclinic/contracts';
+import type { FindingDetail, RunDetail } from '@payclinic/contracts';
 import { api, type ApiClient } from '../api/client';
+import { usePrescribe } from '../api/usePrescribe';
+import type { RunEventSourceCtor } from '../api/useRunEvents';
 import { ExplanationPanel } from '../components/ExplanationPanel';
+import { PrescribeButton } from '../components/PrescribeButton';
+import { PrescribeStepper } from '../components/PrescribeStepper';
 import { TraceTimeline } from '../components/TraceTimeline';
 import { UnifiedDiff } from '../components/UnifiedDiff';
 import { VerifyBadge } from '../components/VerifyBadge';
@@ -12,7 +16,8 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { Spinner } from '../components/ui/Spinner';
 
 export interface FindingPageProps {
-  client?: Pick<ApiClient, 'getFinding'>;
+  client?: Pick<ApiClient, 'getFinding' | 'getRun' | 'prescribe'>;
+  eventSourceCtor?: RunEventSourceCtor;
 }
 
 function severityTone(severity: string): BadgeTone {
@@ -42,11 +47,12 @@ function stateTone(state: string): BadgeTone {
   }
 }
 
-export function FindingPage({ client: injectedClient }: FindingPageProps) {
+export function FindingPage({ client: injectedClient, eventSourceCtor }: FindingPageProps) {
   const client = injectedClient ?? api;
   const clientRef = useRef(client);
   clientRef.current = client;
   const [detail, setDetail] = useState<FindingDetail | null>(null);
+  const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -75,6 +81,31 @@ export function FindingPage({ client: injectedClient }: FindingPageProps) {
     };
   }, [fid, tick]);
 
+  // The run score is auxiliary context here; a failed fetch keeps the
+  // previous value instead of replacing the page with an error.
+  useEffect(() => {
+    if (!detail) return;
+    let active = true;
+    clientRef.current
+      .getRun(detail.finding.runId)
+      .then((run) => {
+        if (active) setRunDetail(run);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [detail]);
+
+  const prescribe = usePrescribe(detail?.finding.id ?? '', detail?.finding.runId ?? '', {
+    client,
+    eventSourceCtor,
+  });
+
+  useEffect(() => {
+    if (prescribe.stage === 'done') reload();
+  }, [prescribe.stage, reload]);
+
   if (loading) return <Spinner label="Loading finding..." />;
   if (error)
     return <ErrorState message={`Failed to load finding: ${error.message}`} onRetry={reload} />;
@@ -89,7 +120,18 @@ export function FindingPage({ client: injectedClient }: FindingPageProps) {
       </header>
       <Card className="finding-summary">
         <p>{detail.finding.summary}</p>
+        {runDetail && <p className="finding-summary__score">Run score: {runDetail.score.score}</p>}
       </Card>
+      {detail.finding.state !== 'verified' && (
+        <Card>
+          <PrescribeButton
+            stage={prescribe.stage}
+            message={prescribe.message}
+            onStart={prescribe.start}
+          />
+          {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
+        </Card>
+      )}
       <Card>
         <TraceTimeline steps={detail.steps} evidenceStepIds={detail.finding.evidenceStepIds} />
       </Card>

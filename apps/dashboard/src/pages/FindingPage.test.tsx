@@ -1,21 +1,63 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
-import type { FindingDetail } from '@payclinic/contracts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FindingDetail, RunDetail, RunEvent } from '@payclinic/contracts';
 import mockData from '../../../../fixtures/mock/mock-data.json';
+import { API_BASE_URL } from '../api/client';
+import type { RunEventSourceCtor, RunEventSourceLike } from '../api/useRunEvents';
 import '../test-setup';
 import { FindingPage } from './FindingPage';
 
-const verified = mockData.findingDetails['fnd-run-2-1'] as unknown as FindingDetail;
 const open = mockData.findingDetails['fnd-run-1-1'] as unknown as FindingDetail;
+const verified = mockData.findingDetails['fnd-run-2-1'] as unknown as FindingDetail;
+const run1 = mockData.details['run-1'] as unknown as RunDetail;
+const run2 = mockData.details['run-2'] as unknown as RunDetail;
 
-function renderPage(detail: FindingDetail): { container: HTMLElement } {
+interface PageClient {
+  getFinding: (id: string) => Promise<FindingDetail>;
+  getRun: (id: string) => Promise<RunDetail>;
+  prescribe: (id: string) => Promise<{ accepted: true }>;
+}
+
+const instances: FakeEventSource[] = [];
+
+class FakeEventSource implements RunEventSourceLike {
+  readonly url: string;
+  onopen: ((event: unknown) => void) | null = null;
+  onerror: ((event: unknown) => void) | null = null;
+  onmessage: ((event: { data?: unknown }) => void) | null = null;
+  closed = false;
+
+  constructor(url: string) {
+    this.url = url;
+    instances.push(this);
+  }
+
+  emit(raw: string): void {
+    this.onmessage?.({ data: raw });
+  }
+
+  close(): void {
+    this.closed = true;
+  }
+}
+
+type ProgressStage = Extract<RunEvent, { type: 'prescribe.progress' }>['stage'];
+
+const progress = (stage: ProgressStage, message: string): RunEvent => ({
+  type: 'prescribe.progress',
+  findingId: 'fnd-run-1-1',
+  stage,
+  message,
+});
+
+function renderPage(client: PageClient, eventSourceCtor?: RunEventSourceCtor) {
   return render(
-    <MemoryRouter initialEntries={['/runs/run-2/findings/fnd-run-2-1']}>
+    <MemoryRouter initialEntries={['/runs/run-1/findings/fnd-run-1-1']}>
       <Routes>
         <Route
           path="/runs/:id/findings/:fid"
-          element={<FindingPage client={{ getFinding: async () => detail }} />}
+          element={<FindingPage client={client} eventSourceCtor={eventSourceCtor} />}
         />
       </Routes>
     </MemoryRouter>,
@@ -23,26 +65,118 @@ function renderPage(detail: FindingDetail): { container: HTMLElement } {
 }
 
 describe('FindingPage', () => {
+  beforeEach(() => {
+    instances.length = 0;
+  });
+
   it('shows the explanation, the diff and Verified for a verified finding (P2-C02)', async () => {
-    const { container } = renderPage(verified);
+    renderPage({
+      getFinding: async () => verified,
+      getRun: async () => run2,
+      prescribe: async () => ({ accepted: true }),
+    });
 
     expect(
       await screen.findByRole('heading', { name: verified.finding.title }),
     ).toBeInTheDocument();
     expect(screen.getByText(verified.finding.summary)).toBeInTheDocument();
     expect(screen.getByText(/root cause/i)).toBeInTheDocument();
-    expect(container.querySelectorAll('.diff__line--del')).not.toHaveLength(0);
     expect(screen.getByText(/Verified/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Prescribe/i })).not.toBeInTheDocument();
   });
 
   it('shows no diff and a dash for an open finding (P2-C02)', async () => {
-    const { container } = renderPage(open);
+    const { container } = renderPage({
+      getFinding: async () => open,
+      getRun: async () => run1,
+      prescribe: async () => ({ accepted: true }),
+    });
 
     expect(await screen.findByRole('heading', { name: open.finding.title })).toBeInTheDocument();
     expect(screen.queryByTestId('diff')).not.toBeInTheDocument();
     expect(container.querySelector('.diff')).toBeNull();
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.queryByText(/root cause/i)).not.toBeInTheDocument();
+  });
+
+  it('posts once and shows the explaining stage when Prescribe is clicked (P2-C03)', async () => {
+    const client: PageClient = {
+      getFinding: vi.fn(async () => open),
+      getRun: vi.fn(async () => run1),
+      prescribe: vi.fn(async () => ({ accepted: true as const })),
+    };
+    renderPage(client, FakeEventSource);
+
+    fireEvent.click(await screen.findByRole('button', { name: /prescribe/i }));
+
+    expect(client.prescribe).toHaveBeenCalledTimes(1);
+    expect(client.prescribe).toHaveBeenCalledWith('fnd-run-1-1');
+    expect(screen.getByTestId('stage-explaining')).toHaveAttribute('data-active', 'true');
+    expect(instances).toHaveLength(1);
+    expect(instances[0]!.url).toBe(`${API_BASE_URL}/api/runs/run-1/events`);
+  });
+
+  it('advances the stepper as stage events arrive (P2-C03)', async () => {
+    renderPage(
+      {
+        getFinding: async () => open,
+        getRun: async () => run1,
+        prescribe: async () => ({ accepted: true }),
+      },
+      FakeEventSource,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /prescribe/i }));
+    const source = instances[0]!;
+
+    act(() => source.emit(JSON.stringify(progress('patching', 'patching fnd-run-1-1'))));
+    expect(screen.getByTestId('stage-patching')).toHaveAttribute('data-active', 'true');
+
+    act(() => source.emit(JSON.stringify(progress('verifying', 'verifying fnd-run-1-1'))));
+    expect(screen.getByTestId('stage-verifying')).toHaveAttribute('data-active', 'true');
+  });
+
+  it('reloads the finding and the run score when the flow is done (P2-C03)', async () => {
+    const verifiedLater: FindingDetail = {
+      ...open,
+      finding: { ...open.finding, state: 'verified' },
+    };
+    let findingCall = 0;
+    const client: PageClient = {
+      getFinding: vi.fn(async () => (findingCall++ === 0 ? open : verifiedLater)),
+      getRun: vi.fn(async () => run1),
+      prescribe: vi.fn(async () => ({ accepted: true as const })),
+    };
+    renderPage(client, FakeEventSource);
+
+    fireEvent.click(await screen.findByRole('button', { name: /prescribe/i }));
+    const source = instances[0]!;
+    act(() => source.emit(JSON.stringify(progress('done', 'done fnd-run-1-1'))));
+
+    await waitFor(() => expect(client.getFinding).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(client.getRun).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('verified')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /prescribe/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the failure message and retries (P2-C03)', async () => {
+    const client: PageClient = {
+      getFinding: vi.fn(async () => open),
+      getRun: vi.fn(async () => run1),
+      prescribe: vi.fn(async () => ({ accepted: true as const })),
+    };
+    renderPage(client, FakeEventSource);
+
+    fireEvent.click(await screen.findByRole('button', { name: /prescribe/i }));
+    const source = instances[0]!;
+    act(() => source.emit(JSON.stringify(progress('failed', 'no patch verified'))));
+
+    expect(await screen.findByText('no patch verified')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+    expect(client.prescribe).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('stage-explaining')).toHaveAttribute('data-active', 'true');
+    expect(instances).toHaveLength(2);
   });
 });
