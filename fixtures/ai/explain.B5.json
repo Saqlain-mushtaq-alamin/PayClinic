@@ -1,0 +1,9 @@
+{
+  "rootCause": "Money formatting hardcodes two decimal places which is invalid for zero-decimal currencies like JPY.",
+  "impact": "PayPal rejects order creation for zero-decimal currencies due to invalid currency format.",
+  "whereInCode": {
+    "file": "apps/buggy-store/src/money.ts",
+    "hint": "formatAmount"
+  },
+  "fixSummary": "Use currency-specific decimal exponent formatting so JPY amounts have zero decimals."
+}
