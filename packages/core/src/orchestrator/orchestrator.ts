@@ -215,7 +215,20 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     if (run.target !== 'agent') throw new ProtectNotApplicableError(runId);
     if (!deps.protector) throw new ProtectNotConfiguredError();
 
-    await deps.protector(run, deps.repos.listFindings(runId));
+    const before = deps.repos.listFindings(runId);
+    await deps.protector(run, before);
+
+    // Persist what the protector changed and emit the dashboard events (spec items 4-5).
+    const previous = new Map(before.map((finding) => [finding.id, finding]));
+    for (const finding of deps.repos.listFindings(runId)) {
+      const prior = previous.get(finding.id);
+      if (prior && prior.state === finding.state && prior.summary === finding.summary) continue;
+      emit({ type: 'finding.updated', finding });
+    }
+
+    const score = computeScore(deps.repos.listFindings(runId));
+    deps.repos.updateRun(runId, { scoreAfter: score.score });
+    emit({ type: 'score.updated', score });
   };
 
   return {
