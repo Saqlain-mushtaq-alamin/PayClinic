@@ -116,4 +116,3 @@ if (isMainModule()) {
   const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
   runSetup(repoRoot);
 }
-
