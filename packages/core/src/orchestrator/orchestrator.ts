@@ -10,6 +10,7 @@ import type {
 } from '@payclinic/contracts';
 import { computeScore } from '../score';
 import { runDiagnose } from '../runner/diagnose';
+import { defaultChildRegistry } from '../runner/child-registry';
 import { createVerify } from '../verify/verify';
 import { ProtectNotApplicableError, ProtectNotConfiguredError } from './types';
 import type { Orchestrator, OrchestratorDeps } from './types';
@@ -20,6 +21,17 @@ function errorMessage(error: unknown): string {
 
 /** Creates the queue-based orchestrator that diagnoses, prescribes, verifies and protects. */
 export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
+  const timeoutMs =
+    deps.runTimeoutMs ??
+    (process.env.RUN_TIMEOUT_MS ? Number(process.env.RUN_TIMEOUT_MS) : 180_000);
+
+  const onSignal = (): void => {
+    void defaultChildRegistry.disposeAll();
+  };
+  process.once('exit', onSignal);
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
+
   const { verifyDetailed } = createVerify({
     repoRoot: deps.repoRoot,
     config: deps.config,
@@ -158,12 +170,26 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     deps.repos.insertRun(run);
 
     const task = async (): Promise<void> => {
+      const controller = new AbortController();
+      let timer: NodeJS.Timeout | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort(new Error('run timed out'));
+          reject(new Error('run timed out'));
+        }, timeoutMs);
+        timer.unref();
+      });
+
       try {
-        await runDiagnose(
-          { ...deps, emit },
-          { target: req.target, mode: req.mode, scenarios: req.scenarios, runId: id },
-        );
+        await Promise.race([
+          runDiagnose(
+            { ...deps, emit, signal: controller.signal },
+            { target: req.target, mode: req.mode, scenarios: req.scenarios, runId: id },
+          ),
+          timeoutPromise,
+        ]);
       } catch (error) {
+        await defaultChildRegistry.disposeAll();
         const current = deps.repos.getRun(id);
         if (current && current.status !== 'failed' && current.status !== 'completed') {
           const message = errorMessage(error);
@@ -174,6 +200,8 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
           });
           emit({ type: 'run.failed', runId: id, error: message });
         }
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     };
 

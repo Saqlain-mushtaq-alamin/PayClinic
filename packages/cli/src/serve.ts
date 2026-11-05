@@ -1,10 +1,14 @@
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cleanupTmp } from '@payclinic/core';
 import { createApi } from './api';
 import { buildRuntime } from './wire';
 
 /** Starts the REST + SSE API on the configured API port. */
 export async function runServer(): Promise<void> {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+  cleanupTmp(repoRoot);
+
   const runtime = buildRuntime(process.env);
   const app = createApi({
     orchestrator: runtime.orchestrator,
@@ -14,10 +18,23 @@ export async function runServer(): Promise<void> {
     version: process.env.PAYCLINIC_VERSION ?? '0.0.0',
   });
 
-  const address = await app.listen({
-    host: process.env.HOST ?? '127.0.0.1',
-    port: runtime.config.ports.api,
-  });
+  let address: string;
+  try {
+    address = await app.listen({
+      host: process.env.HOST ?? '127.0.0.1',
+      port: runtime.config.ports.api,
+    });
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'EADDRINUSE'
+    ) {
+      throw new Error(`port ${runtime.config.ports.api} is in use`);
+    }
+    throw error;
+  }
   process.stdout.write(`payclinic api listening on ${address}\n`);
 
   const shutdown = (): void => {

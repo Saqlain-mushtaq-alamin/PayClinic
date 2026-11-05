@@ -27,6 +27,7 @@ export interface ExecuteScenariosEnv {
   now: () => Date;
   scenarioTimeoutMs?: number;
   runId: string;
+  signal?: AbortSignal;
   storeFactory?: StoreFactory;
   onStep?: (step: Step) => void;
   onScenarioStart?: (key: ScenarioKey, scenarioId: string) => void | Promise<void>;
@@ -107,18 +108,43 @@ async function askInTerminal(url: string): Promise<void> {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, key: ScenarioKey, timeoutMs: number): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  key: ScenarioKey,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(
+        signal.reason instanceof Error
+          ? signal.reason
+          : new Error(String(signal.reason ?? 'aborted')),
+      );
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(
+        signal?.reason instanceof Error
+          ? signal.reason
+          : new Error(String(signal?.reason ?? 'aborted')),
+      );
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
     const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
       reject(new ScenarioTimeoutError(key, timeoutMs));
     }, timeoutMs);
     promise.then(
       (value) => {
         clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
         resolve(value);
       },
       (error: unknown) => {
         clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
         reject(error);
       },
     );
@@ -185,6 +211,11 @@ export async function executeScenarios(
     const timeoutMs = env.scenarioTimeoutMs ?? 60_000;
 
     for (const key of keys) {
+      if (env.signal?.aborted) {
+        throw env.signal.reason instanceof Error
+          ? env.signal.reason
+          : new Error(String(env.signal.reason ?? 'aborted'));
+      }
       const scenarioFn = env.scenarios[key];
       if (!scenarioFn) throw new DiagnoseError(`No scenario registered for ${key}`);
 
@@ -218,7 +249,7 @@ export async function executeScenarios(
           now: () => env.now().getTime(),
         });
 
-        await withTimeout(scenarioFn(ctx), key, timeoutMs);
+        await withTimeout(scenarioFn(ctx), key, timeoutMs, env.signal);
 
         const adminState = asRecord(await fetchJson(`${store.url}/__admin/state`));
         if (!adminState) throw new DiagnoseError('Store admin state was not an object');
@@ -243,6 +274,9 @@ export async function executeScenarios(
         await env.onScenario?.(key, info);
         executed.push({ key, ...info });
       } catch (caught) {
+        if (env.signal?.aborted) {
+          throw caught;
+        }
         const timedOut = caught instanceof ScenarioTimeoutError;
         try {
           if (timedOut) {

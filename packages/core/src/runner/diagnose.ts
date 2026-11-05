@@ -30,6 +30,7 @@ export interface DiagnoseDeps {
   now: () => Date;
   emit?: (e: RunEvent) => void;
   scenarioTimeoutMs?: number;
+  signal?: AbortSignal;
   onScenarioFinished?: (
     key: ScenarioKey,
     info: { steps: Step[]; state: RunState; results: InvariantResult[] },
@@ -92,6 +93,7 @@ export async function runDiagnose(
         storeSourceDir: deps.storeSourceDir,
         newId: deps.newId,
         now: deps.now,
+        signal: deps.signal,
         ...(deps.scenarioTimeoutMs === undefined
           ? {}
           : { scenarioTimeoutMs: deps.scenarioTimeoutMs }),

@@ -30,6 +30,7 @@ export interface OrchestratorDeps {
   newId: () => string;
   now: () => Date;
   bus: EventEmitter;
+  runTimeoutMs?: number;
 }
 
 export interface Orchestrator {
