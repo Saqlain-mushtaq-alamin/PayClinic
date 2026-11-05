@@ -31,7 +31,12 @@ import {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const DEFAULT_DATA_PATH = join(REPO_ROOT, 'fixtures/mock/mock-data.json');
-const ALLOWED_ORIGIN = 'http://localhost:5173';
+const DEFAULT_ORIGIN = 'http://localhost:5173';
+const ALLOWED_ORIGIN_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+function outputOrigin(origin: string | undefined): string {
+  return origin !== undefined && ALLOWED_ORIGIN_PATTERN.test(origin) ? origin : DEFAULT_ORIGIN;
+}
 const PRESCRIBE_STEPS = ['explaining', 'patching', 'verifying', 'done'] as const;
 
 interface MockData {
@@ -125,7 +130,7 @@ export function createMockApi(opts: { dataPath?: string } = {}): FastifyInstance
   };
 
   app.addHook('onRequest', async (request, reply) => {
-    reply.header('access-control-allow-origin', ALLOWED_ORIGIN);
+    reply.header('access-control-allow-origin', outputOrigin(request.headers.origin));
     reply.header('access-control-allow-methods', 'GET,POST,OPTIONS');
     reply.header('access-control-allow-headers', 'content-type');
     if (request.method === 'OPTIONS') reply.code(204).send();
@@ -296,7 +301,7 @@ export function createMockApi(opts: { dataPath?: string } = {}): FastifyInstance
       'content-type': 'text/event-stream',
       'cache-control': 'no-cache',
       connection: 'keep-alive',
-      'access-control-allow-origin': ALLOWED_ORIGIN,
+      'access-control-allow-origin': outputOrigin(request.headers.origin),
     });
     clients.add(reply.raw);
 

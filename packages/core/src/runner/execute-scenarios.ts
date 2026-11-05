@@ -1,4 +1,4 @@
-﻿import { createInterface } from 'node:readline/promises';
+import { createInterface } from 'node:readline/promises';
 import { MerchantOrder, Product, SCENARIO_META, WebhookDelivery } from '@payclinic/contracts';
 import type {
   InvariantResult,
