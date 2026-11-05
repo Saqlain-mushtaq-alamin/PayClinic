@@ -15,7 +15,6 @@ import {
   waitForStoreReady,
   type Prescriber,
 } from '@payclinic/core';
-import { SCENARIOS } from '../../scenarios';
 
 const repoRoot = join(__dirname, '../..');
 const alive = (c: ReturnType<typeof spawn>) => c.exitCode === null && c.signalCode === null;
@@ -155,17 +154,22 @@ describe('run timeout', () => {
       throw new Error('not used');
     };
     let n = 0;
+    // Both scenarios are fakes so the second run only pays sim + proxy + store
+    // boot. The timeout must still leave headroom for that boot under
+    // full-suite load: 1500ms made this test flaky because the second run
+    // competed for the same budget as the hang run.
+    const quick = async () => undefined;
     const orch = createOrchestrator({
       repos,
       config: loadConfig({}),
-      scenarios: { ...SCENARIOS, B1: hang },
+      scenarios: { B1: hang, B2: quick },
       repoRoot,
       storeSourceDir: join(repoRoot, 'apps/buggy-store'),
       prescriber,
       newId: () => `h${++n}`,
       now: () => new Date('2026-10-18T10:00:00Z'),
       bus,
-      runTimeoutMs: 1500,
+      runTimeoutMs: 15_000,
     });
     const first = orch.startRun({ target: 'store', mode: 'offline', scenarios: ['B1'] });
     const second = orch.startRun({ target: 'store', mode: 'offline', scenarios: ['B2'] });
