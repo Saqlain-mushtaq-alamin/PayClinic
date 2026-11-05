@@ -43,15 +43,29 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
   const { events } = useRunEvents(id, { eventSourceCtor });
   const [fixing, setFixing] = useState(false);
   const [fixError, setFixError] = useState<string | null>(null);
+  const [watching, setWatching] = useState(false);
 
-  const runCompleted = events.some((event) => event.type === 'run.completed');
+  const runDone = events.some((e) => e.type === 'run.completed' || e.type === 'run.failed');
+  const status = data?.run.status;
   useEffect(() => {
-    // A live run gains its findings as it completes; refetch once so the grid,
-    // the score and Fix all see them. Replays of completed runs skip this.
-    if (runCompleted && data?.run.status === 'running') reload();
-  }, [runCompleted, data?.run.status, reload]);
+    if (runDone && (status === 'queued' || status === 'running')) reload();
+  }, [runDone, status, reload]);
 
   const openFindings = (data?.findings ?? []).filter((finding) => finding.state === 'open');
+
+  useEffect(() => {
+    if (!watching) return;
+    if (openFindings.length === 0) {
+      setWatching(false);
+      return;
+    }
+    const t = setInterval(reload, 2000);
+    const stop = setTimeout(() => setWatching(false), 180_000);
+    return () => {
+      clearInterval(t);
+      clearTimeout(stop);
+    };
+  }, [watching, openFindings.length, reload]);
 
   const fixAll = useCallback(async () => {
     if (fixing) return;
@@ -62,6 +76,7 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
       for (const finding of openFindings) {
         await clientRef.current.prescribe(finding.id);
       }
+      setWatching(true);
       reload();
     } catch (reason: unknown) {
       setFixError(reason instanceof Error ? reason.message : String(reason));
@@ -70,7 +85,7 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
     }
   }, [fixing, openFindings, reload]);
 
-  if (loading) return <Spinner label="Loading run..." />;
+  if (loading && !data) return <Spinner label="Loading run..." />;
   if (error)
     return <ErrorState message={`Failed to load run: ${error.message}`} onRetry={reload} />;
   if (!data) return null;
@@ -84,11 +99,18 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
         <Badge tone={statusTone(data.run.status)}>{data.run.status}</Badge>
       </header>
       <div className="run-page__summary">
-        <ScoreGauge
-          score={live ?? data.score.score}
-          scoreBefore={data.run.scoreBefore}
-          scoreAfter={live ?? data.run.scoreAfter}
-        />
+        {data.run.status === 'completed' ? (
+          <ScoreGauge
+            score={live ?? data.score.score}
+            scoreBefore={data.run.scoreBefore}
+            scoreAfter={
+              data.run.scoreAfter ??
+              (live !== null && live !== data.run.scoreBefore ? live : undefined)
+            }
+          />
+        ) : (
+          <p className="run-page__running">Running…</p>
+        )}
         {openFindings.length > 0 && (
           <div className="run-page__fixall">
             <Button onClick={fixAll} disabled={fixing}>

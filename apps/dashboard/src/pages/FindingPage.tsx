@@ -106,7 +106,7 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
     if (prescribe.stage === 'done') reload();
   }, [prescribe.stage, reload]);
 
-  if (loading) return <Spinner label="Loading finding..." />;
+  if (loading && !detail) return <Spinner label="Loading finding..." />;
   if (error)
     return <ErrorState message={`Failed to load finding: ${error.message}`} onRetry={reload} />;
   if (!detail) return null;

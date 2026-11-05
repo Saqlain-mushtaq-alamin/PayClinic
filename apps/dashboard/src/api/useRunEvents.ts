@@ -61,7 +61,10 @@ export function useRunEvents(
         return;
       }
       const next = parsed.data;
-      setEvents((previous) => [...previous, next]);
+      setEvents((prev) => {
+        const key = JSON.stringify(next);
+        return prev.some((e) => JSON.stringify(e) === key) ? prev : [...prev, next];
+      });
       if (next.type === 'run.completed' || next.type === 'run.failed') {
         source.close();
         setStatus('closed');

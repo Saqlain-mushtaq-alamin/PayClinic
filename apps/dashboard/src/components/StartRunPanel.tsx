@@ -30,7 +30,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
       setChecked(
         new Set(
           scenarios
-            .filter((scenario) => scenario.target === 'store')
+            .filter((scenario) => scenario.target === 'store' && scenario.key !== 'B6')
             .map((scenario) => scenario.key),
         ),
       );

@@ -79,7 +79,7 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     deps.repos.insertSteps(steps.map((step) => ({ ...step, scenarioId })));
   };
 
-  const prescribe = async (findingId: string): Promise<void> => {
+  const doPrescribe = async (findingId: string): Promise<void> => {
     const finding = deps.repos.getFinding(findingId);
     if (!finding) throw new Error(`Finding ${findingId} not found`);
     const run = deps.repos.getRun(finding.runId);
@@ -136,6 +136,13 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     progress(finding.id, 'failed', lastLog);
   };
 
+  let prescribeChain: Promise<void> = Promise.resolve();
+  const prescribe = (findingId: string): Promise<void> => {
+    const next = prescribeChain.then(() => doPrescribe(findingId));
+    prescribeChain = next.catch(() => undefined);
+    return next;
+  };
+
   let tail: Promise<void> = Promise.resolve();
 
   const startRun = (req: RunCreateRequest): string => {
@@ -187,6 +194,6 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     startRun,
     prescribe,
     protect,
-    idle: () => tail,
+    idle: () => Promise.all([tail, prescribeChain]).then(() => undefined),
   };
 }
