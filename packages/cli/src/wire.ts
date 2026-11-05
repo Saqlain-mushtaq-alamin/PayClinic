@@ -28,9 +28,33 @@ import {
   type Prescriber,
   type Repos,
 } from '@payclinic/core';
+import { createProtector, type ProtectorScenario } from '@payclinic/firewall';
+import {
+  runAgentScenario,
+  ScriptedNaiveBrain,
+  type AgentBrain,
+} from '@payclinic/shopping-agent';
 import { SCENARIOS } from '../../../scenarios';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+
+/** Re-runs an agent attack with the same brain, optionally behind GuardedPayTools. */
+function agentRerun(newBrain: () => AgentBrain): ProtectorScenario {
+  return ({ wrapTools }) =>
+    (ctx) =>
+      runAgentScenario(ctx, {
+        brain: newBrain(),
+        ...(wrapTools === undefined ? {} : { wrapTools }),
+      });
+}
+
+/** Same brains as scenarios/a1.ts and scenarios/a2.ts, used for the protection re-run. */
+const PROTECTOR_SCENARIOS: Partial<Record<ScenarioKey, ProtectorScenario>> = {
+  A1: agentRerun(() => new ScriptedNaiveBrain({ gullible: true, retries: 0 })),
+  A2: agentRerun(
+    () => new ScriptedNaiveBrain({ gullible: false, retries: 4, retryOnSuccess: true }),
+  ),
+};
 
 export interface Runtime {
   orchestrator: Orchestrator;
@@ -84,8 +108,9 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
   const bus = new EventEmitter();
   const newId = () => randomUUID();
   const readSource = createSourceReader(REPO_ROOT);
+  const provider = createProvider(config);
   const prescriberDeps: PrescribeDeps = {
-    provider: createProvider(config),
+    provider,
     readSource,
     loadReferencePatch: createReferenceLoader(REPO_ROOT),
     deriveDiff: (edits: PatchEdit[]) => derivePatchDiff(edits, readSource),
@@ -93,14 +118,26 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
     now: () => new Date().toISOString(),
   };
   const prescriber: Prescriber = (finding, steps) => prescribe(prescriberDeps, finding, steps);
+  const storeSourceDir = join(REPO_ROOT, 'apps', 'buggy-store');
+  const protector = createProtector({
+    provider,
+    repos,
+    config,
+    scenarios: PROTECTOR_SCENARIOS,
+    storeSourceDir,
+    newId,
+    now: () => new Date(),
+    bus,
+  });
 
   const orchestrator = createOrchestrator({
     repos,
     config,
     scenarios: SCENARIOS,
     repoRoot: REPO_ROOT,
-    storeSourceDir: join(REPO_ROOT, 'apps', 'buggy-store'),
+    storeSourceDir,
     prescriber,
+    protector,
     newId,
     now: () => new Date(),
     bus,
