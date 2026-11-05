@@ -94,6 +94,7 @@ export async function startApiOnFreePort(runtime: TestRuntime) {
   return {
     baseUrl,
     async close() {
+      await runtime.orchestrator.idle();
       await app.close();
       runtime.db.close();
     },

@@ -12,7 +12,7 @@ import type {
 import type { VerifyFn, VerifyOptions } from '@payclinic/contracts';
 import type { Config } from '../config';
 import { executeScenarios } from '../runner/execute-scenarios';
-import { startStore } from '../runner/store-process';
+import { startStore, waitForStoreReady } from '../runner/store-process';
 import type { ScenarioFn } from '../runner/context';
 import { applyEditsToDir } from './apply';
 import { checkEditsSafety } from './safety';
@@ -56,7 +56,14 @@ export async function withPatchedStore<T>(
 
     return await fn(storeDir);
   } finally {
-    rmSync(baseDir, { recursive: true, force: true });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        rmSync(baseDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        break;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
   }
 }
 
@@ -217,11 +224,20 @@ export function createVerify(deps: CreateVerifyDeps): {
                 storeFactory: async (options) => {
                   try {
                     const running = await startStore(options);
+                    try {
+                      await waitForStoreReady(running.url, { timeoutMs: 5_000 });
+                    } catch (error) {
+                      await running.stop().catch(() => undefined);
+                      throw error;
+                    }
                     started = true;
                     log.push('Store started from the patched copy');
                     return running;
                   } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
+                    if (message.includes('store did not answer')) {
+                      log.push('store did not answer');
+                    }
                     log.push(`Store failed to start: ${message}`);
                     throw error;
                   }

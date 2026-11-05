@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { defaultChildRegistry } from './child-registry';
 
 export interface RunningStore {
   url: string;
@@ -18,8 +19,37 @@ const LISTENING_LINE = /^PAYCLINIC_STORE_LISTENING (\d+)$/;
 const START_TIMEOUT_MS = 15_000;
 const KILL_GRACE_MS = 2_000;
 
-/** Starts the buggy store as a child process connected to the given PayPal base URL. */
-export async function startStore(o: StartStoreOptions): Promise<RunningStore> {
+/** Polls GET <url>/api/products until 200 OK or timeout; rejects with a message containing "store did not answer". */
+export async function waitForStoreReady(
+  url: string,
+  o: { timeoutMs: number; fetchImpl?: typeof fetch },
+): Promise<void> {
+  const fetchImpl = o.fetchImpl ?? fetch;
+  const deadline = Date.now() + o.timeoutMs;
+  const target = `${url.replace(/\/+$/, '')}/api/products`;
+
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    const perRequestTimeout = Math.min(Math.max(100, remaining), 500);
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), perRequestTimeout);
+      timer.unref();
+      const res = await fetchImpl(target, { signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        return;
+      }
+    } catch {
+      // Server not ready yet or connection refused / timed out; retry
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  throw new Error(`store did not answer at ${url} within ${o.timeoutMs} ms`);
+}
+
+async function attemptStartStore(o: StartStoreOptions): Promise<RunningStore> {
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH ?? process.env.Path ?? '',
     PORT: '0',
@@ -36,6 +66,8 @@ export async function startStore(o: StartStoreOptions): Promise<RunningStore> {
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
+
+  defaultChildRegistry.add(child);
 
   let exited = false;
   let stopPromise: Promise<void> | undefined;
@@ -55,6 +87,7 @@ export async function startStore(o: StartStoreOptions): Promise<RunningStore> {
     timer.unref();
     try {
       await exitPromise;
+      await new Promise((resolve) => setTimeout(resolve, 50));
     } finally {
       clearTimeout(timer);
     }
@@ -132,4 +165,18 @@ export async function startStore(o: StartStoreOptions): Promise<RunningStore> {
       }
     });
   });
+}
+
+/** Starts the buggy store as a child process; retries once if child exits before listening. */
+export async function startStore(o: StartStoreOptions): Promise<RunningStore> {
+  try {
+    return await attemptStartStore(o);
+  } catch (error) {
+    const isExitBeforeListening =
+      error instanceof Error && error.message.includes('Store process exited before listening');
+    if (isExitBeforeListening) {
+      return await attemptStartStore(o);
+    }
+    throw error;
+  }
 }
