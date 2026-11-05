@@ -29,6 +29,7 @@ export interface Repos {
   getFinding(id: string): Finding | null;
   listFindings(runId: string): Finding[];
   updateFindingState(id: string, state: FindingState): void;
+  updateFindingSummary(id: string, summary: string): void;
   upsertExplanation(e: Explanation): void;
   getExplanation(findingId: string): Explanation | null;
   insertPatch(p: Patch): void;
@@ -380,6 +381,10 @@ export function createRepos(db: Database): Repos {
 
     updateFindingState(id, state) {
       db.prepare('UPDATE findings SET state = ? WHERE id = ?').run(state, id);
+    },
+
+    updateFindingSummary(id, summary) {
+      db.prepare('UPDATE findings SET summary = ? WHERE id = ?').run(summary, id);
     },
 
     upsertExplanation(e) {
