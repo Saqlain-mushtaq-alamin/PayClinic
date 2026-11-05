@@ -7,7 +7,7 @@ import type { RunEventSourceCtor } from '../api/useRunEvents';
 import { ExplanationPanel } from '../components/ExplanationPanel';
 import { PrescribeButton } from '../components/PrescribeButton';
 import { PrescribeStepper } from '../components/PrescribeStepper';
-import { TraceTimeline } from '../components/TraceTimeline';
+import { TraceReplay } from '../components/TraceReplay';
 import { UnifiedDiff } from '../components/UnifiedDiff';
 import { VerifyBadge } from '../components/VerifyBadge';
 import { Badge, type BadgeTone } from '../components/ui/Badge';
@@ -133,7 +133,11 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
         </Card>
       )}
       <Card>
-        <TraceTimeline steps={detail.steps} evidenceStepIds={detail.finding.evidenceStepIds} />
+        <TraceReplay
+          steps={detail.steps}
+          evidenceStepIds={detail.finding.evidenceStepIds}
+          verdict={detail.finding.summary}
+        />
       </Card>
       {detail.explanation && (
         <Card className="explanation">
