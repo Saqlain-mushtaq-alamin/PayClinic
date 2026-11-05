@@ -11,6 +11,9 @@
     "node": ">=20.6"
   },
   "scripts": {
+    "build": "npm run build -w @payclinic/dashboard",
+    "setup": "tsx scripts/setup.ts",
+    "demo": "tsx scripts/seed-demo.ts && tsx packages/cli/src/serve.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
