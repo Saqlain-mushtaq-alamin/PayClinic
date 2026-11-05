@@ -29,11 +29,7 @@ import {
   type Repos,
 } from '@payclinic/core';
 import { createProtector, type ProtectorScenario } from '@payclinic/firewall';
-import {
-  runAgentScenario,
-  ScriptedNaiveBrain,
-  type AgentBrain,
-} from '@payclinic/shopping-agent';
+import { runAgentScenario, ScriptedNaiveBrain, type AgentBrain } from '@payclinic/shopping-agent';
 import { SCENARIOS } from '../../../scenarios';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
