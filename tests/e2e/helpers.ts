@@ -1,11 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import {
-  PatchOutput,
-  type PatchEdit,
-  type ScenarioKey,
-} from '@payclinic/contracts';
+import { PatchOutput, type PatchEdit, type ScenarioKey } from '@payclinic/contracts';
 import { FakeProvider, prescribe, type PrescribeDeps } from '@payclinic/ai';
 import {
   createOrchestrator,
@@ -103,4 +99,3 @@ export async function startApiOnFreePort(runtime: TestRuntime) {
     },
   };
 }
-
