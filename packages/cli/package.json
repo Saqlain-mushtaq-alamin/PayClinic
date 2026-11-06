@@ -13,6 +13,7 @@
     "./wire": "./src/wire.ts"
   },
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "@payclinic/contracts": "*",
     "@payclinic/core": "*",
     "fastify": "^5.0.0"

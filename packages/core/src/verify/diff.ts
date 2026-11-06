@@ -1,7 +1,11 @@
 import { createTwoFilesPatch } from 'diff';
 import type { PatchEdit } from '@payclinic/contracts';
 
-function applyToString(original: string, edits: PatchEdit[], file: string): string {
+/**
+ * Applies exact-string edits to a string; each `search` must match exactly
+ * once (else throws with the edit index and file). Same rules as TECH_DESIGN §8.
+ */
+export function applyEditsToString(original: string, edits: PatchEdit[], file: string): string {
   let next = original;
   for (const [index, edit] of edits.entries()) {
     const matches = next.split(edit.search).length - 1;
@@ -28,7 +32,7 @@ export function derivePatchDiff(
   const patches: string[] = [];
   for (const [file, fileEdits] of byFile) {
     const original = readFile(file);
-    const patched = applyToString(original, fileEdits, file);
+    const patched = applyEditsToString(original, fileEdits, file);
     patches.push(
       createTwoFilesPatch(`a/${file}`, `b/${file}`, original, patched, undefined, undefined, {
         context: 3,
