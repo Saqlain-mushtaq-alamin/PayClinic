@@ -2,6 +2,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { cleanupTmp } from '@payclinic/core';
 import { createApi } from './api';
+import { openPrFromEnv } from './open-pr';
 import { buildRuntime } from './wire';
 
 /** Starts the REST + SSE API on the configured API port. */
@@ -10,12 +11,14 @@ export async function runServer(): Promise<void> {
   cleanupTmp(repoRoot);
 
   const runtime = buildRuntime(process.env);
+  const openPrFor = openPrFromEnv(process.env, { repos: runtime.repos });
   const app = createApi({
     orchestrator: runtime.orchestrator,
     repos: runtime.repos,
     config: runtime.config,
     bus: runtime.bus,
     version: process.env.PAYCLINIC_VERSION ?? '0.0.0',
+    ...(openPrFor === undefined ? {} : { openPr: (finding) => openPrFor(finding.id) }),
   });
 
   let address: string;
