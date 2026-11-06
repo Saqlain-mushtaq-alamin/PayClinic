@@ -4,6 +4,7 @@ import type { RunEvent } from '@payclinic/contracts';
 import { useRun } from '../api/hooks';
 import { useRunEvents, type RunEventSourceCtor } from '../api/useRunEvents';
 import { api, type ApiClient } from '../api/client';
+import { AgentRunSection } from './AgentRunSection';
 import { FindingsGrid } from '../components/FindingsGrid';
 import { RunProgress } from '../components/RunProgress';
 import { ScoreGauge } from '../components/ScoreGauge';
@@ -14,7 +15,8 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { Spinner } from '../components/ui/Spinner';
 
 export interface RunPageProps {
-  client?: Pick<ApiClient, 'getRun' | 'prescribe'>;
+  client?: Pick<ApiClient, 'getRun' | 'prescribe'> &
+    Partial<Pick<ApiClient, 'protect' | 'getPolicy' | 'getDecisions'>>;
   eventSourceCtor?: RunEventSourceCtor;
 }
 
@@ -126,6 +128,15 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
       <Card>
         <FindingsGrid runId={data.run.id} findings={data.findings} />
       </Card>
+      {data.run.target === 'agent' && (
+        <AgentRunSection
+          runId={data.run.id}
+          findings={data.findings}
+          reload={reload}
+          client={client}
+          eventSourceCtor={eventSourceCtor}
+        />
+      )}
     </section>
   );
 }
