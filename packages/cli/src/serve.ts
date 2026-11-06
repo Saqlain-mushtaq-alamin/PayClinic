@@ -1,16 +1,37 @@
-import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { cleanupTmp } from '@payclinic/core';
 import { createApi } from './api';
 import { openPrFromEnv } from './open-pr';
 import { buildRuntime } from './wire';
 
-/** Starts the REST + SSE API on the configured API port. */
+/** Resolves the listen port: Render-style `PORT` wins over the configured API port. */
+function listenPort(configured: number): number {
+  const raw = process.env.PORT;
+  if (raw === undefined || raw === '') return configured;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) return configured;
+  return parsed;
+}
+
+/**
+ * Resolves the bind host. A injected `PORT` (Render and similar hosts) means
+ * external traffic must reach us, so bind all interfaces unless HOST says otherwise.
+ */
+function listenHost(): string {
+  if (process.env.HOST !== undefined && process.env.HOST !== '') return process.env.HOST;
+  return process.env.PORT !== undefined && process.env.PORT !== '' ? '0.0.0.0' : '127.0.0.1';
+}
+
+/** Starts the REST + SSE API on the configured API port (or `PORT` if set). */
 export async function runServer(): Promise<void> {
   const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
   cleanupTmp(repoRoot);
 
   const runtime = buildRuntime(process.env);
+  const distDir = join(repoRoot, 'apps', 'dashboard', 'dist');
+  const staticDir = existsSync(join(distDir, 'index.html')) ? distDir : undefined;
   const openPrFor = openPrFromEnv(process.env, { repos: runtime.repos });
   const app = createApi({
     orchestrator: runtime.orchestrator,
@@ -18,14 +39,15 @@ export async function runServer(): Promise<void> {
     config: runtime.config,
     bus: runtime.bus,
     version: process.env.PAYCLINIC_VERSION ?? '0.0.0',
+    staticDir,
     ...(openPrFor === undefined ? {} : { openPr: (finding) => openPrFor(finding.id) }),
   });
 
   let address: string;
   try {
     address = await app.listen({
-      host: process.env.HOST ?? '127.0.0.1',
-      port: runtime.config.ports.api,
+      host: listenHost(),
+      port: listenPort(runtime.config.ports.api),
     });
   } catch (error) {
     if (
@@ -34,7 +56,7 @@ export async function runServer(): Promise<void> {
       'code' in error &&
       error.code === 'EADDRINUSE'
     ) {
-      throw new Error(`port ${runtime.config.ports.api} is in use`);
+      throw new Error(`port ${listenPort(runtime.config.ports.api)} is in use`);
     }
     throw error;
   }

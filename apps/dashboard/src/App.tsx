@@ -13,6 +13,7 @@ export default function App() {
           <Route path="/runs/:id/findings/:fid" element={<FindingPage />} />
         </Routes>
       </main>
+      <footer>Offline demo: simulated PayPal and recorded AI</footer>
     </div>
   );
 }

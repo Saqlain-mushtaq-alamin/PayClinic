@@ -1,4 +1,6 @@
 import type { EventEmitter } from 'node:events';
+import { createReadStream, existsSync, statSync } from 'node:fs';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
 import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify';
 import type { z } from 'zod';
@@ -42,6 +44,48 @@ export interface ApiDeps {
   bus: EventEmitter;
   version?: string;
   openPr?: OpenPr;
+  /** Directory of the built dashboard; enables static hosting with SPA fallback. */
+  staticDir?: string;
+}
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.map': 'application/json',
+  '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+/**
+ * Serves a file from the static directory, falling back to index.html for
+ * extension-less client routes. Returns false when nothing could be served.
+ */
+function serveStatic(staticDir: string, url: string, reply: FastifyReply): boolean {
+  const pathOnly = url.split('?')[0] ?? '/';
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathOnly);
+  } catch {
+    return false;
+  }
+  const candidate = resolve(staticDir, normalize(decoded).replace(/^([/\\])+/, ''));
+  if (candidate !== staticDir && !candidate.startsWith(staticDir + sep)) return false;
+
+  let filePath = candidate;
+  if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+    if (extname(decoded) !== '') return false;
+    filePath = join(staticDir, 'index.html');
+    if (!existsSync(filePath)) return false;
+  }
+
+  const type = MIME_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream';
+  void reply.header('content-type', type).send(createReadStream(filePath));
+  return true;
 }
 
 interface SseClient {
@@ -143,7 +187,17 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     clients.clear();
   });
 
-  app.setNotFoundHandler((_request, reply) => notFound(reply));
+  app.setNotFoundHandler((request, reply) => {
+    if (
+      deps.staticDir !== undefined &&
+      request.method === 'GET' &&
+      !request.url.startsWith('/api')
+    ) {
+      if (!serveStatic(deps.staticDir, request.url, reply)) notFound(reply);
+      return;
+    }
+    notFound(reply);
+  });
 
   app.setErrorHandler((error: unknown, _request, reply) => {
     const statusCode =
