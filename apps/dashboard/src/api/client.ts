@@ -120,10 +120,10 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
   };
 }
 
-/** Base URL the dashboard talks to: `VITE_API_URL` or the mock at :4001. */
-export const API_BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:4001').replace(
-  /\/+$/,
-  '',
-);
+/**
+ * Base URL the dashboard talks to. Same origin by default (the API serves the
+ * built dashboard); the mock dev flow sets VITE_API_URL via `--mode mock`.
+ */
+export const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
 export const api = createApiClient(API_BASE_URL);

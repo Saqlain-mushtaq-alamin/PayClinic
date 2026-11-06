@@ -33,7 +33,9 @@ describe('render hello-world', () => {
     expect(config).toContain('plan: free');
     expect(config).toContain('npm ci');
     expect(config).toContain('npm run build');
-    expect(config).toContain('scripts/hello-render.ts');
-    expect(config).toContain('healthCheckPath: /healthz');
+    expect(config).toContain('npm run demo');
+    expect(config).toContain('healthCheckPath: /api/health');
+    expect(config).toContain('PAYCLINIC_MODE');
+    expect(config).toContain('AI_PROVIDER');
   });
 });
