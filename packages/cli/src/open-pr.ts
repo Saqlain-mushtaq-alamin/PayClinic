@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Octokit } from '@octokit/rest';
 import type { Explanation, Finding, Patch, VerifyResult } from '@payclinic/contracts';
-import { applyEditsToString, checkEditsSafety, type Repos } from '@payclinic/core';
+import { applyEditsToString, checkEditsSafety, type ProjectsRepo, type Repos } from '@payclinic/core';
 
 /** Raised when a finding may not be turned into a pull request. */
 export class PrNotAllowedError extends Error {
@@ -122,6 +122,8 @@ function prBody(
 export interface OpenPrDeps {
   github: GitHubLike;
   repos: Repos;
+  projectsRepo?: ProjectsRepo;
+  allowedPrefix?: string;
   owner: string;
   repo: string;
   baseBranch: string;
@@ -148,7 +150,20 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
       }
       if (!patch) throw new PrNotAllowedError(`finding ${findingId} has no patch`);
 
-      const safety = checkEditsSafety(patch.edits);
+      let allowedPrefix = deps.allowedPrefix;
+      if (!allowedPrefix && deps.projectsRepo) {
+        const run = repos.getRun(finding.runId);
+        if (run?.projectId) {
+          const project = deps.projectsRepo.getProject(run.projectId);
+          if (project && project.kind === 'remote' && project.source_root) {
+            allowedPrefix = project.source_root;
+          }
+        }
+      }
+
+      const safety = checkEditsSafety(patch.edits, {
+        ...(allowedPrefix ? { allowedPrefix } : {}),
+      });
       if (!safety.ok) throw new PrNotAllowedError(safety.reason);
 
       const explanation = repos.getExplanation(findingId);
@@ -222,7 +237,7 @@ export interface OpenPrEnv {
  */
 export function openPrFromEnv(
   env: OpenPrEnv,
-  deps: { repos: Repos },
+  deps: { repos: Repos; projectsRepo?: ProjectsRepo },
 ): ((findingId: string) => Promise<{ prUrl: string }>) | undefined {
   const token = env.GITHUB_TOKEN;
   const repoFull = env.GITHUB_REPO;
@@ -237,6 +252,7 @@ export function openPrFromEnv(
   return createOpenPr({
     github: createGitHubClient(token),
     repos: deps.repos,
+    projectsRepo: deps.projectsRepo,
     owner,
     repo,
     baseBranch,

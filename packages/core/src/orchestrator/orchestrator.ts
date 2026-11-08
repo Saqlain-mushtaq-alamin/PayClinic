@@ -119,7 +119,7 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
 
     if (result.patches.length === 0) {
       setFindingState(finding.id, 'unverified');
-      progress(finding.id, 'failed', 'No patches were returned');
+      progress(finding.id, 'failed', result.explanation?.fixSummary || 'No patches were returned');
       return;
     }
 

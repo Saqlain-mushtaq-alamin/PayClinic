@@ -13,6 +13,7 @@ import {
   FakeProvider,
   FixtureProvider,
   GeminiProvider,
+  fetchProjectSources,
   prescribe,
   type PrescribeDeps,
 } from '@payclinic/ai';
@@ -73,8 +74,8 @@ function createProvider(config: Config): AIProvider {
     case 'fake':
       return new FakeProvider({});
     case 'gemini':
-      if (config.geminiModel === undefined) {
-        throw new ConfigError('AI_PROVIDER=gemini requires GEMINI_MODEL');
+      if (!config.geminiApiKey || !config.geminiModel) {
+        throw new ConfigError('AI_PROVIDER=gemini requires GEMINI_API_KEY and GEMINI_MODEL');
       }
       return new GeminiProvider({
         apiKey: config.geminiApiKey,
@@ -114,16 +115,83 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
   const bus = new EventEmitter();
   const newId = () => randomUUID();
   const readSource = createSourceReader(REPO_ROOT);
-  const provider = createProvider(config);
-  const prescriberDeps: PrescribeDeps = {
-    provider,
-    readSource,
-    loadReferencePatch: createReferenceLoader(REPO_ROOT),
-    deriveDiff: (edits: PatchEdit[]) => derivePatchDiff(edits, readSource),
-    newId,
-    now: () => new Date().toISOString(),
+  const prescriber: Prescriber = async (finding, steps) => {
+    const currentConfig = getConfig();
+    const run = repos.getRun(finding.runId);
+    const projectId = run?.projectId ?? 'builtin';
+    const project = projectsRepo.getProject(projectId);
+    const isRemote = project?.kind === 'remote';
+
+    const geminiConfigured = Boolean(currentConfig.geminiApiKey && currentConfig.geminiModel);
+
+    if (currentConfig.aiProvider === 'gemini' && !geminiConfigured) {
+      if (isRemote) {
+        const message = 'Configure Gemini in Settings to get an AI fix';
+        return {
+          explanation: {
+            findingId: finding.id,
+            rootCause: message,
+            impact: message,
+            whereInCode: { file: '', hint: message },
+            fixSummary: message,
+            model: 'template',
+            createdAt: new Date().toISOString(),
+          },
+          patches: [],
+          message,
+        };
+      }
+      throw new ConfigError('AI_PROVIDER=gemini requires GEMINI_API_KEY and GEMINI_MODEL');
+    }
+
+    let sourceReader = readSource;
+    let sourceFiles: string[] | undefined;
+
+    if (isRemote && project) {
+      if (!geminiConfigured) {
+        const message = 'Configure Gemini in Settings to get an AI fix';
+        return {
+          explanation: {
+            findingId: finding.id,
+            rootCause: message,
+            impact: message,
+            whereInCode: { file: '', hint: message },
+            fixSummary: message,
+            model: 'template',
+            createdAt: new Date().toISOString(),
+          },
+          patches: [],
+          message,
+        };
+      }
+
+      const githubToken = settingsStore.get('githubToken') ?? process.env.GITHUB_TOKEN;
+      const sourceMap = await fetchProjectSources(project, finding, { token: githubToken });
+      sourceReader = (file: string) => {
+        const content = sourceMap.get(file);
+        if (content === undefined) {
+          throw new Error(`File not found in prefetched remote sources: ${file}`);
+        }
+        return content;
+      };
+      sourceFiles = Array.from(sourceMap.keys());
+    }
+
+    const provider = createProvider(currentConfig);
+    const prescriberDeps: PrescribeDeps = {
+      provider,
+      readSource: sourceReader,
+      loadReferencePatch: isRemote ? () => null : createReferenceLoader(REPO_ROOT),
+      deriveDiff: (edits: PatchEdit[]) => derivePatchDiff(edits, sourceReader),
+      newId,
+      now: () => new Date().toISOString(),
+      sourceFiles,
+      isRemote,
+      geminiConfigured,
+    };
+
+    return prescribe(prescriberDeps, finding, steps);
   };
-  const prescriber: Prescriber = (finding, steps) => prescribe(prescriberDeps, finding, steps);
   const storeSourceDir = join(REPO_ROOT, 'apps', 'buggy-store');
   const protector = createProtector({
     provider,

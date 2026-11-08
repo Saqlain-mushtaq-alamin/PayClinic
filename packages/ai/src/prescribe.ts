@@ -23,6 +23,9 @@ export interface PrescribeDeps {
   deriveDiff: (edits: PatchEdit[]) => string;
   newId: () => string;
   now: () => string;
+  sourceFiles?: string[];
+  isRemote?: boolean;
+  geminiConfigured?: boolean;
 }
 
 export class PrescribeError extends Error {
@@ -72,9 +75,34 @@ export async function prescribe(
   deps: PrescribeDeps,
   finding: Finding,
   steps: Step[],
-): Promise<{ explanation: Explanation; patches: Patch[] }> {
-  const reference = deps.loadReferencePatch(finding.scenarioKey);
-  const providerDeps = { provider: deps.provider, readSource: deps.readSource };
+): Promise<{ explanation: Explanation; patches: Patch[]; message?: string }> {
+  // Remote project without Gemini: return clear configure message
+  if (deps.isRemote && (!deps.geminiConfigured || deps.provider.name !== 'gemini')) {
+    const message = 'Configure Gemini in Settings to get an AI fix';
+    const explanation: Explanation = {
+      findingId: finding.id,
+      rootCause: message,
+      impact: message,
+      whereInCode: { file: '', hint: message },
+      fixSummary: message,
+      model: 'template',
+      createdAt: deps.now(),
+    };
+    return { explanation, patches: [], message };
+  }
+
+  // Builtin project with Gemini selected but not configured: never silently fall back
+  if (!deps.isRemote && deps.provider.name === 'gemini' && deps.geminiConfigured === false) {
+    throw new PrescribeError('Gemini is selected but not configured in Settings');
+  }
+
+  // For remote projects, disable reference patch and template fallback
+  const reference = deps.isRemote ? null : deps.loadReferencePatch(finding.scenarioKey);
+  const providerDeps = {
+    provider: deps.provider,
+    readSource: deps.readSource,
+    sourceFiles: deps.sourceFiles,
+  };
 
   let explainOutput: ExplainOutput | null = null;
   let explanation: Explanation;
@@ -88,6 +116,11 @@ export async function prescribe(
     };
   } catch (error) {
     if (!isAiFailure(error)) throw error;
+    if (deps.isRemote) {
+      throw new PrescribeError(
+        error instanceof Error ? error.message : 'AI explanation failed for remote project',
+      );
+    }
     explanation = templateExplanation(finding, reference, deps.now());
   }
 

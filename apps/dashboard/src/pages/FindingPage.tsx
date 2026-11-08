@@ -165,7 +165,18 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
 
           {detail.patch && (
             <Card className="finding-diff-card">
-              <h3 className="section-title">Proposed patch</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="section-title">Proposed patch</h3>
+                <span className="chip chip--neutral" data-testid="patch-model-chip">
+                  {detail.patch.source === 'template' ? (
+                    'Reference fix'
+                  ) : (
+                    <>
+                      AI: <span>{detail.patch.model ?? 'gemini'}</span>
+                    </>
+                  )}
+                </span>
+              </div>
               <UnifiedDiff diff={detail.patch.diff} />
             </Card>
           )}

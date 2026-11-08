@@ -32,7 +32,10 @@ export async function runServer(): Promise<void> {
   const runtime = buildRuntime(process.env);
   const distDir = join(repoRoot, 'apps', 'dashboard', 'dist');
   const staticDir = existsSync(join(distDir, 'index.html')) ? distDir : undefined;
-  const openPrFor = openPrFromEnv(process.env, { repos: runtime.repos });
+  const openPrFor = openPrFromEnv(process.env, {
+    repos: runtime.repos,
+    projectsRepo: runtime.projectsRepo,
+  });
   const app = createApi({
     orchestrator: runtime.orchestrator,
     repos: runtime.repos,

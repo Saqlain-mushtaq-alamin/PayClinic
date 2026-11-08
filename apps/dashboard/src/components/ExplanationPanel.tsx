@@ -19,7 +19,13 @@ export function ExplanationPanel({ explanation }: ExplanationPanelProps) {
       <p>{explanation.fixSummary}</p>
       <p>
         <span className="chip chip--neutral">
-          {explanation.model === 'template' ? 'Reference fix' : explanation.model}
+          {explanation.model === 'template' ? (
+            'Reference fix'
+          ) : (
+            <>
+              AI: <span>{explanation.model}</span>
+            </>
+          )}
         </span>
       </p>
     </section>

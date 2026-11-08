@@ -3,6 +3,7 @@ export * from './errors';
 export * from './eval';
 export * from './evidence';
 export * from './explain';
+export * from './github-sources';
 export * from './patch';
 export * from './prescribe';
 export * from './prompts';
