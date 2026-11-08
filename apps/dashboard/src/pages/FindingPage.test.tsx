@@ -116,6 +116,23 @@ describe('FindingPage', () => {
     expect(instances[0]!.url).toBe(`${API_BASE_URL}/api/runs/run-1/events`);
   });
 
+  it('clicking Prescribe once disables the button immediately', async () => {
+    const prescribePromise = new Promise<{ accepted: true }>(() => {});
+    const client: PageClient = {
+      getFinding: vi.fn(async () => open),
+      getRun: vi.fn(async () => run1),
+      prescribe: vi.fn(() => prescribePromise),
+    };
+    renderPage(client, FakeEventSource);
+
+    const btn = await screen.findByRole('button', { name: /prescribe/i });
+    expect(btn).toBeEnabled();
+
+    fireEvent.click(btn);
+    expect(btn).toBeDisabled();
+    expect(client.prescribe).toHaveBeenCalledTimes(1);
+  });
+
   it('advances the stepper as stage events arrive (P2-C03)', async () => {
     renderPage(
       {
@@ -178,5 +195,33 @@ describe('FindingPage', () => {
     expect(client.prescribe).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('stage-explaining')).toHaveAttribute('data-active', 'true');
     expect(instances).toHaveLength(2);
+  });
+
+  it('renders a back link to the run page and Open PR button for verified findings', async () => {
+    renderPage({
+      getFinding: async () => verified,
+      getRun: async () => run2,
+      prescribe: async () => ({ accepted: true }),
+    });
+
+    const backLink = await screen.findByRole('link', { name: /Back to run/i });
+    expect(backLink).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', `/runs/${verified.finding.runId}`);
+    expect(screen.getByTestId('open-pr-button')).toBeInTheDocument();
+  });
+
+  it('hides the Prescribe button for protected findings', async () => {
+    const protectedFinding: FindingDetail = {
+      ...open,
+      finding: { ...open.finding, state: 'protected' },
+    };
+    renderPage({
+      getFinding: async () => protectedFinding,
+      getRun: async () => run1,
+      prescribe: async () => ({ accepted: true }),
+    });
+
+    await screen.findByRole('heading', { name: protectedFinding.finding.title });
+    expect(screen.queryByRole('button', { name: /prescribe/i })).not.toBeInTheDocument();
   });
 });

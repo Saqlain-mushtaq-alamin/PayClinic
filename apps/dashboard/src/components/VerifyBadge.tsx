@@ -8,23 +8,13 @@ export function VerifyBadge({ verify }: VerifyBadgeProps) {
   if (!verify) return <span className="chip chip--neutral">—</span>;
 
   if (verify.verified) {
-    return (
-      <span
-        className="chip chip--ok"
-        style={{ color: 'var(--color-ok)', borderColor: 'var(--color-ok)' }}
-      >
-        Verified ✓ {formatDuration(verify.durationMs)}
-      </span>
-    );
+    return <span className="chip chip--ok">Verified ✓ {formatDuration(verify.durationMs)}</span>;
   }
 
   const lastLogLine = verify.log[verify.log.length - 1] ?? '';
 
   return (
-    <span
-      className="chip chip--warn"
-      style={{ color: 'var(--color-warn)', borderColor: 'var(--color-warn)' }}
-    >
+    <span className="chip chip--warn">
       <span>Not verified</span>
       {lastLogLine && <span>{lastLogLine}</span>}
     </span>

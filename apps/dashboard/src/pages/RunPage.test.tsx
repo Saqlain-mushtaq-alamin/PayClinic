@@ -112,6 +112,49 @@ describe('RunPage', () => {
     await waitFor(() => expect(getRun).toHaveBeenCalledTimes(2));
   });
 
+  it('live stream stays open after run.completed and triggers reload on a prescribe.progress done event', async () => {
+    let call = 0;
+    const getRun = vi.fn(async () => {
+      call++;
+      return {
+        ...detail,
+        run: {
+          ...detail.run,
+          status: call > 1 ? ('completed' as const) : ('running' as const),
+        },
+      };
+    });
+    renderPage({ getRun, prescribe: async () => ({ accepted: true }) }, FakeEventSource);
+    await screen.findByTestId('findings-grid');
+    const source = instances[0]!;
+
+    act(() => {
+      source.onopen?.({});
+    });
+
+    act(() => {
+      source.emit(
+        JSON.stringify({ type: 'run.completed', run: { ...detail.run, status: 'completed' } }),
+      );
+    });
+
+    expect(source.closed).toBe(false);
+
+    act(() => {
+      source.emit(
+        JSON.stringify({
+          type: 'prescribe.progress',
+          findingId: 'fnd-run-1-1',
+          stage: 'done',
+          message: 'Patch verified',
+        }),
+      );
+    });
+
+    await waitFor(() => expect(getRun).toHaveBeenCalledTimes(2));
+    expect(source.closed).toBe(false);
+  });
+
   it('posts one prescribe at a time, in order, for Fix all (P2-C03)', async () => {
     const gates = [deferred(), deferred(), deferred()];
     const prescribe = vi.fn((id: string) => gates[Number(id.slice(-1)) - 1]!.promise);
@@ -157,5 +200,21 @@ describe('RunPage', () => {
 
     expect(await screen.findByText(/prescribe blew up/)).toBeInTheDocument();
     expect(prescribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows an error state with run.error when the run failed', async () => {
+    const failedRun: RunDetail = {
+      ...detail,
+      run: {
+        ...detail.run,
+        status: 'failed',
+        error: 'Simulator crashed unexpectedly',
+      },
+    };
+    renderPage({ getRun: async () => failedRun, prescribe: async () => ({ accepted: true }) });
+
+    expect(
+      await screen.findByText('Run failed: Simulator crashed unexpectedly'),
+    ).toBeInTheDocument();
   });
 });

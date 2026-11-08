@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import type { Step } from '@payclinic/contracts';
-import { describeStep, orderSteps, type StepTone } from '../lib/trace';
+import { describeStep, orderSteps } from '../lib/trace';
 
 export interface TraceTimelineProps {
   steps: Step[];
   evidenceStepIds: string[];
 }
-
-const TONE_COLOR: Record<StepTone, string> = {
-  ok: 'var(--color-ok)',
-  warn: 'var(--color-warn)',
-  error: 'var(--color-danger)',
-};
 
 export function TraceTimeline({ steps, evidenceStepIds }: TraceTimelineProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -19,17 +13,19 @@ export function TraceTimeline({ steps, evidenceStepIds }: TraceTimelineProps) {
   const ordered = orderSteps(steps);
 
   return (
-    <ul className="timeline">
-      {ordered.map((step) => (
-        <TraceRow
-          key={step.id}
-          step={step}
-          isEvidence={evidence.has(step.id)}
-          isOpen={openId === step.id}
-          onToggle={() => setOpenId((current) => (current === step.id ? null : step.id))}
-        />
-      ))}
-    </ul>
+    <div className="timeline-container">
+      <ul className="timeline">
+        {ordered.map((step) => (
+          <TraceRow
+            key={step.id}
+            step={step}
+            isEvidence={evidence.has(step.id)}
+            isOpen={openId === step.id}
+            onToggle={() => setOpenId((current) => (current === step.id ? null : step.id))}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -45,101 +41,32 @@ function TraceRow(props: {
   return (
     <li
       data-testid={`timeline-row-${step.id}`}
-      className="timeline__item"
-      style={{
-        position: 'relative',
-        paddingLeft: '1rem',
-        borderLeft: `4px solid ${isEvidence ? 'var(--color-accent)' : 'transparent'}`,
-        margin: 'none',
-      }}
+      className={`timeline__item timeline__item--${described.tone} ${isEvidence ? 'timeline__item--evidence' : ''}`}
       aria-current={isEvidence ? 'true' : undefined}
     >
+      <div className={`timeline__dot timeline__dot--${described.tone}`} />
       <button
         type="button"
         className="timeline__row"
         data-testid="timeline-row"
         onClick={onToggle}
         aria-expanded={isOpen}
-        style={{
-          width: '100%',
-          background: 'transparent',
-          color: 'var(--color-text)',
-          cursor: 'pointer',
-          padding: '0.4rem 0.6rem',
-          font: 'inherit',
-          textAlign: 'left',
-          borderRadius: 'var(--radius-sm)',
-          gap: '0.6rem',
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }}
       >
-        <span className="timeline__actor" style={{ minWidth: '7ch', fontWeight: 600 }}>
-          {described.actorLabel}
-        </span>
-        <span style={{ flex: 1 }}>{described.title}</span>
-        <span
-          className={`chip chip--${described.tone}`}
-          style={{
-            color: TONE_COLOR[described.tone],
-            border: `1px solid ${TONE_COLOR[described.tone]}`,
-            borderRadius: 'var(--radius-pill)',
-            padding: '0.1rem 0.4rem',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-          }}
-        >
-          {described.chip}
-        </span>
-        {step.paypalDebugId && (
-          <span
-            className="chip timeline__debug"
-            style={{
-              color: 'var(--color-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-pill)',
-              padding: '0.1rem 0.4rem',
-              fontSize: '0.7rem',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-            }}
-          >
-            {step.paypalDebugId}
-          </span>
-        )}
+        <span className="timeline__actor">{described.actorLabel}</span>
+        <span className="timeline__title">{described.title}</span>
+        <span className={`chip chip--${described.tone}`}>{described.chip}</span>
+        {step.paypalDebugId && <span className="chip timeline__debug">{step.paypalDebugId}</span>}
       </button>
       {isOpen && (
-        <div className="timeline__details" style={{ padding: '0 0 0.6rem 1rem' }}>
-          <pre
-            className="timeline__body"
-            style={{
-              font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-              background: 'var(--color-surface-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.5rem',
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--color-text)',
-            }}
-          >
-            {formatBody(step.requestBody)}
-          </pre>
-          <pre
-            className="timeline__body"
-            style={{
-              font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-              background: 'var(--color-surface-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.5rem',
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--color-text)',
-            }}
-          >
-            {formatBody(step.responseBody)}
-          </pre>
+        <div className="timeline__details">
+          <div className="timeline__pane">
+            <span className="timeline__pane-label">Request</span>
+            <pre className="timeline__body">{formatBody(step.requestBody)}</pre>
+          </div>
+          <div className="timeline__pane">
+            <span className="timeline__pane-label">Response</span>
+            <pre className="timeline__body">{formatBody(step.responseBody)}</pre>
+          </div>
         </div>
       )}
     </li>

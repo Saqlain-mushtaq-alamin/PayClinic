@@ -17,21 +17,29 @@ function useAsync<T>(load: () => Promise<T>, keys: readonly unknown[]): AsyncSta
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const reload = useCallback(() => setTick((value) => value + 1), []);
+  const lastJsonRef = useRef<string>('');
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    // Silent reload: only set loading=true on initial fetch when data is null
+    if (data === null) {
+      setLoading(true);
+    }
     setError(null);
     loadRef
       .current()
       .then((value) => {
         if (!active) return;
-        setData(value);
+        const json = JSON.stringify(value);
+        if (json !== lastJsonRef.current) {
+          lastJsonRef.current = json;
+          setData(value);
+        }
         setLoading(false);
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setData(null);
+        if (data === null) setData(null);
         setError(reason instanceof Error ? reason : new Error(String(reason)));
         setLoading(false);
       });

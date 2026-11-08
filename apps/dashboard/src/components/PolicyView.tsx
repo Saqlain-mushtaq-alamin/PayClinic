@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Check, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Policy } from '@payclinic/contracts';
 import { Button } from './ui/Button';
 
@@ -38,30 +40,41 @@ export function PolicyView({ policy, yaml }: PolicyViewProps) {
     navigator.clipboard.writeText(yaml).then(
       () => {
         setCopied(true);
+        toast.success('Copied ✓');
+        setTimeout(() => setCopied(false), 2000);
       },
       () => undefined,
     );
   };
 
+  const yamlLines = yaml.split('\n');
+
   return (
     <div className="policy-view" data-testid="policy-view">
-      <h2>Spending-firewall policy</h2>
-      <pre
-        className="policy-view__yaml"
-        data-testid="policy-yaml"
-        style={{
-          font: '0.8rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-          background: 'var(--color-surface-muted)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-sm)',
-          padding: '0.6rem',
-          overflowX: 'auto',
-          whiteSpace: 'pre-wrap',
-        }}
-      >
-        {yaml}
-      </pre>
-      <Button onClick={copy}>{copied ? 'Copied' : 'Copy'}</Button>
+      <div className="policy-view__header">
+        <h3 className="policy-view__title">Spending-firewall policy</h3>
+        <Button variant="secondary" onClick={copy} className="policy-view__copy-btn">
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          <span>{copied ? 'Copied ✓' : 'Copy'}</span>
+        </Button>
+      </div>
+
+      <div className="code-card">
+        <div className="code-card__header">
+          <span className="code-card__filename">policy.yaml</span>
+        </div>
+        <div className="code-card__content">
+          <div className="code-card__line-numbers" aria-hidden="true">
+            {yamlLines.map((_, i) => (
+              <span key={i}>{i + 1}</span>
+            ))}
+          </div>
+          <pre className="code-card__code" data-testid="policy-yaml">
+            {yaml}
+          </pre>
+        </div>
+      </div>
+
       <table className="policy-view__rules">
         <thead>
           <tr>
@@ -75,9 +88,15 @@ export function PolicyView({ policy, yaml }: PolicyViewProps) {
             const value = rule.value(policy);
             return (
               <tr key={rule.id} data-testid={`rule-${rule.id}`}>
-                <td>{rule.id}</td>
+                <td>
+                  <span className="chip badge--neutral">{rule.id}</span>
+                </td>
                 <td>{rule.label}</td>
-                <td>{value ?? 'not set'}</td>
+                <td>
+                  <strong className={value ? 'text-accent' : 'text-muted'}>
+                    {value ?? 'not set'}
+                  </strong>
+                </td>
               </tr>
             );
           })}

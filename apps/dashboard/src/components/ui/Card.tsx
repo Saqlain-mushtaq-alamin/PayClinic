@@ -3,9 +3,14 @@ import type { ReactNode } from 'react';
 export interface CardProps {
   children: ReactNode;
   className?: string;
+  id?: string;
 }
 
-export function Card({ children, className }: CardProps) {
+export function Card({ children, className, id }: CardProps) {
   const classes = ['card', className].filter(Boolean).join(' ');
-  return <section className={classes}>{children}</section>;
+  return (
+    <section id={id} className={classes}>
+      {children}
+    </section>
+  );
 }

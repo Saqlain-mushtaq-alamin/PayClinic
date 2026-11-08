@@ -48,12 +48,13 @@ export function ScoreGauge({ score, scoreBefore, scoreAfter }: ScoreGaugeProps) 
     return () => window.cancelAnimationFrame(frame);
   }, [score]);
 
+  const tone = score >= 80 ? 'ok' : score >= 50 ? 'warn' : 'bad';
   const showChange = scoreBefore !== undefined && scoreAfter !== undefined;
   const safeScore = Math.max(0, Math.min(100, displayed));
   const offset = CIRCUMFERENCE * (1 - safeScore / 100);
 
   return (
-    <div className="score-gauge" data-testid="score-gauge">
+    <div className={`score-gauge score-gauge--${tone}`} data-testid="score-gauge">
       <svg
         className="score-gauge__ring"
         viewBox="0 0 120 120"
@@ -80,6 +81,7 @@ export function ScoreGauge({ score, scoreBefore, scoreAfter }: ScoreGaugeProps) 
           {displayed}
         </text>
       </svg>
+      <span className="score-gauge__label">Payment Safety Score</span>
       {showChange && (
         <span className="score-gauge__change">
           {scoreBefore} &rarr; {scoreAfter}

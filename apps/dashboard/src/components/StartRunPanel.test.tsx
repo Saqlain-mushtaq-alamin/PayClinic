@@ -87,4 +87,25 @@ describe('StartRunPanel', () => {
     expect(await screen.findByText(/buying is offline/i)).toBeInTheDocument();
     expect(screen.queryByText('Run page reached')).not.toBeInTheDocument();
   });
+
+  it('switches target to agent and starts an agent run', async () => {
+    const client = makeClient();
+    renderPanel(client);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Agent attacks' }));
+
+    expect(await screen.findByRole('checkbox', { name: /A1/ })).toBeChecked();
+    expect(screen.queryByRole('checkbox', { name: /B1/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Diagnose/i }));
+
+    await waitFor(() =>
+      expect(client.createRun).toHaveBeenCalledWith({
+        target: 'agent',
+        mode: 'offline',
+        scenarios: ['A1'],
+      }),
+    );
+    expect(await screen.findByText('Run page reached')).toBeInTheDocument();
+  });
 });

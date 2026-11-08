@@ -124,6 +124,17 @@ describe('TraceReplay', () => {
     expect(screen.getAllByTestId('timeline-row')).toHaveLength(2);
   });
 
+  it('does not hijack space when an inner element is focused', () => {
+    render(<TraceReplay steps={steps} evidenceStepIds={[]} verdict="done" />);
+    const stepButton = screen.getByRole('button', { name: 'Step' });
+
+    // Firing space on an inner button bubbles up, but event.target !== event.currentTarget
+    fireEvent.keyDown(stepButton, { key: ' ' });
+    act(() => vi.advanceTimersByTime(1000));
+    // Since play was not toggled, no new rows are advanced by interval timer
+    expect(screen.queryByTestId('timeline-row')).not.toBeInTheDocument();
+  });
+
   it('scrolls the current row into view without animation under reduced motion', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
