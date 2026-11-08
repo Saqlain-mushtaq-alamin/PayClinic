@@ -44,7 +44,13 @@ export interface FindingsGridProps {
 
 export function FindingsGrid({ runId, findings }: FindingsGridProps) {
   const navigate = useNavigate();
-  const rows = useMemo(() => toFindingRows(findings), [findings]);
+
+  // Stable content signature prevents recreating rows array on every silent fetch
+  const signature = useMemo(
+    () => findings.map((f) => `${f.id}:${f.state}:${f.severity}:${f.title}`).join('|'),
+    [findings],
+  );
+  const rows = useMemo(() => toFindingRows(findings), [findings, signature]);
 
   const onRowClicked = (event: RowClickedEvent<FindingRow>) => {
     if (!event.data) return;
@@ -59,6 +65,7 @@ export function FindingsGrid({ runId, findings }: FindingsGridProps) {
         rowStyle={{ cursor: 'pointer' }}
         overlayNoRowsTemplate="No findings: every checked invariant passed 🎉"
         rowData={rows}
+        getRowId={(p) => p.data.id}
         columnDefs={columnDefs}
         defaultColDef={{ sortable: true, resizable: true }}
         onRowClicked={onRowClicked}

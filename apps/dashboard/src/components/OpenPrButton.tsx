@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type ApiClient } from '../api/client';
 import { Button } from './ui/Button';
+import { Spinner } from './ui/Spinner';
 
 export interface OpenPrButtonProps {
   findingId: string;
@@ -49,7 +50,15 @@ export function OpenPrButton({ findingId, client = api }: OpenPrButtonProps) {
         disabled={disabled}
         title={state.kind === 'reason' ? state.message : undefined}
       >
-        {state.kind === 'opening' ? 'Opening…' : state.kind === 'error' ? 'Retry' : 'Open PR'}
+        {state.kind === 'opening' ? (
+          <>
+            <Spinner label="" /> Opening…
+          </>
+        ) : state.kind === 'error' ? (
+          'Retry'
+        ) : (
+          'Open PR'
+        )}
       </Button>
       {state.kind === 'opened' && (
         <a data-testid="open-pr-link" href={state.url} target="_blank" rel="noreferrer">

@@ -22,28 +22,51 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const { data: scenarios, loading: scenariosLoading } = useScenarios(injectedClient);
   const { data: health } = useHealth(injectedClient);
   const [target, setTarget] = useState<RunTarget>('store');
-  const [checked, setChecked] = useState<Set<string> | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
 
+  // Guard to ensure checkbox state is independent of scenarios array identity
+  const userToggledRef = useRef<Set<string>>(new Set());
+  const initializedTargetsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
-    if (scenarios)
+    if (scenarios && !initializedTargetsRef.current.has(target)) {
+      initializedTargetsRef.current.add(target);
+      if (!userToggledRef.current.has(target)) {
+        setChecked(
+          new Set(
+            scenarios
+              .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+              .map((s) => s.key),
+          ),
+        );
+      }
+    }
+  }, [scenarios, target]);
+
+  const selectTarget = (nextTarget: RunTarget) => {
+    if (nextTarget === target) return;
+    setTarget(nextTarget);
+    if (scenarios && !userToggledRef.current.has(nextTarget)) {
+      initializedTargetsRef.current.add(nextTarget);
       setChecked(
         new Set(
           scenarios
-            .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+            .filter((s) => s.target === nextTarget && !(nextTarget === 'store' && s.key === 'B6'))
             .map((s) => s.key),
         ),
       );
-  }, [scenarios, target]);
+    }
+  };
 
-  const effectiveChecked =
-    checked ??
-    new Set(
-      (scenarios ?? [])
-        .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
-        .map((s) => s.key),
-    );
+  const effectiveChecked = userToggledRef.current.has(target)
+    ? checked
+    : new Set(
+        (scenarios ?? [])
+          .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+          .map((s) => s.key),
+      );
 
   const mode: RunMode | undefined = health?.mode;
   const canStart = Boolean(scenarios && mode) && !posting && effectiveChecked.size > 0;
@@ -51,6 +74,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const onDiagnose = useCallback(async () => {
     const list: ScenarioInfo[] | null = scenarios;
     if (!list || !mode || posting) return; // never post without the health mode label
+    // Immediate optimistic state before awaiting network call
     setPosting(true);
     setPostError(null);
     try {
@@ -76,19 +100,13 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
       <div role="group" aria-label="Target">
         <Button
           variant={target === 'store' ? 'primary' : 'secondary'}
-          onClick={() => {
-            setTarget('store');
-            setChecked(null);
-          }}
+          onClick={() => selectTarget('store')}
         >
           Store bugs
         </Button>{' '}
         <Button
           variant={target === 'agent' ? 'primary' : 'secondary'}
-          onClick={() => {
-            setTarget('agent');
-            setChecked(null);
-          }}
+          onClick={() => selectTarget('agent')}
         >
           Agent attacks
         </Button>
@@ -105,7 +123,9 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
                   checked={effectiveChecked.has(scenario.key)}
                   onChange={() =>
                     setChecked((current) => {
-                      const next = new Set(current ?? effectiveChecked);
+                      const base = userToggledRef.current.has(target) ? current : effectiveChecked;
+                      userToggledRef.current.add(target);
+                      const next = new Set(base);
                       if (next.has(scenario.key)) next.delete(scenario.key);
                       else next.add(scenario.key);
                       return next;
@@ -118,7 +138,13 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
           ))}
       </ul>
       <Button aria-label="Diagnose" onClick={onDiagnose} disabled={!canStart}>
-        {posting ? 'Starting…' : 'Diagnose'}
+        {posting ? (
+          <>
+            <Spinner label="" /> Starting…
+          </>
+        ) : (
+          'Diagnose'
+        )}
       </Button>
       {postError && (
         <p className="start-run__error" role="alert">

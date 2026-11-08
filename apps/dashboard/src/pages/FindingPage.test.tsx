@@ -116,6 +116,23 @@ describe('FindingPage', () => {
     expect(instances[0]!.url).toBe(`${API_BASE_URL}/api/runs/run-1/events`);
   });
 
+  it('clicking Prescribe once disables the button immediately', async () => {
+    const prescribePromise = new Promise<{ accepted: true }>(() => {});
+    const client: PageClient = {
+      getFinding: vi.fn(async () => open),
+      getRun: vi.fn(async () => run1),
+      prescribe: vi.fn(() => prescribePromise),
+    };
+    renderPage(client, FakeEventSource);
+
+    const btn = await screen.findByRole('button', { name: /prescribe/i });
+    expect(btn).toBeEnabled();
+
+    fireEvent.click(btn);
+    expect(btn).toBeDisabled();
+    expect(client.prescribe).toHaveBeenCalledTimes(1);
+  });
+
   it('advances the stepper as stage events arrive (P2-C03)', async () => {
     renderPage(
       {

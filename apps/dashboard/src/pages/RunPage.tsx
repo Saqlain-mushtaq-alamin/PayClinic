@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { RunEvent } from '@payclinic/contracts';
 import { useRun } from '../api/hooks';
-import { useRunEvents, type RunEventSourceCtor } from '../api/useRunEvents';
+import { useLiveRun } from '../api/useLiveRun';
+import type { RunEventSourceCtor } from '../api/useRunEvents';
 import { api, type ApiClient } from '../api/client';
 import { AgentRunSection } from './AgentRunSection';
 import { FindingsGrid } from '../components/FindingsGrid';
@@ -42,52 +43,104 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
   clientRef.current = client;
   const { id = '' } = useParams();
   const { data, error, loading, reload } = useRun(id, client);
-  const { events } = useRunEvents(id, { eventSourceCtor });
   const [fixing, setFixing] = useState(false);
+  const [fixingIndex, setFixingIndex] = useState<number | null>(null);
   const [fixError, setFixError] = useState<string | null>(null);
-  const [watching, setWatching] = useState(false);
 
-  const runDone = events.some((e) => e.type === 'run.completed' || e.type === 'run.failed');
-  const status = data?.run.status;
-  useEffect(() => {
-    if (runDone && (status === 'queued' || status === 'running')) reload();
-  }, [runDone, status, reload]);
+  const pendingPrescribesRef = useRef<Map<string, () => void>>(new Map());
+  const reloadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debouncedReload = useCallback(() => {
+    if (reloadDebounceRef.current) clearTimeout(reloadDebounceRef.current);
+    reloadDebounceRef.current = setTimeout(() => {
+      reload();
+    }, 300);
+  }, [reload]);
+
+  const onLiveEvent = useCallback(
+    (event: RunEvent) => {
+      // Unblock sequential Fix all when done or failed arrives for a finding
+      if (
+        event.type === 'prescribe.progress' &&
+        (event.stage === 'done' || event.stage === 'failed')
+      ) {
+        const resolver = pendingPrescribesRef.current.get(event.findingId);
+        if (resolver) {
+          pendingPrescribesRef.current.delete(event.findingId);
+          resolver();
+        }
+      }
+
+      // Live event driven reload with debounce
+      const shouldReload =
+        event.type === 'finding.created' ||
+        event.type === 'score.updated' ||
+        event.type === 'scenario.finished' ||
+        event.type === 'run.completed' ||
+        event.type === 'run.failed' ||
+        (event.type === 'prescribe.progress' &&
+          (event.stage === 'done' || event.stage === 'failed')) ||
+        (event.type === 'finding.updated' && event.finding.state === 'protected');
+
+      if (shouldReload) {
+        debouncedReload();
+      }
+    },
+    [debouncedReload],
+  );
+
+  const { events, connection } = useLiveRun(id, {
+    eventSourceCtor,
+    onEvent: onLiveEvent,
+  });
 
   const openFindings = (data?.findings ?? []).filter((finding) => finding.state === 'open');
+  const status = data?.run.status;
+  const isBusy = status === 'queued' || status === 'running' || fixing;
 
+  // Fallback poll every 5s ONLY while connection !== 'live' and a run/prescribe is in progress
   useEffect(() => {
-    if (!watching) return;
-    if (openFindings.length === 0) {
-      setWatching(false);
-      return;
-    }
-    const t = setInterval(reload, 2000);
-    const stop = setTimeout(() => setWatching(false), 180_000);
-    return () => {
-      clearInterval(t);
-      clearTimeout(stop);
-    };
-  }, [watching, openFindings.length, reload]);
+    if (connection === 'live' || !isBusy) return;
+    const timer = setInterval(() => {
+      reload();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [connection, isBusy, reload]);
 
   const fixAll = useCallback(async () => {
-    if (fixing) return;
+    if (fixing || openFindings.length === 0) return;
     setFixing(true);
     setFixError(null);
     try {
-      // Note: prescribe returns 202 Accepted immediately.
-      // If ordering matters for patching the same store, queue them in the orchestrator,
-      // or wait for each finding to leave the open state before starting the next.
-      for (const finding of openFindings) {
+      for (let i = 0; i < openFindings.length; i++) {
+        const finding = openFindings[i]!;
+        setFixingIndex(i);
+
+        // Optimistically post prescribe
         await clientRef.current.prescribe(finding.id);
+
+        // Truly sequential: wait for prescribe.progress done or failed when SSE stream is active
+        if (connection === 'live' || eventSourceCtor) {
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              clearTimeout(timer);
+              pendingPrescribesRef.current.delete(finding.id);
+              resolve();
+            };
+            const timer = setTimeout(done, 120_000);
+            pendingPrescribesRef.current.set(finding.id, done);
+          });
+        }
       }
-      setWatching(true);
       reload();
     } catch (reason: unknown) {
       setFixError(reason instanceof Error ? reason.message : String(reason));
     } finally {
       setFixing(false);
+      setFixingIndex(null);
+      pendingPrescribesRef.current.clear();
     }
-  }, [fixing, openFindings, reload]);
+  }, [connection, eventSourceCtor, fixing, openFindings, reload]);
 
   if (loading && !data) return <Spinner label="Loading run..." />;
   if (error)
@@ -124,8 +177,18 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
         )}
         {openFindings.length > 0 && (
           <div className="run-page__fixall">
-            <Button onClick={fixAll} disabled={fixing}>
-              {fixing ? 'Fixing…' : 'Fix all'}
+            <Button
+              aria-label={
+                fixing && fixingIndex !== null
+                  ? `Fixing ${fixingIndex + 1} of ${openFindings.length}…`
+                  : 'Fix all'
+              }
+              onClick={fixAll}
+              disabled={fixing}
+            >
+              {fixing && fixingIndex !== null
+                ? `Fixing ${fixingIndex + 1} of ${openFindings.length}…`
+                : 'Fix all'}
             </Button>
             {fixError && <p role="alert">{fixError}</p>}
           </div>

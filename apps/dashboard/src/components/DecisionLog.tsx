@@ -27,7 +27,11 @@ const columnDefs: ColDef<DecisionRow>[] = [
 
 /** The firewall decision log: count summary plus one grid row per decision. */
 export function DecisionLog({ decisions }: { decisions: FirewallDecision[] }) {
-  const rows = useMemo(() => toDecisionRows(decisions), [decisions]);
+  const signature = useMemo(
+    () => decisions.map((d) => `${d.id}:${d.action}:${d.ruleId}`).join('|'),
+    [decisions],
+  );
+  const rows = useMemo(() => toDecisionRows(decisions), [decisions, signature]);
   const summary = useMemo(() => summarizeDecisions(decisions), [decisions]);
 
   return (
@@ -38,6 +42,7 @@ export function DecisionLog({ decisions }: { decisions: FirewallDecision[] }) {
           theme={gridTheme}
           domLayout="autoHeight"
           rowData={rows}
+          getRowId={(p) => p.data.id}
           columnDefs={columnDefs}
           defaultColDef={{ sortable: true, resizable: true }}
           // Blocked attempts are the money-losing rows: tint them red.

@@ -13,6 +13,18 @@ describe('PrescribeButton', () => {
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
+  it('clicking Prescribe once disables the button immediately', () => {
+    const onStart = vi.fn();
+    render(<PrescribeButton stage="idle" message={null} onStart={onStart} />);
+
+    const button = screen.getByRole('button', { name: /prescribe/i });
+    expect(button).toBeEnabled();
+
+    fireEvent.click(button);
+    expect(button).toBeDisabled();
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
   it('is disabled while a stage is running (P2-C03)', () => {
     render(<PrescribeButton stage="verifying" message={null} onStart={vi.fn()} />);
 
