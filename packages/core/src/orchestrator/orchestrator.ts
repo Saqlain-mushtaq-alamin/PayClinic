@@ -11,6 +11,7 @@ import type {
 import { startSim } from '@payclinic/sim';
 import type { ProjectRow } from '../db/projects-repo';
 import { computeScore } from '../score';
+import { executeScenarios } from '../runner/execute-scenarios';
 import { runDiagnose } from '../runner/diagnose';
 import { defaultChildRegistry } from '../runner/child-registry';
 import { createVerify } from '../verify/verify';
@@ -120,6 +121,18 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     if (result.patches.length === 0) {
       setFindingState(finding.id, 'unverified');
       progress(finding.id, 'failed', result.explanation?.fixSummary || 'No patches were returned');
+      return;
+    }
+
+    const project = run.projectId ? deps.projectsRepo?.getProject(run.projectId) : null;
+    const isRemote = project?.kind === 'remote';
+
+    if (isRemote) {
+      for (const patch of result.patches) {
+        deps.repos.insertPatch(patch);
+      }
+      setFindingState(finding.id, 'patched');
+      progress(finding.id, 'done', 'Patch generated. Needs review.');
       return;
     }
 
@@ -291,10 +304,90 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     emit({ type: 'score.updated', score });
   };
 
+  const retest = async (
+    projectId: string,
+    runId: string,
+  ): Promise<{ ok: boolean; score: number; findings: Finding[] }> => {
+    const project = deps.projectsRepo?.getProject(projectId);
+    if (!project) throw new Error(`Project ${projectId} not found`);
+
+    const run = deps.repos.getRun(runId);
+    if (!run) throw new Error(`Run ${runId} not found`);
+
+    deps.repos.updateRun(run.id, { status: 'running' });
+
+    try {
+      const simUrl = await getSimUrl();
+      const result = await executeScenarios(
+        {
+          scenarios: deps.scenarios,
+          repoRoot: deps.repoRoot,
+          storeSourceDir: deps.storeSourceDir,
+          newId: deps.newId,
+          now: deps.now,
+          simUrl,
+          project:
+            project.kind === 'remote'
+              ? {
+                  id: project.id,
+                  name: project.name,
+                  kind: project.kind,
+                  baseUrl: project.baseUrl,
+                  base_url: project.baseUrl,
+                  adminSecretEncrypted: project.adminSecretEncrypted,
+                  admin_secret_encrypted: project.adminSecretEncrypted,
+                  proxyToken: project.proxyToken,
+                  proxy_token: project.proxyToken,
+                }
+              : undefined,
+          repos: deps.repos,
+        },
+        {
+          target: run.target,
+          mode: run.mode,
+          scenarios: run.scenarioKeys,
+          runId: run.id,
+        },
+      );
+
+      const priorFindings = deps.repos.listFindings(run.id);
+      for (const prior of priorFindings) {
+        const stillFailing = result.findings.some(
+          (f) => f.scenarioKey === prior.scenarioKey && f.invariantKey === prior.invariantKey,
+        );
+        if (!stillFailing) {
+          setFindingState(prior.id, 'verified');
+        }
+      }
+
+      const updatedFindings = deps.repos.listFindings(run.id);
+      const score = computeScore(updatedFindings);
+      deps.repos.updateRun(run.id, {
+        status: 'completed',
+        completedAt: deps.now().toISOString(),
+        scoreAfter: score.score,
+      });
+      emit({ type: 'score.updated', score });
+
+      return { ok: true, score: score.score, findings: updatedFindings };
+    } finally {
+      const current = deps.repos.getRun(run.id);
+      if (current && current.status === 'running') {
+        const score = computeScore(deps.repos.listFindings(run.id));
+        deps.repos.updateRun(run.id, {
+          status: 'completed',
+          completedAt: deps.now().toISOString(),
+          scoreAfter: score.score,
+        });
+      }
+    }
+  };
+
   return {
     startRun,
     prescribe,
     protect,
+    retest,
     idle: () => Promise.all([tail, prescribeChain]).then(() => undefined),
     getSimUrl,
   };

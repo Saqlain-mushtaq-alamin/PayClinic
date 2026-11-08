@@ -37,10 +37,17 @@ export interface OrchestratorDeps {
   runTimeoutMs?: number;
 }
 
+export interface RetestResult {
+  ok: boolean;
+  score: number;
+  findings: Finding[];
+}
+
 export interface Orchestrator {
   startRun(req: RunCreateRequest): string;
   prescribe(findingId: string): Promise<void>;
   protect(runId: string): Promise<void>;
+  retest?(projectId: string, runId: string): Promise<RetestResult>;
   idle(): Promise<void>;
   getSimUrl?: () => Promise<string>;
 }

@@ -15,6 +15,7 @@ import {
   TestSettingsResponse,
   Project,
   AdapterCheckItem,
+  Finding,
   type ProjectCreateRequest,
   type ProjectUpdateRequest,
   type FirewallDecision,
@@ -66,6 +67,24 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface RetestResponse {
+  ok: boolean;
+  score: number;
+  findings: Finding[];
+}
+
+const RetestResultSchema: Schema<RetestResponse> = {
+  parse(value) {
+    if (typeof value !== 'object' || value === null) throw new Error('invalid retest response');
+    const v = value as { ok?: unknown; score?: unknown; findings?: unknown };
+    return {
+      ok: Boolean(v.ok),
+      score: Number(v.score ?? 0),
+      findings: Finding.array().parse(v.findings ?? []),
+    };
+  },
+};
+
 const Ok: Schema<OkResponse> = {
   parse(value) {
     if (
@@ -111,6 +130,7 @@ export interface ApiClient {
   updateProject(id: string, updates: ProjectUpdateRequest): Promise<Project>;
   deleteProject(id: string): Promise<OkResponse>;
   checkProject(id: string): Promise<AdapterCheckItem[]>;
+  retestProject(projectId: string, runId: string): Promise<RetestResponse>;
 }
 
 /**
@@ -194,6 +214,13 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     deleteProject: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`, Ok),
     checkProject: (id) =>
       request('POST', `/api/projects/${encodeURIComponent(id)}/check`, AdapterCheckItem.array()),
+    retestProject: (projectId, runId) =>
+      request(
+        'POST',
+        `/api/projects/${encodeURIComponent(projectId)}/retest`,
+        RetestResultSchema,
+        { runId },
+      ),
   };
 }
 

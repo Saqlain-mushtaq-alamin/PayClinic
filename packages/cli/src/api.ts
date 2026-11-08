@@ -707,6 +707,34 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     return send(reply, AdapterCheckResponse, checklist);
   });
 
+  app.post('/api/projects/:id/retest', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const project = projectsRepo.getProject(id);
+    if (!project) return notFound(reply);
+
+    const body = request.body as { runId?: string } | undefined;
+    const runId = body?.runId;
+    if (!runId) {
+      return reply.code(400).send({ error: 'runId is required' });
+    }
+
+    const run = repos.getRun(runId);
+    if (!run) return notFound(reply);
+
+    if (deps.orchestrator.retest) {
+      try {
+        const result = await deps.orchestrator.retest(id, runId);
+        return reply.code(200).send(result);
+      } catch (error) {
+        return reply
+          .code(500)
+          .send({ error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+
+    return reply.code(501).send({ error: 'retest not implemented' });
+  });
+
   app.get('/api/docs/connect-your-site', async (_request, reply) => {
     const docPath = resolve(process.cwd(), 'docs/CONNECT-YOUR-SITE.md');
     if (!existsSync(docPath)) {

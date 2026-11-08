@@ -50,6 +50,11 @@ function stateTone(state: string): BadgeTone {
   }
 }
 
+function stateLabel(state: string): string {
+  if (state === 'patched') return 'Needs review';
+  return state;
+}
+
 export function FindingPage({ client: injectedClient, eventSourceCtor }: FindingPageProps) {
   const client = injectedClient ?? api;
   const clientRef = useRef(client);
@@ -58,6 +63,7 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prUrl, setPrUrl] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const reload = useCallback(() => setTick((value) => value + 1), []);
   const { fid = '' } = useParams();
@@ -134,7 +140,7 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
             <h1 className="finding-header__title">{detail.finding.title}</h1>
             <div className="finding-header__badges">
               <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
-              <Badge tone={stateTone(detail.finding.state)}>{detail.finding.state}</Badge>
+              <Badge tone={stateTone(detail.finding.state)}>{stateLabel(detail.finding.state)}</Badge>
               <VerifyBadge verify={detail.verify} />
             </div>
           </div>

@@ -35,6 +35,7 @@ export async function runServer(): Promise<void> {
   const openPrFor = openPrFromEnv(process.env, {
     repos: runtime.repos,
     projectsRepo: runtime.projectsRepo,
+    settingsStore: runtime.settingsStore,
   });
   const app = createApi({
     orchestrator: runtime.orchestrator,
