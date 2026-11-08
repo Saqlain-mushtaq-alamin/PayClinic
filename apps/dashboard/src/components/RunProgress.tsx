@@ -227,7 +227,7 @@ export function RunProgress({
 
   return (
     <div className="activity-feed" data-testid="run-progress">
-      <div className="activity-feed__header">
+      <div className="activity-feed__header" aria-live="polite">
         <div className="activity-feed__state-wrapper">
           <span
             className={`activity-feed__dot ${

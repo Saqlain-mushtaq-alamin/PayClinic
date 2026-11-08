@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Check, Play, ShieldAlert, Sparkles } from 'lucide-react';
@@ -28,47 +28,59 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
 
-  // Guard to ensure checkbox state is independent of scenarios array identity
+  // Synchronous ref tracking ensures instant updates even if click and post occur in same tick
   const userToggledRef = useRef<Set<string>>(new Set());
   const initializedTargetsRef = useRef<Set<string>>(new Set());
+  const checkedRef = useRef<Set<string>>(new Set());
+
+  const defaultKeys = useMemo(
+    () =>
+      new Set(
+        (scenarios ?? [])
+          .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+          .map((s) => s.key),
+      ),
+    [scenarios, target],
+  );
 
   useEffect(() => {
     if (scenarios && !initializedTargetsRef.current.has(target)) {
       initializedTargetsRef.current.add(target);
       if (!userToggledRef.current.has(target)) {
-        setChecked(
-          new Set(
-            scenarios
-              .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
-              .map((s) => s.key),
-          ),
-        );
+        setChecked(defaultKeys);
+        checkedRef.current = defaultKeys;
       }
     }
-  }, [scenarios, target]);
+  }, [scenarios, target, defaultKeys]);
 
   const selectTarget = (nextTarget: RunTarget) => {
     if (nextTarget === target) return;
     setTarget(nextTarget);
     if (scenarios && !userToggledRef.current.has(nextTarget)) {
       initializedTargetsRef.current.add(nextTarget);
-      setChecked(
-        new Set(
-          scenarios
-            .filter((s) => s.target === nextTarget && !(nextTarget === 'store' && s.key === 'B6'))
-            .map((s) => s.key),
-        ),
+      const nextDefaults = new Set(
+        scenarios
+          .filter((s) => s.target === nextTarget && !(nextTarget === 'store' && s.key === 'B6'))
+          .map((s) => s.key),
       );
+      setChecked(nextDefaults);
+      checkedRef.current = nextDefaults;
     }
+  };
+
+  const toggleScenario = (key: string) => {
+    userToggledRef.current.add(target);
+    const base = checkedRef.current.size > 0 ? checkedRef.current : defaultKeys;
+    const next = new Set(base);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    checkedRef.current = next;
+    setChecked(next);
   };
 
   const effectiveChecked = userToggledRef.current.has(target)
     ? checked
-    : new Set(
-        (scenarios ?? [])
-          .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
-          .map((s) => s.key),
-      );
+    : defaultKeys;
 
   const mode: RunMode | undefined = health?.mode;
   const canStart = Boolean(scenarios && mode) && !posting && effectiveChecked.size > 0;
@@ -76,6 +88,10 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const onDiagnose = useCallback(async () => {
     const list: ScenarioInfo[] | null = scenarios;
     if (!list || !mode || posting) return;
+    const activeChecked = userToggledRef.current.has(target)
+      ? checkedRef.current
+      : defaultKeys;
+    if (activeChecked.size === 0) return;
     setPosting(true);
     setPostError(null);
     try {
@@ -83,7 +99,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
         target,
         mode,
         scenarios: list
-          .filter((scenario) => effectiveChecked.has(scenario.key))
+          .filter((scenario) => activeChecked.has(scenario.key))
           .map((scenario) => scenario.key),
       });
       toast.success(`Run started: ${runId}`);
@@ -95,7 +111,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     } finally {
       setPosting(false);
     }
-  }, [effectiveChecked, mode, navigate, posting, scenarios, target]);
+  }, [defaultKeys, mode, navigate, posting, scenarios, target]);
 
   return (
     <Card className="start-run start-run--tall" id="diagnose-card" data-testid="diagnose-panel">
@@ -155,18 +171,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
                       type="checkbox"
                       className="scenario-chip__input"
                       checked={isChecked}
-                      onChange={() =>
-                        setChecked((current) => {
-                          const base = userToggledRef.current.has(target)
-                            ? current
-                            : effectiveChecked;
-                          userToggledRef.current.add(target);
-                          const next = new Set(base);
-                          if (next.has(scenario.key)) next.delete(scenario.key);
-                          else next.add(scenario.key);
-                          return next;
-                        })
-                      }
+                      onChange={() => toggleScenario(scenario.key)}
                     />
                     <span className="scenario-chip__box">
                       {isChecked ? <Check size={12} strokeWidth={3} /> : null}

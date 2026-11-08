@@ -9,10 +9,7 @@ export function VerifyBadge({ verify }: VerifyBadgeProps) {
 
   if (verify.verified) {
     return (
-      <span
-        className="chip chip--ok"
-        style={{ color: 'var(--color-ok)', borderColor: 'var(--color-ok)' }}
-      >
+      <span className="chip chip--ok">
         Verified ✓ {formatDuration(verify.durationMs)}
       </span>
     );
@@ -21,10 +18,7 @@ export function VerifyBadge({ verify }: VerifyBadgeProps) {
   const lastLogLine = verify.log[verify.log.length - 1] ?? '';
 
   return (
-    <span
-      className="chip chip--warn"
-      style={{ color: 'var(--color-warn)', borderColor: 'var(--color-warn)' }}
-    >
+    <span className="chip chip--warn">
       <span>Not verified</span>
       {lastLogLine && <span>{lastLogLine}</span>}
     </span>

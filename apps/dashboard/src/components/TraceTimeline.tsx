@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import type { Step } from '@payclinic/contracts';
-import { describeStep, orderSteps, type StepTone } from '../lib/trace';
+import { describeStep, orderSteps } from '../lib/trace';
 
 export interface TraceTimelineProps {
   steps: Step[];
   evidenceStepIds: string[];
 }
-
-const TONE_COLOR: Record<StepTone, string> = {
-  ok: 'var(--color-ok)',
-  warn: 'var(--color-warn)',
-  error: 'var(--color-danger)',
-};
 
 export function TraceTimeline({ steps, evidenceStepIds }: TraceTimelineProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -50,10 +44,7 @@ function TraceRow(props: {
       className={`timeline__item timeline__item--${described.tone} ${isEvidence ? 'timeline__item--evidence' : ''}`}
       aria-current={isEvidence ? 'true' : undefined}
     >
-      <div
-        className={`timeline__dot timeline__dot--${described.tone}`}
-        style={{ backgroundColor: TONE_COLOR[described.tone] }}
-      />
+      <div className={`timeline__dot timeline__dot--${described.tone}`} />
       <button
         type="button"
         className="timeline__row"
@@ -63,13 +54,7 @@ function TraceRow(props: {
       >
         <span className="timeline__actor">{described.actorLabel}</span>
         <span className="timeline__title">{described.title}</span>
-        <span
-          className={`chip chip--${described.tone}`}
-          style={{
-            color: TONE_COLOR[described.tone],
-            borderColor: `${TONE_COLOR[described.tone]}44`,
-          }}
-        >
+        <span className={`chip chip--${described.tone}`}>
           {described.chip}
         </span>
         {step.paypalDebugId && (
