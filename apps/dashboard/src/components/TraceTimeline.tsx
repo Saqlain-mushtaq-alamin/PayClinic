@@ -50,7 +50,7 @@ function TraceRow(props: {
         position: 'relative',
         paddingLeft: '1rem',
         borderLeft: `4px solid ${isEvidence ? 'var(--color-accent)' : 'transparent'}`,
-        margin: 'none',
+        margin: 0,
       }}
       aria-current={isEvidence ? 'true' : undefined}
     >
@@ -63,6 +63,7 @@ function TraceRow(props: {
         style={{
           width: '100%',
           background: 'transparent',
+          border: 'none',
           color: 'var(--color-text)',
           cursor: 'pointer',
           padding: '0.4rem 0.6rem',
@@ -110,36 +111,42 @@ function TraceRow(props: {
       </button>
       {isOpen && (
         <div className="timeline__details" style={{ padding: '0 0 0.6rem 1rem' }}>
-          <pre
-            className="timeline__body"
-            style={{
-              font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-              background: 'var(--color-surface-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.5rem',
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--color-text)',
-            }}
-          >
-            {formatBody(step.requestBody)}
-          </pre>
-          <pre
-            className="timeline__body"
-            style={{
-              font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-              background: 'var(--color-surface-muted)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.5rem',
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              color: 'var(--color-text)',
-            }}
-          >
-            {formatBody(step.responseBody)}
-          </pre>
+          <div>
+            <strong>Request</strong>
+            <pre
+              className="timeline__body"
+              style={{
+                font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                background: 'var(--color-surface-muted)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.5rem',
+                overflowX: 'auto',
+                whiteSpace: 'pre-wrap',
+                color: 'var(--color-text)',
+              }}
+            >
+              {formatBody(step.requestBody)}
+            </pre>
+          </div>
+          <div>
+            <strong>Response</strong>
+            <pre
+              className="timeline__body"
+              style={{
+                font: '0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                background: 'var(--color-surface-muted)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.5rem',
+                overflowX: 'auto',
+                whiteSpace: 'pre-wrap',
+                color: 'var(--color-text)',
+              }}
+            >
+              {formatBody(step.responseBody)}
+            </pre>
+          </div>
         </div>
       )}
     </li>

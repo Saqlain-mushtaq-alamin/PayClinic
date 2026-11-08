@@ -74,7 +74,9 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
     setFixing(true);
     setFixError(null);
     try {
-      // One prescribe at a time so the store is patched and verified in order.
+      // Note: prescribe returns 202 Accepted immediately.
+      // If ordering matters for patching the same store, queue them in the orchestrator,
+      // or wait for each finding to leave the open state before starting the next.
       for (const finding of openFindings) {
         await clientRef.current.prescribe(finding.id);
       }
@@ -110,8 +112,15 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
               (live !== null && live !== data.run.scoreBefore ? live : undefined)
             }
           />
+        ) : data.run.status === 'failed' ? (
+          <ErrorState
+            message={`Run failed: ${data.run.error ?? 'unknown error'}`}
+            onRetry={reload}
+          />
         ) : (
-          <p className="run-page__running">Running…</p>
+          <p className="run-page__running">
+            <Spinner label="Running scenarios…" />
+          </p>
         )}
         {openFindings.length > 0 && (
           <div className="run-page__fixall">

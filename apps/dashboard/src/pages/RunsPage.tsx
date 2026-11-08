@@ -24,7 +24,7 @@ function statusTone(status: string): BadgeTone {
 export function RunsPage({ client }: RunsPageProps) {
   const { data, error, loading, reload } = useRuns(client);
 
-  if (loading) return <Spinner label="Loading runs..." />;
+  const sorted = data ? [...data].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) : [];
 
   return (
     <section className="runs-page">
@@ -32,32 +32,42 @@ export function RunsPage({ client }: RunsPageProps) {
         <h1>Runs</h1>
       </header>
       <StartRunPanel client={client} />
-      {error ? (
+      {loading ? (
+        <Spinner label="Loading runs..." />
+      ) : error ? (
         <ErrorState message={`Failed to load runs: ${error.message}`} onRetry={reload} />
-      ) : data && data.length > 0 ? (
+      ) : sorted.length > 0 ? (
         <Card>
           <table className="runs-table">
             <thead>
               <tr>
                 <th>Run</th>
+                <th>Started</th>
                 <th>Target</th>
                 <th>Mode</th>
                 <th>Status</th>
                 <th>Score</th>
+                <th>Scenarios</th>
+                <th>Findings</th>
               </tr>
             </thead>
             <tbody>
-              {data.map((run) => (
+              {sorted.map((run) => (
                 <tr key={run.id}>
                   <td>
-                    <Link to={`/runs/${run.id}`}>{run.id}</Link>
+                    <Link to={`/runs/${run.id}`}>
+                      {run.id.length > 12 ? run.id.slice(0, 8) : run.id}
+                    </Link>
                   </td>
+                  <td>{new Date(run.startedAt).toLocaleString()}</td>
                   <td>{run.target}</td>
                   <td>{run.mode}</td>
                   <td>
                     <Badge tone={statusTone(run.status)}>{run.status}</Badge>
                   </td>
                   <td>{run.score ? <strong>{run.score.score}</strong> : '-'}</td>
+                  <td>{run.scenarioKeys.join(', ')}</td>
+                  <td>{run.findingCount}</td>
                 </tr>
               ))}
             </tbody>

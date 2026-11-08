@@ -45,6 +45,7 @@ export function TraceReplay({ steps, evidenceStepIds, verdict }: TraceReplayProp
 
   const toggle = () => dispatch({ type: state.playing ? 'pause' : 'play' });
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
     if (event.key === ' ') {
       event.preventDefault();
       toggle();

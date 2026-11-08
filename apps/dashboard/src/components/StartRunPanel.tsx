@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { RunMode, ScenarioInfo } from '@payclinic/contracts';
+import type { RunMode, RunTarget, ScenarioInfo } from '@payclinic/contracts';
 import { useHealth, useScenarios } from '../api/hooks';
 import { api, type ApiClient } from '../api/client';
 import { Button } from './ui/Button';
@@ -21,7 +21,8 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const navigate = useNavigate();
   const { data: scenarios, loading: scenariosLoading } = useScenarios(injectedClient);
   const { data: health } = useHealth(injectedClient);
-  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [target, setTarget] = useState<RunTarget>('store');
+  const [checked, setChecked] = useState<Set<string> | null>(null);
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
 
@@ -30,14 +31,22 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
       setChecked(
         new Set(
           scenarios
-            .filter((scenario) => scenario.target === 'store' && scenario.key !== 'B6')
-            .map((scenario) => scenario.key),
+            .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+            .map((s) => s.key),
         ),
       );
-  }, [scenarios]);
+  }, [scenarios, target]);
+
+  const effectiveChecked =
+    checked ??
+    new Set(
+      (scenarios ?? [])
+        .filter((s) => s.target === target && !(target === 'store' && s.key === 'B6'))
+        .map((s) => s.key),
+    );
 
   const mode: RunMode | undefined = health?.mode;
-  const canStart = Boolean(scenarios && mode) && !posting;
+  const canStart = Boolean(scenarios && mode) && !posting && effectiveChecked.size > 0;
 
   const onDiagnose = useCallback(async () => {
     const list: ScenarioInfo[] | null = scenarios;
@@ -46,10 +55,10 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     setPostError(null);
     try {
       const { runId } = await clientRef.current.createRun({
-        target: 'store',
+        target,
         mode,
         scenarios: list
-          .filter((scenario) => checked.has(scenario.key))
+          .filter((scenario) => effectiveChecked.has(scenario.key))
           .map((scenario) => scenario.key),
       });
       navigate(`/runs/${runId}`);
@@ -58,25 +67,45 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     } finally {
       setPosting(false);
     }
-  }, [checked, mode, navigate, posting, scenarios]);
+  }, [effectiveChecked, mode, navigate, posting, scenarios, target]);
 
   return (
     <Card className="start-run">
       <h2>Diagnose</h2>
       {mode && <p>Mode: {mode}</p>}
+      <div role="group" aria-label="Target">
+        <Button
+          variant={target === 'store' ? 'primary' : 'secondary'}
+          onClick={() => {
+            setTarget('store');
+            setChecked(null);
+          }}
+        >
+          Store bugs
+        </Button>{' '}
+        <Button
+          variant={target === 'agent' ? 'primary' : 'secondary'}
+          onClick={() => {
+            setTarget('agent');
+            setChecked(null);
+          }}
+        >
+          Agent attacks
+        </Button>
+      </div>
       {scenariosLoading && <Spinner label="Loading scenarios..." />}
       <ul className="start-run__scenarios">
         {(scenarios ?? [])
-          .filter((scenario) => scenario.target === 'store')
+          .filter((scenario) => scenario.target === target)
           .map((scenario) => (
             <li key={scenario.key}>
               <label>
                 <input
                   type="checkbox"
-                  checked={checked.has(scenario.key)}
+                  checked={effectiveChecked.has(scenario.key)}
                   onChange={() =>
                     setChecked((current) => {
-                      const next = new Set(current);
+                      const next = new Set(current ?? effectiveChecked);
                       if (next.has(scenario.key)) next.delete(scenario.key);
                       else next.add(scenario.key);
                       return next;
@@ -88,8 +117,8 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
             </li>
           ))}
       </ul>
-      <Button onClick={onDiagnose} disabled={!canStart}>
-        Diagnose
+      <Button aria-label="Diagnose" onClick={onDiagnose} disabled={!canStart}>
+        {posting ? 'Starting…' : 'Diagnose'}
       </Button>
       {postError && (
         <p className="start-run__error" role="alert">

@@ -158,4 +158,20 @@ describe('RunPage', () => {
     expect(await screen.findByText(/prescribe blew up/)).toBeInTheDocument();
     expect(prescribe).toHaveBeenCalledTimes(1);
   });
+
+  it('shows an error state with run.error when the run failed', async () => {
+    const failedRun: RunDetail = {
+      ...detail,
+      run: {
+        ...detail.run,
+        status: 'failed',
+        error: 'Simulator crashed unexpectedly',
+      },
+    };
+    renderPage({ getRun: async () => failedRun, prescribe: async () => ({ accepted: true }) });
+
+    expect(
+      await screen.findByText('Run failed: Simulator crashed unexpectedly'),
+    ).toBeInTheDocument();
+  });
 });

@@ -179,4 +179,32 @@ describe('FindingPage', () => {
     expect(screen.getByTestId('stage-explaining')).toHaveAttribute('data-active', 'true');
     expect(instances).toHaveLength(2);
   });
+
+  it('renders a back link to the run page and Open PR button for verified findings', async () => {
+    renderPage({
+      getFinding: async () => verified,
+      getRun: async () => run2,
+      prescribe: async () => ({ accepted: true }),
+    });
+
+    const backLink = await screen.findByRole('link', { name: /Back to run/i });
+    expect(backLink).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', `/runs/${verified.finding.runId}`);
+    expect(screen.getByTestId('open-pr-button')).toBeInTheDocument();
+  });
+
+  it('hides the Prescribe button for protected findings', async () => {
+    const protectedFinding: FindingDetail = {
+      ...open,
+      finding: { ...open.finding, state: 'protected' },
+    };
+    renderPage({
+      getFinding: async () => protectedFinding,
+      getRun: async () => run1,
+      prescribe: async () => ({ accepted: true }),
+    });
+
+    await screen.findByRole('heading', { name: protectedFinding.finding.title });
+    expect(screen.queryByRole('button', { name: /prescribe/i })).not.toBeInTheDocument();
+  });
 });

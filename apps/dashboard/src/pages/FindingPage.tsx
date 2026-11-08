@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { FindingDetail, RunDetail } from '@payclinic/contracts';
 import { api, type ApiClient } from '../api/client';
 import { usePrescribe } from '../api/usePrescribe';
 import type { RunEventSourceCtor } from '../api/useRunEvents';
 import { ExplanationPanel } from '../components/ExplanationPanel';
+import { OpenPrButton } from '../components/OpenPrButton';
 import { PrescribeButton } from '../components/PrescribeButton';
 import { PrescribeStepper } from '../components/PrescribeStepper';
 import { TraceReplay } from '../components/TraceReplay';
@@ -16,7 +17,8 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { Spinner } from '../components/ui/Spinner';
 
 export interface FindingPageProps {
-  client?: Pick<ApiClient, 'getFinding' | 'getRun' | 'prescribe'>;
+  client?: Pick<ApiClient, 'getFinding' | 'getRun' | 'prescribe'> &
+    Partial<Pick<ApiClient, 'openPr'>>;
   eventSourceCtor?: RunEventSourceCtor;
 }
 
@@ -39,7 +41,6 @@ function stateTone(state: string): BadgeTone {
     case 'protected':
       return 'ok';
     case 'patched':
-      return 'medium';
     case 'unverified':
       return 'medium';
     default:
@@ -113,16 +114,18 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
 
   return (
     <section className="finding-page" data-testid="finding-page">
+      <Link to={`/runs/${detail.finding.runId}`}>← Back to run</Link>
       <header className="page-header">
         <h1>{detail.finding.title}</h1>
         <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
         <Badge tone={stateTone(detail.finding.state)}>{detail.finding.state}</Badge>
+        <VerifyBadge verify={detail.verify} />
       </header>
       <Card className="finding-summary">
         <p>{detail.finding.summary}</p>
         {runDetail && <p className="finding-summary__score">Run score: {runDetail.score.score}</p>}
       </Card>
-      {detail.finding.state !== 'verified' && (
+      {detail.finding.state !== 'verified' && detail.finding.state !== 'protected' && (
         <Card>
           <PrescribeButton
             stage={prescribe.stage}
@@ -132,25 +135,32 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
           {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
         </Card>
       )}
+      {detail.finding.state === 'verified' && (
+        <Card>
+          <OpenPrButton
+            findingId={detail.finding.id}
+            client={client.openPr ? (client as Pick<ApiClient, 'openPr'>) : undefined}
+          />
+        </Card>
+      )}
+      {detail.explanation && (
+        <Card>
+          <ExplanationPanel explanation={detail.explanation} />
+        </Card>
+      )}
+      {detail.patch && (
+        <Card>
+          <h2>Proposed patch</h2>
+          <UnifiedDiff diff={detail.patch.diff} />
+        </Card>
+      )}
       <Card>
+        <h2>Trace replay</h2>
         <TraceReplay
           steps={detail.steps}
           evidenceStepIds={detail.finding.evidenceStepIds}
           verdict={detail.finding.summary}
         />
-      </Card>
-      {detail.explanation && (
-        <Card className="explanation">
-          <ExplanationPanel explanation={detail.explanation} />
-        </Card>
-      )}
-      {detail.patch && (
-        <Card className="patch">
-          <UnifiedDiff diff={detail.patch.diff} />
-        </Card>
-      )}
-      <Card>
-        <VerifyBadge verify={detail.verify} />
       </Card>
     </section>
   );

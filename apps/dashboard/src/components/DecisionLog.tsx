@@ -1,10 +1,18 @@
 import { useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef } from 'ag-grid-community';
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  colorSchemeVariable,
+  themeQuartz,
+  type ColDef,
+} from 'ag-grid-community';
 import type { FirewallDecision } from '@payclinic/contracts';
 import { summarizeDecisions, toDecisionRows, type DecisionRow } from '../lib/decisions';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const gridTheme = themeQuartz.withPart(colorSchemeVariable);
 
 const columnDefs: ColDef<DecisionRow>[] = [
   { field: 'time', headerName: 'Time', width: 200 },
@@ -25,9 +33,10 @@ export function DecisionLog({ decisions }: { decisions: FirewallDecision[] }) {
   return (
     <div className="decision-log">
       <p data-testid="decision-summary">{summary}</p>
-      <div data-testid="decision-grid" style={{ height: 320, width: '100%' }}>
+      <div data-testid="decision-grid" style={{ width: '100%' }}>
         <AgGridReact<DecisionRow>
-          theme={themeQuartz}
+          theme={gridTheme}
+          domLayout="autoHeight"
           rowData={rows}
           columnDefs={columnDefs}
           defaultColDef={{ sortable: true, resizable: true }}
