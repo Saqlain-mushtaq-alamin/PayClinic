@@ -32,6 +32,7 @@ describe('Shell', () => {
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Runs & Findings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Live Activity' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
 
     // Topbar

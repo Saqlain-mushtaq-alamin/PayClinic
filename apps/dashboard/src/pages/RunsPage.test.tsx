@@ -70,4 +70,11 @@ describe('RunsPage', () => {
     expect(await screen.findByText(/Failed to load runs/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
+
+  it('shows the project name for each run', async () => {
+    renderPage(async () => runs);
+    const projectLabels = await screen.findAllByTestId('run-project-name');
+    expect(projectLabels.length).toBeGreaterThan(0);
+    expect(projectLabels[0]).toHaveTextContent('Demo store');
+  });
 });

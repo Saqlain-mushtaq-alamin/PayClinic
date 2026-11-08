@@ -5,6 +5,7 @@ import { FindingPage } from './pages/FindingPage';
 import { RunPage } from './pages/RunPage';
 import { RunsPage } from './pages/RunsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProjectsPage } from './pages/ProjectsPage';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<RunsPage />} />
         <Route path="/runs/:id" element={<RunPage />} />
         <Route path="/runs/:id/findings/:fid" element={<FindingPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route
           path="*"

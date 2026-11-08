@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Activity, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react';
+import { Activity, FolderGit2, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react';
 import type { ApiClient } from '../../api/client';
 import { useDashboard } from '../../context/DashboardContext';
 
@@ -81,6 +81,16 @@ export function Shell({ children, client }: ShellProps) {
                 aria-label="Live Activity"
               >
                 <Activity size={20} />
+              </NavLink>
+
+              <NavLink
+                to="/projects"
+                role="button"
+                className={({ isActive }) => `shell__nav-link ${isActive ? 'active' : ''}`}
+                title="Projects"
+                aria-label="Projects"
+              >
+                <FolderGit2 size={20} />
               </NavLink>
             </nav>
           </div>

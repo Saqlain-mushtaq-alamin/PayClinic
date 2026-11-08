@@ -9,7 +9,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
-import { useRuns } from '../api/hooks';
+import { useProjects, useRuns } from '../api/hooks';
 import type { ApiClient } from '../api/client';
 import { useDashboard } from '../context/DashboardContext';
 import { SegmentedGauge } from '../components/SegmentedGauge';
@@ -19,7 +19,11 @@ import type { BadgeTone } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { ErrorState } from '../components/ui/ErrorState';
 
-export type RunsPageClient = Pick<ApiClient, 'listRuns' | 'health' | 'getScenarios' | 'createRun'>;
+export type RunsPageClient = Pick<
+  ApiClient,
+  'listRuns' | 'health' | 'getScenarios' | 'createRun'
+> &
+  Partial<Pick<ApiClient, 'listProjects'>>;
 
 export interface RunsPageProps {
   client?: RunsPageClient;
@@ -56,8 +60,14 @@ function formatRelativeTime(isoString: string): string {
 
 export function RunsPage({ client }: RunsPageProps) {
   const { data, error, loading, reload } = useRuns(client);
+  const { data: projects } = useProjects(client);
   const { searchQuery, setSearchQuery } = useDashboard();
   const navigate = useNavigate();
+
+  const projectMap = useMemo(
+    () => new Map((projects ?? []).map((p) => [p.id, p.name])),
+    [projects],
+  );
 
   const sorted = useMemo(() => {
     return data ? [...data].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) : [];
@@ -171,6 +181,7 @@ export function RunsPage({ client }: RunsPageProps) {
                   <thead>
                     <tr>
                       <th>Run</th>
+                      <th>Project</th>
                       <th>Started</th>
                       <th>Target</th>
                       <th>Mode</th>
@@ -215,6 +226,27 @@ export function RunsPage({ client }: RunsPageProps) {
                                 </span>
                               </div>
                             </div>
+                          </td>
+
+                          <td>
+                            <span
+                              className="runs-table__project-label"
+                              data-testid="run-project-name"
+                              style={{
+                                display: 'inline-block',
+                                maxWidth: '140px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.85rem',
+                                color: 'var(--color-text-secondary, #666)',
+                              }}
+                            >
+                              {projectMap.get(run.projectId ?? 'builtin') ??
+                                (run.projectId && run.projectId !== 'builtin'
+                                  ? run.projectId
+                                  : 'Demo store')}
+                            </span>
                           </td>
 
                           <td>

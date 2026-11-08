@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Check, Play, ShieldAlert, Sparkles } from 'lucide-react';
 import type { RunMode, RunTarget, ScenarioInfo } from '@payclinic/contracts';
-import { useHealth, useScenarios } from '../api/hooks';
+import { useHealth, useProjects, useScenarios } from '../api/hooks';
 import { api, type ApiClient } from '../api/client';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { Spinner } from './ui/Spinner';
 
-export type StartRunClient = Pick<ApiClient, 'health' | 'getScenarios' | 'createRun'>;
+export type StartRunClient = Pick<ApiClient, 'health' | 'getScenarios' | 'createRun'> &
+  Partial<Pick<ApiClient, 'listProjects'>>;
 
 export interface StartRunPanelProps {
   client?: StartRunClient;
@@ -23,10 +24,21 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const navigate = useNavigate();
   const { data: scenarios, loading: scenariosLoading } = useScenarios(injectedClient);
   const { data: health } = useHealth(injectedClient);
+  const { data: projects } = useProjects(injectedClient);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('builtin');
   const [target, setTarget] = useState<RunTarget>('store');
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+
+  const isAgentAttackDisabled = selectedProjectId !== 'builtin';
+
+  const handleProjectChange = (nextId: string) => {
+    setSelectedProjectId(nextId);
+    if (nextId !== 'builtin' && target === 'agent') {
+      selectTarget('store');
+    }
+  };
 
   // Synchronous ref tracking ensures instant updates even if click and post occur in same tick
   const userToggledRef = useRef<Set<string>>(new Set());
@@ -92,6 +104,9 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     setPostError(null);
     try {
       const { runId } = await clientRef.current.createRun({
+        ...(selectedProjectId && selectedProjectId !== 'builtin'
+          ? { projectId: selectedProjectId }
+          : {}),
         target,
         mode,
         scenarios: list
@@ -107,7 +122,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     } finally {
       setPosting(false);
     }
-  }, [defaultKeys, mode, navigate, posting, scenarios, target]);
+  }, [defaultKeys, mode, navigate, posting, scenarios, selectedProjectId, target]);
 
   return (
     <Card className="start-run start-run--tall" id="diagnose-card" data-testid="diagnose-panel">
@@ -132,6 +147,38 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
           <span className="start-run__subtitle">Select targets & scenarios</span>
         </div>
 
+        {/* Project selector */}
+        <div className="start-run__project-field" style={{ marginBottom: '0.85rem' }}>
+          <label
+            htmlFor="project-selector"
+            style={{
+              display: 'block',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              color: 'var(--color-text-muted, #888)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: '0.35rem',
+            }}
+          >
+            Project
+          </label>
+          <select
+            id="project-selector"
+            data-testid="project-selector"
+            className="settings-select"
+            value={selectedProjectId}
+            onChange={(e) => handleProjectChange(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            {(projects ?? [{ id: 'builtin', name: 'Demo store', kind: 'builtin' }]).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} {p.kind === 'builtin' ? '(Demo)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Segmented Toggle */}
         <div className="segmented-toggle" role="group" aria-label="Target">
           <button
@@ -145,6 +192,13 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
             type="button"
             className={`segmented-toggle__btn ${target === 'agent' ? 'segmented-toggle__btn--active' : ''}`}
             onClick={() => selectTarget('agent')}
+            disabled={isAgentAttackDisabled}
+            title={
+              isAgentAttackDisabled
+                ? 'Agent attacks are only enabled for the builtin project'
+                : undefined
+            }
+            data-testid="agent-attacks-toggle"
           >
             Agent attacks
           </button>

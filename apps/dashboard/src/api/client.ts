@@ -13,6 +13,9 @@ import {
   SettingsResponse,
   StepList,
   TestSettingsResponse,
+  Project,
+  type ProjectCreateRequest,
+  type ProjectUpdateRequest,
   type FirewallDecision,
   type RunCreateRequest,
   type RunSummary as RunSummaryType,
@@ -58,6 +61,23 @@ const Accepted: Schema<AcceptedResponse> = {
   },
 };
 
+export interface OkResponse {
+  ok: boolean;
+}
+
+const Ok: Schema<OkResponse> = {
+  parse(value) {
+    if (
+      typeof value !== 'object' ||
+      value === null ||
+      (value as { ok?: unknown }).ok !== true
+    ) {
+      throw new Error('invalid ok response');
+    }
+    return { ok: true };
+  },
+};
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -85,6 +105,10 @@ export interface ApiClient {
   saveSettings(updates: Record<string, string | null>): Promise<SettingsResponse>;
   testSetting(kind: 'paypal' | 'gemini' | 'github'): Promise<TestSettingsResponse>;
   getAuthStatus(): Promise<AuthStatusResponse>;
+  listProjects(): Promise<Project[]>;
+  createProject(body: ProjectCreateRequest): Promise<Project>;
+  updateProject(id: string, updates: ProjectUpdateRequest): Promise<Project>;
+  deleteProject(id: string): Promise<OkResponse>;
 }
 
 /**
@@ -161,6 +185,11 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     testSetting: (kind) =>
       request('POST', `/api/settings/test/${encodeURIComponent(kind)}`, TestSettingsResponse),
     getAuthStatus: () => request('GET', '/api/auth/status', AuthStatusResponse),
+    listProjects: () => request('GET', '/api/projects', Project.array()),
+    createProject: (body) => request('POST', '/api/projects', Project, body),
+    updateProject: (id, updates) =>
+      request('PUT', `/api/projects/${encodeURIComponent(id)}`, Project, updates),
+    deleteProject: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`, Ok),
   };
 }
 
