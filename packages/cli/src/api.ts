@@ -3,9 +3,15 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
-import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify';
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+} from 'fastify';
 import type { z } from 'zod';
 import {
+  AdapterCheckItem,
+  AdapterCheckResponse,
   AuthStatusResponse,
   DecisionList,
   FindingDetail,
@@ -31,21 +37,25 @@ import {
   type ScenarioKey,
   type ScenarioResult,
   type Score,
+  type Step,
 } from '@payclinic/contracts';
 import {
   ProjectsRepo,
   ProtectNotApplicableError,
   ProtectNotConfiguredError,
   SettingsStore,
+  adapterCheck,
   assertSafeTarget,
   computeScore,
   createProjectsRepo,
   encrypt,
+  forwardProxyRequest,
   openDb,
   type Config,
   type Orchestrator,
   type Repos,
 } from '@payclinic/core';
+import { startSim } from '@payclinic/sim';
 import {
   defaultTestGemini,
   defaultTestGitHub,
@@ -192,6 +202,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   const projectsRepo = deps.projectsRepo ?? createProjectsRepo(openDb(':memory:'));
   const clients = new Set<SseClient>();
   let lastRunId: string | null = null;
+  let activeSim: Awaited<ReturnType<typeof startSim>> | null = null;
+  const getSimUrl = async (): Promise<string> => {
+    if (!activeSim) {
+      activeSim = await startSim();
+    }
+    return activeSim.url;
+  };
 
   const onEvent = (event: RunEvent) => {
     const knownRunId = eventRunId(event, repos);
@@ -236,13 +253,18 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     bus.off('event', onEvent);
     for (const client of clients) client.response.destroy();
     clients.clear();
+    if (activeSim) {
+      await activeSim.close().catch(() => undefined);
+      activeSim = null;
+    }
   });
 
   app.setNotFoundHandler((request, reply) => {
     if (
       deps.staticDir !== undefined &&
       request.method === 'GET' &&
-      !request.url.startsWith('/api')
+      !request.url.startsWith('/api') &&
+      !request.url.startsWith('/paypal-proxy')
     ) {
       if (!serveStatic(deps.staticDir, request.url, reply)) notFound(reply);
       return;
@@ -518,7 +540,7 @@ export function createApi(deps: ApiDeps): FastifyInstance {
         kind: p.kind,
         baseUrl: p.baseUrl,
         proxyToken: p.proxyToken,
-        proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${p.proxyToken}`,
+        proxyUrl: `${base.replace(/\/+$/, '')}/paypal-proxy/${p.proxyToken}`,
         hasAdminSecret: Boolean(p.adminSecretEncrypted),
         repoOwner: p.repoOwner,
         repoName: p.repoName,
@@ -573,7 +595,7 @@ export function createApi(deps: ApiDeps): FastifyInstance {
       kind: 'remote',
       baseUrl: baseUrl ?? null,
       proxyToken,
-      proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${proxyToken}`,
+      proxyUrl: `${base.replace(/\/+$/, '')}/paypal-proxy/${proxyToken}`,
       hasAdminSecret: Boolean(adminSecretEncrypted),
       repoOwner: repoOwner ?? null,
       repoName: repoName ?? null,
@@ -636,7 +658,7 @@ export function createApi(deps: ApiDeps): FastifyInstance {
       kind: updated.kind,
       baseUrl: updated.baseUrl,
       proxyToken: updated.proxyToken,
-      proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${updated.proxyToken}`,
+      proxyUrl: `${base.replace(/\/+$/, '')}/paypal-proxy/${updated.proxyToken}`,
       hasAdminSecret: Boolean(updated.adminSecretEncrypted),
       repoOwner: updated.repoOwner,
       repoName: updated.repoName,
@@ -658,6 +680,90 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     projectsRepo.deleteProject(id);
     return reply.code(200).send({ ok: true });
   });
+
+  app.post('/api/projects/:id/check', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const project = projectsRepo.getProject(id);
+    if (!project) return notFound(reply);
+
+    const checklist = await adapterCheck(project);
+    return send(reply, AdapterCheckResponse, checklist);
+  });
+
+  app.get('/api/docs/connect-your-site', async (_request, reply) => {
+    const docPath = resolve(process.cwd(), 'docs/CONNECT-YOUR-SITE.md');
+    if (!existsSync(docPath)) {
+      return reply.code(404).send({ error: 'Documentation not found' });
+    }
+    const content = createReadStream(docPath);
+    return reply
+      .header('content-type', 'text/markdown; charset=utf-8')
+      .header('content-disposition', 'attachment; filename="CONNECT-YOUR-SITE.md"')
+      .send(content);
+  });
+
+  const handlePaypalProxy = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { token } = request.params as { token: string };
+    const project = projectsRepo.getProjectByProxyToken(token);
+    if (!project) {
+      return reply.code(404).send({ error: 'Unknown proxy token' });
+    }
+
+    const runs = repos.listRuns();
+    const activeRun = runs.find(
+      (r) =>
+        r.status === 'running' &&
+        (r.projectId === project.id || (project.id === 'builtin' && (!r.projectId || r.projectId === 'builtin'))),
+    );
+
+    if (!activeRun) {
+      return reply.code(409).send({ error: 'No PayClinic run active' });
+    }
+
+    let target = 'https://api-m.sandbox.paypal.com';
+    if (activeRun.mode === 'offline') {
+      target = await getSimUrl();
+    }
+
+    const prefix = `/paypal-proxy/${token}`;
+    const rawUrl = request.url;
+    let subpath = rawUrl.startsWith(prefix) ? rawUrl.slice(prefix.length) : rawUrl;
+    if (!subpath.startsWith('/')) subpath = '/' + subpath;
+
+    reply.hijack();
+
+    await forwardProxyRequest(request.raw, reply.raw, {
+      target,
+      subpath,
+      onFinish: (exchange) => {
+        const scenarios = repos.listScenarios(activeRun.id);
+        const scenarioId = scenarios[scenarios.length - 1]?.id ?? `${activeRun.id}-scenario-1`;
+        const steps = repos.listSteps(activeRun.id);
+        const step: Step = {
+          id: randomUUID(),
+          runId: activeRun.id,
+          scenarioId,
+          seq: steps.length,
+          actor: 'store',
+          label: `${exchange.method} ${subpath}`,
+          url: exchange.url,
+          method: exchange.method,
+          requestHeaders: exchange.requestHeaders,
+          requestBody: exchange.requestBody,
+          responseStatus: exchange.responseStatus,
+          responseHeaders: exchange.responseHeaders,
+          responseBody: exchange.responseBody,
+          durationMs: exchange.durationMs,
+          timestamp: new Date().toISOString(),
+        };
+        repos.insertSteps([step]);
+        bus.emit('event', { type: 'step.recorded', step });
+      },
+    });
+  };
+
+  app.all('/paypal-proxy/:token/*', handlePaypalProxy);
+  app.all('/paypal-proxy/:token', handlePaypalProxy);
 
   return app;
 }

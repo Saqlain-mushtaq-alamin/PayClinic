@@ -14,6 +14,7 @@ import {
   StepList,
   TestSettingsResponse,
   Project,
+  AdapterCheckItem,
   type ProjectCreateRequest,
   type ProjectUpdateRequest,
   type FirewallDecision,
@@ -109,6 +110,7 @@ export interface ApiClient {
   createProject(body: ProjectCreateRequest): Promise<Project>;
   updateProject(id: string, updates: ProjectUpdateRequest): Promise<Project>;
   deleteProject(id: string): Promise<OkResponse>;
+  checkProject(id: string): Promise<AdapterCheckItem[]>;
 }
 
 /**
@@ -190,6 +192,8 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     updateProject: (id, updates) =>
       request('PUT', `/api/projects/${encodeURIComponent(id)}`, Project, updates),
     deleteProject: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`, Ok),
+    checkProject: (id) =>
+      request('POST', `/api/projects/${encodeURIComponent(id)}/check`, AdapterCheckItem.array()),
   };
 }
 

@@ -77,12 +77,28 @@ function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
       baseUrl: updates.baseUrl !== undefined ? updates.baseUrl : mockProjects[1]!.baseUrl,
     })),
     deleteProject: vi.fn(async () => ({ ok: true })),
+    checkProject: vi.fn(async () => [
+      {
+        id: 'products',
+        endpoint: 'GET /api/products',
+        ok: true,
+        detail: 'Returns 3 products including all required SKUs',
+        fix: null,
+      },
+      {
+        id: 'orders',
+        endpoint: 'POST /api/orders',
+        ok: false,
+        detail: 'Expected HTTP 201, got 500',
+        fix: 'Implement POST /api/orders accepting { cartId, items } and creating an order via PAYPAL_BASE_URL.',
+      },
+    ]),
     ...overrides,
   };
 }
 
 describe('ProjectsPage', () => {
-  it('renders project cards with Demo badge for builtin and remote for others', async () => {
+  it('renders project cards with Demo badge for builtin, download guide link, and PAYPAL_BASE_URL', async () => {
     const client = createMockClient();
     render(
       <MemoryRouter>
@@ -95,10 +111,17 @@ describe('ProjectsPage', () => {
     expect(screen.getByText('Production Store')).toBeInTheDocument();
     expect(screen.getByText('Remote')).toBeInTheDocument();
 
-    // Check connection button is disabled with tooltip
-    const checkBtn = screen.getByTestId('check-connection-builtin');
-    expect(checkBtn).toBeDisabled();
-    expect(checkBtn).toHaveAttribute('title', 'Connection test available in Phase 5');
+    // Download guide link exists
+    const downloadLink = screen.getByTestId('download-guide-btn');
+    expect(downloadLink).toBeInTheDocument();
+    expect(downloadLink).toHaveAttribute('href', '/api/docs/connect-your-site');
+
+    // PAYPAL_BASE_URL is shown
+    expect(screen.getByText(/PAYPAL_BASE_URL=.*remote-token/)).toBeInTheDocument();
+
+    // Check connection button is enabled
+    const checkBtn = screen.getByTestId('check-connection-remote-1');
+    expect(checkBtn).not.toBeDisabled();
 
     // Builtin edit and delete are disabled
     expect(screen.getByTestId('edit-project-builtin')).toBeDisabled();
@@ -107,6 +130,36 @@ describe('ProjectsPage', () => {
     // Remote edit and delete are enabled
     expect(screen.getByTestId('edit-project-remote-1')).not.toBeDisabled();
     expect(screen.getByTestId('delete-project-remote-1')).not.toBeDisabled();
+  });
+
+  it('runs connection checklist and displays passed/failed rows with fix text', async () => {
+    const client = createMockClient();
+    render(
+      <MemoryRouter>
+        <ProjectsPage client={client} />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Production Store');
+    fireEvent.click(screen.getByTestId('check-connection-remote-1'));
+
+    expect(screen.getByTestId('check-connection-dialog')).toBeInTheDocument();
+    expect(await screen.findByText(/Adapter Checklist: Production Store/)).toBeInTheDocument();
+
+    // Verified checklist rows
+    expect(await screen.findByTestId('checklist-row-products')).toBeInTheDocument();
+    expect(screen.getByTestId('checklist-row-orders')).toBeInTheDocument();
+
+    // Passed and failed badges
+    expect(screen.getByText('Passed')).toBeInTheDocument();
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+
+    // Fix text is visible for failed row
+    expect(
+      screen.getByText(
+        /Implement POST \/api\/orders accepting \{ cartId, items \} and creating an order via PAYPAL_BASE_URL\./,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('validates URL client-side in Add website dialog', async () => {

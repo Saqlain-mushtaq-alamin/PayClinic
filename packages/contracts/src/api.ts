@@ -37,6 +37,8 @@ import {
  * POST /api/projects                      body ProjectCreateRequest    -> 201 Project
  * PUT  /api/projects/:id                  body ProjectUpdateRequest    -> 200 Project
  * DELETE /api/projects/:id                                             -> 200 { ok: true }
+ * POST /api/projects/:id/check                                         -> 200 AdapterCheckItem[]
+ * GET  /api/docs/connect-your-site                                     -> 200 Markdown
  */
 export const RunCreateRequest = z.object({
   projectId: z.string().default('builtin').optional(),
@@ -163,3 +165,16 @@ export const ProjectUpdateRequest = z.object({
   sourceRoot: z.string().optional().nullable(),
 });
 export type ProjectUpdateRequest = z.infer<typeof ProjectUpdateRequest>;
+
+export const AdapterCheckItem = z.object({
+  id: z.string(),
+  endpoint: z.string(),
+  ok: z.boolean(),
+  detail: z.string(),
+  fix: z.string().nullable(),
+});
+export type AdapterCheckItem = z.infer<typeof AdapterCheckItem>;
+
+export const AdapterCheckResponse = z.array(AdapterCheckItem);
+export type AdapterCheckResponse = z.infer<typeof AdapterCheckResponse>;
+

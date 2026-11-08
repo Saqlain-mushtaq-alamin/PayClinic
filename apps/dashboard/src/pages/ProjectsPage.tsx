@@ -2,7 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
+  Copy,
+  Download,
   ExternalLink,
   FolderGit2,
   GitBranch,
@@ -13,8 +16,14 @@ import {
   Radio,
   Trash2,
   X,
+  XCircle,
 } from 'lucide-react';
-import type { Project, ProjectCreateRequest, ProjectUpdateRequest } from '@payclinic/contracts';
+import type {
+  AdapterCheckItem,
+  Project,
+  ProjectCreateRequest,
+  ProjectUpdateRequest,
+} from '@payclinic/contracts';
 import { api, onAuthRequired, setAdminToken, type ApiClient } from '../api/client';
 import { useProjects } from '../api/hooks';
 import { Badge } from '../components/ui/Badge';
@@ -58,6 +67,7 @@ function isValidUrl(val: string): boolean {
 
 export function ProjectsPage({ client = api }: ProjectsPageProps) {
   const { data: projects, loading, error, reload } = useProjects(client);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
 
   // Dialog states
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -66,6 +76,11 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
   const [formData, setFormData] = useState<ProjectFormData>(EMPTY_FORM);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Connection check modal state
+  const [checkingProject, setCheckingProject] = useState<Project | null>(null);
+  const [checkResults, setCheckResults] = useState<AdapterCheckItem[] | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   // Auth unlock modal state
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
@@ -77,6 +92,19 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
       setShowUnlockDialog(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (client.getSettings) {
+      client
+        .getSettings()
+        .then((s) => {
+          if (s.publicUrl?.hint) {
+            setPublicUrl(s.publicUrl.hint);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [client]);
 
   const handleUnlock = async (e: FormEvent) => {
     e.preventDefault();
@@ -120,8 +148,35 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
     setIsAddOpen(false);
     setEditingProject(null);
     setDeletingProject(null);
+    setCheckingProject(null);
+    setCheckResults(null);
     setUrlError(null);
     setSubmitting(false);
+    setIsChecking(false);
+  };
+
+  const handleCheck = async (p: Project) => {
+    setCheckingProject(p);
+    setCheckResults(null);
+    setIsChecking(true);
+    try {
+      const results = await client.checkProject(p.id);
+      setCheckResults(results);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Check failed: ${msg}`);
+      setCheckResults([
+        {
+          id: 'error',
+          endpoint: 'CONNECTION',
+          ok: false,
+          detail: msg,
+          fix: 'Verify the site is reachable and your settings allow private targets if running locally.',
+        },
+      ]);
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -192,6 +247,11 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    void navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
   return (
     <div className="projects-page" data-testid="projects-page">
       <div className="projects-header">
@@ -199,14 +259,25 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
           <h1 className="projects-title">Projects</h1>
           <p className="projects-subtitle">Connected websites and stores</p>
         </div>
-        <Button
-          className="button--primary"
-          onClick={openAdd}
-          data-testid="add-website-button"
-        >
-          <Plus size={16} />
-          Add website
-        </Button>
+        <div className="projects-header-actions" style={{ display: 'flex', gap: '0.75rem' }}>
+          <a
+            href="/api/docs/connect-your-site"
+            download="CONNECT-YOUR-SITE.md"
+            className="button button--secondary"
+            data-testid="download-guide-btn"
+          >
+            <Download size={16} />
+            Download integration guide
+          </a>
+          <Button
+            className="button--primary"
+            onClick={openAdd}
+            data-testid="add-website-button"
+          >
+            <Plus size={16} />
+            Add website
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -227,6 +298,9 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
         <div className="projects-grid" data-testid="projects-grid">
           {projects.map((p) => {
             const isBuiltin = p.kind === 'builtin' || p.id === 'builtin';
+            const paypalBaseUrl = publicUrl
+              ? `${publicUrl.replace(/\/+$/, '')}/paypal-proxy/${p.proxyToken}`
+              : `http://localhost:4000/paypal-proxy/${p.proxyToken}`;
 
             return (
               <Card
@@ -271,11 +345,39 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                     </span>
                   </div>
 
-                  <div className="project-card__detail">
-                    <span className="project-card__label">Proxy URL</span>
-                    <span className="project-card__value project-card__code">
-                      {p.proxyUrl}
-                    </span>
+                  <div className="project-card__detail" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+                    <span className="project-card__label">PAYPAL_BASE_URL for site</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        background: 'var(--surface-raised, #22252e)',
+                        borderRadius: '6px',
+                        padding: '0.35rem 0.5rem',
+                        fontSize: '0.78rem',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        PAYPAL_BASE_URL={paypalBaseUrl}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`PAYPAL_BASE_URL=${paypalBaseUrl}`)}
+                        className="button button--icon button--sm"
+                        style={{ border: 'none', background: 'transparent', padding: '0.1rem', cursor: 'pointer' }}
+                        title="Copy configuration"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    </div>
+                    {!publicUrl && !isBuiltin && (
+                      <span style={{ color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <AlertTriangle size={12} /> Public URL empty in Settings
+                      </span>
+                    )}
                   </div>
 
                   <div className="project-card__detail">
@@ -308,8 +410,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                   <button
                     type="button"
                     className="button button--secondary button--sm"
-                    disabled
-                    title="Connection test available in Phase 5"
+                    onClick={() => handleCheck(p)}
                     data-testid={`check-connection-${p.id}`}
                   >
                     <Radio size={14} />
@@ -343,6 +444,111 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Check Connection Modal */}
+      {checkingProject && (
+        <div
+          className="settings-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="check-dialog-title"
+          data-testid="check-connection-dialog"
+        >
+          <div className="settings-modal" style={{ maxWidth: '640px' }}>
+            <div className="settings-modal__header">
+              <Radio size={20} className="settings-modal__icon" />
+              <h3 id="check-dialog-title" className="settings-modal__title">
+                Adapter Checklist: {checkingProject.name}
+              </h3>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={closeDialogs}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="checklist-container" style={{ margin: '1rem 0' }}>
+              {isChecking && (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <Spinner label="Checking adapter endpoints…" />
+                </div>
+              )}
+
+              {!isChecking && checkResults && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {checkResults.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`checklist-item ${item.ok ? 'checklist-item--ok' : 'checklist-item--fail'}`}
+                      style={{
+                        padding: '0.85rem',
+                        borderRadius: '8px',
+                        background: item.ok ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                        border: `1px solid ${item.ok ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                      }}
+                      data-testid={`checklist-row-${item.id}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {item.ok ? (
+                            <CheckCircle2 size={18} color="#10b981" />
+                          ) : (
+                            <XCircle size={18} color="#ef4444" />
+                          )}
+                          <strong style={{ fontSize: '0.9rem' }}>{item.endpoint}</strong>
+                        </div>
+                        <Badge tone={item.ok ? 'ok' : 'critical'}>
+                          {item.ok ? 'Passed' : 'Failed'}
+                        </Badge>
+                      </div>
+
+                      <p style={{ margin: '0.2rem 0 0 1.6rem', fontSize: '0.84rem', color: 'var(--muted, #aaa)' }}>
+                        {item.detail}
+                      </p>
+
+                      {item.fix && (
+                        <div
+                          style={{
+                            margin: '0.5rem 0 0 1.6rem',
+                            padding: '0.5rem 0.65rem',
+                            borderRadius: '6px',
+                            background: 'rgba(0,0,0,0.3)',
+                            fontSize: '0.82rem',
+                            color: '#f87171',
+                          }}
+                        >
+                          <strong>Fix:</strong> {item.fix}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="settings-modal__actions">
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={closeDialogs}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => handleCheck(checkingProject)}
+                disabled={isChecking}
+              >
+                Re-check
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

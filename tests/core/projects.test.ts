@@ -186,7 +186,7 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
     const projects = res.json();
     const custom = projects.find((p: any) => p.id === 'proj-1');
     expect(custom.hasAdminSecret).toBe(true);
-    expect(custom.proxyUrl).toMatch(/\/proxy\/token12345$/);
+    expect(custom.proxyUrl).toMatch(/\/(?:paypal-)?proxy\/token12345$/);
     expect(custom.adminSecret).toBeUndefined();
     expect(custom.adminSecretEncrypted).toBeUndefined();
   });
