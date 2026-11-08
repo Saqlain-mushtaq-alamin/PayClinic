@@ -192,9 +192,13 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
 
     return prescribe(prescriberDeps, finding, steps);
   };
+  const defaultProvider =
+    config.aiProvider === 'gemini' && (!config.geminiApiKey || !config.geminiModel)
+      ? new FixtureProvider(join(REPO_ROOT, 'fixtures', 'ai'))
+      : createProvider(config);
   const storeSourceDir = join(REPO_ROOT, 'apps', 'buggy-store');
   const protector = createProtector({
-    provider,
+    provider: defaultProvider,
     repos,
     config,
     scenarios: PROTECTOR_SCENARIOS,

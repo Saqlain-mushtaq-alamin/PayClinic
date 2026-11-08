@@ -155,8 +155,8 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
         const run = repos.getRun(finding.runId);
         if (run?.projectId) {
           const project = deps.projectsRepo.getProject(run.projectId);
-          if (project && project.kind === 'remote' && project.source_root) {
-            allowedPrefix = project.source_root;
+          if (project && project.kind === 'remote' && project.sourceRoot) {
+            allowedPrefix = project.sourceRoot;
           }
         }
       }

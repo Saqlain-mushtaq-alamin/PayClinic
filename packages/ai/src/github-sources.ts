@@ -1,9 +1,13 @@
 import type { Finding } from '@payclinic/contracts';
 
 export interface FetchSourcesProject {
+  repoOwner?: string | null;
   repo_owner?: string | null;
+  repoName?: string | null;
   repo_name?: string | null;
+  repoBranch?: string | null;
   repo_branch?: string | null;
+  sourceRoot?: string | null;
   source_root?: string | null;
 }
 
@@ -76,14 +80,15 @@ export async function fetchProjectSources(
   _finding: Finding,
   opts: FetchProjectSourcesOptions = {},
 ): Promise<Map<string, string>> {
-  const owner = project.repo_owner;
-  const repo = project.repo_name;
+  const owner = project.repoOwner ?? project.repo_owner;
+  const repo = project.repoName ?? project.repo_name;
   if (!owner || !repo) {
     throw new Error('Project repository is not configured (missing repo_owner or repo_name)');
   }
-  const branch = project.repo_branch || 'main';
-  const sourceRoot = project.source_root
-    ? project.source_root.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+  const branch = project.repoBranch ?? project.repo_branch ?? 'main';
+  const rawSourceRoot = project.sourceRoot ?? project.source_root ?? '';
+  const sourceRoot = rawSourceRoot
+    ? rawSourceRoot.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
     : '';
 
   const maxFiles = opts.maxFiles ?? 8;
