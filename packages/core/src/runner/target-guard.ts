@@ -1,4 +1,5 @@
 import dns from 'node:dns';
+import net from 'node:net';
 
 /** Raised when a remote target URL violates SSRF or network boundary safety rules. */
 export class UnsafeTargetError extends Error {
@@ -18,12 +19,8 @@ export function isPrivateOrLocalIp(ip: string): boolean {
   }
 
   // IPv4 address
-  if (clean.includes('.')) {
+  if (net.isIPv4(clean)) {
     const parts = clean.split('.').map((p) => parseInt(p, 10));
-    if (parts.length !== 4 || parts.some((p) => isNaN(p) || p < 0 || p > 255)) {
-      return true; // malformed IPv4 is treated as unsafe
-    }
-
     const [a, b] = parts as [number, number, number, number];
 
     // 0.0.0.0/8 (current network)
@@ -47,13 +44,17 @@ export function isPrivateOrLocalIp(ip: string): boolean {
   }
 
   // IPv6 address
-  if (clean === '::1' || clean === '::') return true;
-  // Link-local: fe80::/10 (fe8, fe9, fea, feb)
-  if (/^fe[89ab]/i.test(clean)) return true;
-  // Unique local: fc00::/7 (fc, fd)
-  if (/^f[cd]/i.test(clean)) return true;
-  // Multicast: ff00::/8
-  if (clean.startsWith('ff')) return true;
+  if (net.isIPv6(clean)) {
+    if (clean === '::1' || clean === '::') return true;
+    // Link-local: fe80::/10 (fe8, fe9, fea, feb)
+    if (/^fe[89ab]/i.test(clean)) return true;
+    // Unique local: fc00::/7 (fc, fd)
+    if (/^f[cd]/i.test(clean)) return true;
+    // Multicast: ff00::/8
+    if (clean.startsWith('ff')) return true;
+
+    return false;
+  }
 
   return false;
 }
@@ -88,8 +89,12 @@ export async function assertSafeTarget(
 
   const rawHost = parsed.hostname.replace(/^\[|\]$/g, '');
 
+  if (rawHost.toLowerCase() === 'localhost') {
+    throw new UnsafeTargetError('Target host localhost is not allowed');
+  }
+
   // Direct IP check
-  if (isPrivateOrLocalIp(rawHost)) {
+  if (net.isIP(rawHost) && isPrivateOrLocalIp(rawHost)) {
     throw new UnsafeTargetError(`Target host is private, loopback, or link-local: ${rawHost}`);
   }
 
