@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
+  ArrowRight,
   Bot,
   CheckCircle2,
+  FolderGit2,
   Globe,
   KeyRound,
   Loader2,
@@ -655,6 +658,41 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   Save
                 </button>
               </div>
+            </div>
+          </Card>
+
+          {/* Next steps link card */}
+          <Card className="settings-card settings-card--next" data-testid="settings-projects-card">
+            <div className="settings-card__header">
+              <div className="settings-card__title-row">
+                <FolderGit2 size={20} className="settings-card__icon" />
+                <h3 className="settings-card__title">Connect Your Website</h3>
+              </div>
+            </div>
+            <div className="settings-card__content">
+              <p
+                style={{
+                  margin: '0 0 1rem 0',
+                  color: 'var(--color-text-secondary, #666)',
+                  fontSize: '0.875rem',
+                }}
+              >
+                Next: add your website in Projects
+              </p>
+              <Link
+                to="/projects"
+                className="button button--secondary"
+                data-testid="settings-to-projects-link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Next: add your website in Projects</span>
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </Card>
         </div>

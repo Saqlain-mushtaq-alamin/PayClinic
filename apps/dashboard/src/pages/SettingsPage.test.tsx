@@ -77,6 +77,11 @@ describe('SettingsPage', () => {
     expect(paypalIdInput.value).toBe('');
     expect(paypalSecretInput.value).toBe('');
     expect(geminiKeyInput.value).toBe('');
+
+    // Verify next steps link card to Projects
+    expect(await screen.findAllByText(/Next: add your website in Projects/i)).toHaveLength(2);
+    const link = screen.getByTestId('settings-to-projects-link');
+    expect(link).toHaveAttribute('href', '/projects');
   });
 
   it('Save sends only changed fields', async () => {
