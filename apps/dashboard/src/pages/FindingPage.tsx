@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { FindingDetail, RunDetail } from '@payclinic/contracts';
@@ -120,54 +121,116 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
 
   return (
     <section className="finding-page" data-testid="finding-page">
-      <Link to={`/runs/${detail.finding.runId}`}>← Back to run</Link>
-      <header className="page-header">
-        <h1>{detail.finding.title}</h1>
-        <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
-        <Badge tone={stateTone(detail.finding.state)}>{detail.finding.state}</Badge>
-        <VerifyBadge verify={detail.verify} />
+      {/* Sticky Header */}
+      <header className="finding-header sticky-header">
+        <div className="finding-header__nav">
+          <Link to={`/runs/${detail.finding.runId}`} className="back-link">
+            <ArrowLeft size={16} />
+            <span>← Back to run</span>
+          </Link>
+        </div>
+        <div className="finding-header__main">
+          <div className="finding-header__title-row">
+            <h1 className="finding-header__title">{detail.finding.title}</h1>
+            <div className="finding-header__badges">
+              <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
+              <Badge tone={stateTone(detail.finding.state)}>{detail.finding.state}</Badge>
+              <VerifyBadge verify={detail.verify} />
+            </div>
+          </div>
+        </div>
       </header>
-      <Card className="finding-summary">
-        <p>{detail.finding.summary}</p>
-        {runDetail && <p className="finding-summary__score">Run score: {runDetail.score.score}</p>}
-      </Card>
-      {detail.finding.state !== 'verified' && detail.finding.state !== 'protected' && (
-        <Card>
-          <PrescribeButton
-            stage={prescribe.stage}
-            message={prescribe.message}
-            onStart={prescribe.start}
-          />
-          {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
-        </Card>
-      )}
-      {detail.finding.state === 'verified' && (
-        <Card>
-          <OpenPrButton
-            findingId={detail.finding.id}
-            client={client.openPr ? (client as Pick<ApiClient, 'openPr'>) : undefined}
-          />
-        </Card>
-      )}
-      {detail.explanation && (
-        <Card>
-          <ExplanationPanel explanation={detail.explanation} />
-        </Card>
-      )}
-      {detail.patch && (
-        <Card>
-          <h2>Proposed patch</h2>
-          <UnifiedDiff diff={detail.patch.diff} />
-        </Card>
-      )}
-      <Card>
-        <h2>Trace replay</h2>
-        <TraceReplay
-          steps={detail.steps}
-          evidenceStepIds={detail.finding.evidenceStepIds}
-          verdict={detail.finding.summary}
-        />
-      </Card>
+
+      <div className="finding-layout">
+        {/* Left Column: Details, Diff, Trace */}
+        <div className="finding-layout__main">
+          <Card className="finding-summary-card">
+            <h3 className="section-title">Summary & Evidence</h3>
+            <p className="finding-summary__text">{detail.finding.summary}</p>
+            {runDetail && (
+              <div className="finding-summary__meta">
+                <span className="text-muted">Run score:</span>
+                <span className="chip badge--neutral font-mono font-bold">
+                  {runDetail.score.score}
+                </span>
+              </div>
+            )}
+          </Card>
+
+          {detail.explanation && (
+            <Card className="finding-explanation-card">
+              <ExplanationPanel explanation={detail.explanation} />
+            </Card>
+          )}
+
+          {detail.patch && (
+            <Card className="finding-diff-card">
+              <h3 className="section-title">Proposed patch</h3>
+              <UnifiedDiff diff={detail.patch.diff} />
+            </Card>
+          )}
+
+          <Card className="finding-trace-card">
+            <h3 className="section-title">Trace replay</h3>
+            <TraceReplay
+              steps={detail.steps}
+              evidenceStepIds={detail.finding.evidenceStepIds}
+              verdict={detail.finding.summary}
+            />
+          </Card>
+        </div>
+
+        {/* Right Column: Sticky Actions Sidebar */}
+        <div className="finding-layout__sidebar">
+          <div className="finding-sidebar-sticky">
+            {detail.finding.state !== 'verified' && detail.finding.state !== 'protected' && (
+              <Card className="actions-card">
+                <h3 className="actions-card__title">Remediation</h3>
+                <p className="actions-card__desc">
+                  Propose an AI patch and re-run invariant checks in sandbox.
+                </p>
+                <PrescribeButton
+                  stage={prescribe.stage}
+                  message={prescribe.message}
+                  onStart={prescribe.start}
+                />
+                {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
+              </Card>
+            )}
+
+            {detail.finding.state === 'verified' && (
+              <Card className="actions-card actions-card--verified">
+                <h3 className="actions-card__title">Patch Ready</h3>
+                <p className="actions-card__desc">
+                  The generated patch resolved all invariant checks in the sandbox.
+                </p>
+                <OpenPrButton
+                  findingId={detail.finding.id}
+                  client={client.openPr ? (client as Pick<ApiClient, 'openPr'>) : undefined}
+                />
+              </Card>
+            )}
+
+            <Card className="meta-card">
+              <h4 className="meta-card__title">Metadata</h4>
+              <dl className="meta-dl">
+                <div className="meta-row">
+                  <dt>Finding ID</dt>
+                  <dd className="font-mono">{detail.finding.id}</dd>
+                </div>
+                <div className="meta-row">
+                  <dt>Scenario</dt>
+                  <dd className="font-mono">{detail.finding.scenarioKey}</dd>
+                </div>
+                <div className="meta-row">
+                  <dt>Invariant</dt>
+                  <dd className="font-mono">{detail.finding.invariantKey}</dd>
+                </div>
+              </dl>
+            </Card>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

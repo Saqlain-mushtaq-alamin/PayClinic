@@ -3,20 +3,30 @@ import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
   ModuleRegistry,
-  colorSchemeVariable,
+  colorSchemeDark,
   themeQuartz,
   type ColDef,
+  type ICellRendererParams,
 } from 'ag-grid-community';
 import type { FirewallDecision } from '@payclinic/contracts';
 import { summarizeDecisions, toDecisionRows, type DecisionRow } from '../lib/decisions';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const gridTheme = themeQuartz.withPart(colorSchemeVariable);
+const gridTheme = themeQuartz.withPart(colorSchemeDark);
+
+const actionRenderer = (p: ICellRendererParams<DecisionRow>) => {
+  const isBlock = p.value === 'block';
+  return (
+    <span className={`chip ${isBlock ? 'badge--critical' : 'badge--ok'}`}>
+      {String(p.value)}
+    </span>
+  );
+};
 
 const columnDefs: ColDef<DecisionRow>[] = [
   { field: 'time', headerName: 'Time', width: 200 },
-  { field: 'action', headerName: 'Action', width: 110 },
+  { field: 'action', headerName: 'Action', width: 110, cellRenderer: actionRenderer },
   { field: 'rule', headerName: 'Rule', width: 90 },
   { field: 'reason', headerName: 'Reason', flex: 1, minWidth: 220 },
   { field: 'merchant', headerName: 'Merchant', width: 150 },
@@ -36,7 +46,11 @@ export function DecisionLog({ decisions }: { decisions: FirewallDecision[] }) {
 
   return (
     <div className="decision-log">
-      <p data-testid="decision-summary">{summary}</p>
+      <div className="decision-log__header">
+        <p data-testid="decision-summary" className="decision-log__summary">
+          {summary}
+        </p>
+      </div>
       <div data-testid="decision-grid" style={{ width: '100%' }}>
         <AgGridReact<DecisionRow>
           theme={gridTheme}
@@ -45,9 +59,9 @@ export function DecisionLog({ decisions }: { decisions: FirewallDecision[] }) {
           getRowId={(p) => p.data.id}
           columnDefs={columnDefs}
           defaultColDef={{ sortable: true, resizable: true }}
-          // Blocked attempts are the money-losing rows: tint them red.
           rowClassRules={{
             'decision-log__row--block': (params) => params.data?.action === 'block',
+            'decision-log__row--allow': (params) => params.data?.action === 'allow',
           }}
         />
       </div>

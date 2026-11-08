@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 export interface FindingCounts {
   critical: number;
   high: number;
@@ -7,9 +9,13 @@ export interface FindingCounts {
 
 export interface SegmentedGaugeProps {
   score: number;
+  scoreBefore?: number;
+  scoreAfter?: number;
   caption?: string;
   findingCounts?: Partial<FindingCounts>;
   totalSegments?: number;
+  flash?: boolean;
+  ariaLabel?: string;
 }
 
 export function getScoreTone(score: number): 'ok' | 'warn' | 'bad' {
@@ -24,19 +30,60 @@ export function getScoreColor(score: number): string {
   return '#ef5b52';
 }
 
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+const ANIMATION_MS = 600;
+
 export function SegmentedGauge({
   score,
+  scoreBefore,
+  scoreAfter,
   caption = 'Latest run',
   findingCounts,
   totalSegments = 12,
+  flash = false,
+  ariaLabel,
 }: SegmentedGaugeProps) {
+  const [displayed, setDisplayed] = useState(score);
+  const previousRef = useRef(score);
+
+  useEffect(() => {
+    const from = previousRef.current;
+    if (from === score) return;
+    previousRef.current = score;
+
+    if (prefersReducedMotion() || typeof window.requestAnimationFrame !== 'function') {
+      setDisplayed(score);
+      return;
+    }
+
+    let startedAt: number | null = null;
+    let frame = 0;
+    const tick = (now: number) => {
+      if (startedAt === null) startedAt = now;
+      const progress = Math.min(1, (now - startedAt) / ANIMATION_MS);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayed(Math.round(from + (score - from) * eased));
+      if (progress < 1) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [score]);
+
   const scoreTone = getScoreTone(score);
   const activeColor = getScoreColor(score);
   const dimColor = 'rgba(255, 255, 255, 0.08)';
 
   const filledCount = Math.min(
     totalSegments,
-    Math.max(0, Math.round((score / 100) * totalSegments)),
+    Math.max(0, Math.round((displayed / 100) * totalSegments)),
   );
 
   // SVG Geometry
@@ -70,7 +117,7 @@ export function SegmentedGauge({
       index: i,
       d,
       isFilled,
-      delay: i * 40,
+      delay: i * 30,
     };
   });
 
@@ -81,12 +128,15 @@ export function SegmentedGauge({
     low: findingCounts?.low ?? 0,
   };
 
+  const hasCounts = findingCounts !== undefined;
+  const showChange = scoreBefore !== undefined && scoreAfter !== undefined;
+
   return (
     <div
-      className={`segmented-gauge segmented-gauge--${scoreTone}`}
-      data-testid="segmented-gauge"
+      className={`segmented-gauge segmented-gauge--${scoreTone} ${flash ? 'segmented-gauge--flash-green' : ''}`}
+      data-testid="score-gauge"
       role="img"
-      aria-label={`Payment safety score ${score} out of 100`}
+      aria-label={ariaLabel ?? `Payment safety score ${score} out of 100`}
     >
       <div className="segmented-gauge__arc-wrapper">
         <svg
@@ -111,7 +161,7 @@ export function SegmentedGauge({
           ))}
 
           <text x={cx} y={cy - 20} textAnchor="middle" className="segmented-gauge__score-value">
-            {score}
+            {displayed}
           </text>
           <text x={cx} y={cy} textAnchor="middle" className="segmented-gauge__score-caption">
             {caption}
@@ -119,21 +169,32 @@ export function SegmentedGauge({
         </svg>
       </div>
 
-      <div className="segmented-gauge__legend" aria-label="Unresolved findings by severity">
-        <span className="chip badge--critical" title={`${counts.critical} critical findings`}>
-          <strong>{counts.critical}</strong> Critical
-        </span>
-        <span className="chip badge--high" title={`${counts.high} high findings`}>
-          <strong>{counts.high}</strong> High
-        </span>
-        <span className="chip badge--medium" title={`${counts.medium} medium findings`}>
-          <strong>{counts.medium}</strong> Medium
-        </span>
-        <span className="chip badge--low" title={`${counts.low} low findings`}>
-          <strong>{counts.low}</strong> Low
-        </span>
-      </div>
+      {showChange && (
+        <div className="segmented-gauge__change" data-testid="score-change">
+          <span className="chip chip--neutral">{scoreBefore}</span>
+          {' → '}
+          <span className={`chip ${scoreAfter >= scoreBefore ? 'badge--ok' : 'badge--critical'}`}>
+            {scoreAfter}
+          </span>
+        </div>
+      )}
+
+      {hasCounts && (
+        <div className="segmented-gauge__legend" aria-label="Unresolved findings by severity">
+          <span className="chip badge--critical" title={`${counts.critical} critical findings`}>
+            <strong>{counts.critical}</strong> Critical
+          </span>
+          <span className="chip badge--high" title={`${counts.high} high findings`}>
+            <strong>{counts.high}</strong> High
+          </span>
+          <span className="chip badge--medium" title={`${counts.medium} medium findings`}>
+            <strong>{counts.medium}</strong> Medium
+          </span>
+          <span className="chip badge--low" title={`${counts.low} low findings`}>
+            <strong>{counts.low}</strong> Low
+          </span>
+        </div>
+      )}
     </div>
   );
 }
-
