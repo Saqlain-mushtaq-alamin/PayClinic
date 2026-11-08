@@ -25,6 +25,7 @@ export interface OrchestratorDeps {
   projectsRepo?: ProjectsRepo;
   config: Config;
   getConfig?: () => Config;
+  getSimUrl?: () => Promise<string>;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   repoRoot: string;
   storeSourceDir: string;
@@ -41,6 +42,7 @@ export interface Orchestrator {
   prescribe(findingId: string): Promise<void>;
   protect(runId: string): Promise<void>;
   idle(): Promise<void>;
+  getSimUrl?: () => Promise<string>;
 }
 
 /** Raised when protect is requested for a run that is not an agent run. */

@@ -289,19 +289,19 @@ export function createRepos(db: Database): Repos {
             s.id,
             s.runId,
             s.scenarioId,
-            s.seq,
-            s.actor,
+            s.seq ?? 0,
+            s.actor ?? 'runner',
             s.label ?? null,
-            s.method,
-            s.url,
-            JSON.stringify(s.requestHeaders),
+            s.method ?? 'GET',
+            s.url ?? '',
+            s.requestHeaders ? JSON.stringify(s.requestHeaders) : '{}',
             toJson(s.requestBody),
-            s.responseStatus,
-            JSON.stringify(s.responseHeaders),
+            s.responseStatus ?? 0,
+            s.responseHeaders ? JSON.stringify(s.responseHeaders) : '{}',
             toJson(s.responseBody),
             s.paypalDebugId ?? null,
-            s.durationMs,
-            s.timestamp,
+            s.durationMs ?? 0,
+            s.timestamp ?? new Date().toISOString(),
           );
         }
       });
@@ -313,10 +313,10 @@ export function createRepos(db: Database): Repos {
         scenarioId === undefined
           ? db.prepare('SELECT * FROM steps WHERE run_id = ? ORDER BY scenario_id, seq').all(runId)
           : db
-              .prepare(
-                'SELECT * FROM steps WHERE run_id = ? AND scenario_id = ? ORDER BY scenario_id, seq',
-              )
-              .all(runId, scenarioId)
+            .prepare(
+              'SELECT * FROM steps WHERE run_id = ? AND scenario_id = ? ORDER BY scenario_id, seq',
+            )
+            .all(runId, scenarioId)
       ) as Row[];
       return rows.map(parseStep);
     },

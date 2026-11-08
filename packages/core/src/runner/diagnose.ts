@@ -13,6 +13,7 @@ import type {
 } from '@payclinic/contracts';
 import type { Config } from '../config';
 import type { Repos } from '../db/repos';
+import type { ProjectsRepo } from '../db/projects-repo';
 import { findingsFromResults } from '../findings';
 import { computeScore } from '../score';
 import type { ScenarioFn } from './context';
@@ -23,8 +24,10 @@ export type { ExecuteScenariosEnv, ExecutedScenario, StoreFactory } from './exec
 
 export interface DiagnoseDeps {
   repos: Repos;
+  projectsRepo?: ProjectsRepo;
   config: Config;
   getConfig?: () => Config;
+  getSimUrl?: () => Promise<string>;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   storeSourceDir: string;
   newId: () => string;
@@ -43,6 +46,7 @@ export interface DiagnoseRequest {
   mode: RunMode;
   scenarios: ScenarioKey[];
   runId?: string;
+  projectId?: string;
 }
 
 export interface DiagnoseResult {
@@ -85,6 +89,8 @@ export async function runDiagnose(
 
   const findings: Finding[] = [];
   const startedAt = new Map<string, string>();
+  const projectId = req.projectId ?? existing?.projectId ?? 'builtin';
+  const project = deps.projectsRepo?.getProject(projectId);
 
   try {
     const runConfig = deps.getConfig ? deps.getConfig() : deps.config;
@@ -97,6 +103,9 @@ export async function runDiagnose(
         newId: deps.newId,
         now: deps.now,
         signal: deps.signal,
+        project,
+        repos: deps.repos,
+        simUrl: deps.getSimUrl,
         ...(deps.scenarioTimeoutMs === undefined
           ? {}
           : { scenarioTimeoutMs: deps.scenarioTimeoutMs }),
@@ -124,7 +133,13 @@ export async function runDiagnose(
               ? { startedAt: startedAt.get(info.scenarioId) }
               : {}),
           };
-          deps.repos.insertSteps(info.steps);
+          const existingStepIds = new Set(
+            deps.repos.listSteps(runId, info.scenarioId).map((s) => s.id),
+          );
+          const newSteps = info.steps.filter((s) => !existingStepIds.has(s.id));
+          if (newSteps.length > 0) {
+            deps.repos.insertSteps(newSteps);
+          }
 
           if (info.status === 'error') {
             const finishedAt = deps.now().toISOString();

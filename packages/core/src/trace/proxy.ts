@@ -21,6 +21,33 @@ export interface TraceProxy {
   stop(): Promise<void>;
 }
 
+const proxyMockRules = new Map<string, MockRule[]>();
+
+export function setProxyMockRule(runId: string, rule: MockRule): void {
+  const list = proxyMockRules.get(runId) ?? [];
+  list.push(rule);
+  proxyMockRules.set(runId, list);
+}
+
+export function popProxyMockRule(
+  runId: string,
+  method: string,
+  path: string,
+): MockRule | undefined {
+  const list = proxyMockRules.get(runId);
+  if (!list || list.length === 0) return undefined;
+  const index = list.findIndex(
+    (r) => r.method === method && new RegExp(r.pathRegex).test(path),
+  );
+  if (index === -1) return undefined;
+  const [rule] = list.splice(index, 1);
+  return rule;
+}
+
+export function clearProxyMockRules(runId: string): void {
+  proxyMockRules.delete(runId);
+}
+
 function headerRecord(raw: IncomingHttpHeaders): Record<string, string> {
   const headers: Record<string, string> = {};
   for (const [name, value] of Object.entries(raw)) {
@@ -103,6 +130,7 @@ export interface ForwardProxyRequestOptions {
   target: string;
   subpath?: string;
   mockRule?: MockRule;
+  body?: unknown;
   onFinish?: (exchange: RecordedExchange) => void;
 }
 
@@ -128,8 +156,16 @@ export async function forwardProxyRequest(
   let requestBody: unknown = undefined;
 
   try {
-    const requestBuffer = await readBody(req);
-    requestBody = parseBody(requestBuffer, incoming['content-type'] ?? null);
+    let requestBuffer: Buffer;
+    if (opts.body !== undefined) {
+      requestBody = opts.body;
+      requestBuffer = Buffer.isBuffer(opts.body)
+        ? opts.body
+        : Buffer.from(typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body));
+    } else {
+      requestBuffer = await readBody(req);
+      requestBody = parseBody(requestBuffer, incoming['content-type'] ?? null);
+    }
     const extra: Record<string, string> = opts.mockRule
       ? { 'paypal-mock-response': JSON.stringify({ mock_application_codes: opts.mockRule.mockCode }) }
       : {};

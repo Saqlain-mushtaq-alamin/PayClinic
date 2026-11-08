@@ -50,6 +50,7 @@ import {
   encrypt,
   forwardProxyRequest,
   openDb,
+  popProxyMockRule,
   type Config,
   type Orchestrator,
   type Repos,
@@ -203,6 +204,9 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   let lastRunId: string | null = null;
   let activeSim: Awaited<ReturnType<typeof startSim>> | null = null;
   const getSimUrl = async (): Promise<string> => {
+    if (deps.orchestrator.getSimUrl) {
+      return deps.orchestrator.getSimUrl();
+    }
     if (!activeSim) {
       activeSim = await startSim();
     }
@@ -322,9 +326,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   });
 
   app.get('/api/runs', async (_request, reply) => {
+    const projects = new Map(projectsRepo.listProjects().map((p) => [p.id, p.name]));
     const runs = repos.listRuns().map((run) => {
       const findings = repos.listFindings(run.id);
-      return { ...run, findingCount: findings.length, score: computeScore(findings) };
+      const projectName = run.projectId
+        ? projects.get(run.projectId) ?? (run.projectId === 'builtin' ? 'Demo store' : run.projectId)
+        : 'Demo store';
+      return { ...run, projectName, findingCount: findings.length, score: computeScore(findings) };
     });
     return send(reply, RunSummary.array(), runs);
   });
@@ -333,9 +341,19 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     const { id } = request.params as { id: string };
     const run = repos.getRun(id);
     if (!run) return notFound(reply);
+    const projects = new Map(projectsRepo.listProjects().map((p) => [p.id, p.name]));
+    const projectName = run.projectId
+      ? projects.get(run.projectId) ?? (run.projectId === 'builtin' ? 'Demo store' : run.projectId)
+      : 'Demo store';
+    const runWithProjectName = { ...run, projectName };
     const scenarios = repos.listScenarios(id);
     const findings = repos.listFindings(id);
-    return send(reply, RunDetail, { run, scenarios, findings, score: computeScore(findings) });
+    return send(reply, RunDetail, {
+      run: runWithProjectName,
+      scenarios,
+      findings,
+      score: computeScore(findings),
+    });
   });
 
   app.get('/api/runs/:id/steps', async (request, reply) => {
@@ -731,9 +749,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
 
     reply.hijack();
 
+    const mockRule = popProxyMockRule(activeRun.id, request.method, subpath);
+
     await forwardProxyRequest(request.raw, reply.raw, {
       target,
       subpath,
+      mockRule,
+      body: request.body,
       onFinish: (exchange) => {
         const scenarios = repos.listScenarios(activeRun.id);
         const scenarioId = scenarios[scenarios.length - 1]?.id ?? `${activeRun.id}-scenario-1`;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bot, Sparkles, Store } from 'lucide-react';
+import { ArrowLeft, Bot, FolderGit2, Sparkles, Store } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { RunEvent } from '@payclinic/contracts';
@@ -198,6 +198,15 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
           <div className="run-header__left">
             <div className="run-header__title-row">
               <h1 className="run-header__title">Run {data.run.id}</h1>
+              <span className="chip chip--project" data-testid="run-project-name">
+                <FolderGit2 size={14} />
+                <span>
+                  {data.run.projectName ??
+                    (data.run.projectId && data.run.projectId !== 'builtin'
+                      ? data.run.projectId
+                      : 'Demo store')}
+                </span>
+              </span>
               <span className="chip chip--target">
                 {isStore ? <Store size={14} /> : <Bot size={14} />}
                 <span>{isStore ? 'Store' : 'Agent'}</span>

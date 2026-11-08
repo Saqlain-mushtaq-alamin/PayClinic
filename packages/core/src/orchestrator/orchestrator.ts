@@ -8,6 +8,8 @@ import type {
   Step,
   VerifyResult,
 } from '@payclinic/contracts';
+import { startSim } from '@payclinic/sim';
+import type { ProjectRow } from '../db/projects-repo';
 import { computeScore } from '../score';
 import { runDiagnose } from '../runner/diagnose';
 import { defaultChildRegistry } from '../runner/child-registry';
@@ -156,6 +158,14 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
   };
 
   let tail: Promise<void> = Promise.resolve();
+  let activeSim: Awaited<ReturnType<typeof startSim>> | null = null;
+  const getSimUrl = async (): Promise<string> => {
+    if (deps.getSimUrl) return deps.getSimUrl();
+    if (!activeSim) {
+      activeSim = await startSim();
+    }
+    return activeSim.url;
+  };
 
   const startRun = (req: RunCreateRequest): string => {
     const currentConfig = deps.getConfig ? deps.getConfig() : deps.config;
@@ -167,10 +177,37 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     }
 
     const projectId = req.projectId ?? 'builtin';
+    let project: ProjectRow | null = null;
     if (deps.projectsRepo) {
-      const project = deps.projectsRepo.getProject(projectId);
+      project = deps.projectsRepo.getProject(projectId);
       if (!project) {
         throw new Error(`Project ${projectId} not found`);
+      }
+    }
+
+    if (project && project.kind === 'remote') {
+      // 3. Only store scenarios B1-B5 (and optional B6) are allowed for remote projects. Reject A1/A2 with a clear error.
+      if (req.target === 'agent') {
+        throw new Error(
+          'Remote projects only support store scenarios (B1-B5, B6). Agent attacks (A1, A2) are not supported.',
+        );
+      }
+      const disallowed = req.scenarios.filter((k) => k === 'A1' || k === 'A2');
+      if (disallowed.length > 0) {
+        throw new Error(
+          `Remote projects only support store scenarios (B1-B5, B6). Agent scenarios (${disallowed.join(', ')}) are not supported.`,
+        );
+      }
+
+      // 2. Run lock: only one run per remote project at a time (queue or reject with a clear message)
+      const runs = deps.repos.listRuns();
+      const activeOrQueued = runs.find(
+        (r) => (r.status === 'running' || r.status === 'queued') && r.projectId === projectId,
+      );
+      if (activeOrQueued) {
+        throw new Error(
+          `A run is already active or queued for project '${project.name}' (${activeOrQueued.id}). Please wait for it to complete.`,
+        );
       }
     }
 
@@ -200,8 +237,14 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
       try {
         await Promise.race([
           runDiagnose(
-            { ...deps, config: currentConfig, emit, signal: controller.signal },
-            { target: req.target, mode: req.mode, scenarios: req.scenarios, runId: id },
+            { ...deps, getSimUrl, config: currentConfig, emit, signal: controller.signal },
+            {
+              target: req.target,
+              mode: req.mode,
+              scenarios: req.scenarios,
+              runId: id,
+              projectId,
+            },
           ),
           timeoutPromise,
         ]);
@@ -253,5 +296,6 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     prescribe,
     protect,
     idle: () => Promise.all([tail, prescribeChain]).then(() => undefined),
+    getSimUrl,
   };
 }
