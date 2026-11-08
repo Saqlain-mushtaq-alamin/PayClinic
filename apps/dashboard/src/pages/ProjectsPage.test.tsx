@@ -93,6 +93,7 @@ function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
         fix: 'Implement POST /api/orders accepting { cartId, items } and creating an order via PAYPAL_BASE_URL.',
       },
     ]),
+    retestProject: vi.fn(async () => ({ ok: true, score: 100, findings: [] })),
     ...overrides,
   };
 }

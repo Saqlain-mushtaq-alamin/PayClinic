@@ -344,9 +344,11 @@ export function openPrFromEnv(
   const token = env.GITHUB_TOKEN ?? deps.settingsStore?.get('githubToken');
   const repoFull = env.GITHUB_REPO ?? deps.settingsStore?.get('githubRepo');
 
-  // If both token and repo are missing globally and no projectsRepo exists, return undefined
-  if (!deps.projectsRepo && (!token || !repoFull)) {
-    return undefined;
+  const [owner, repo] = repoFull ? repoFull.split('/') : [];
+  const hasGlobalRepo = Boolean(owner && repo);
+
+  if (!deps.projectsRepo && !deps.settingsStore) {
+    if (!token || !hasGlobalRepo) return undefined;
   }
 
   return createOpenPr({
@@ -355,7 +357,5 @@ export function openPrFromEnv(
     settingsStore: deps.settingsStore,
     env,
     now: () => new Date(),
-  });
-}
   });
 }

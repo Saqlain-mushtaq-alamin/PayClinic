@@ -200,31 +200,53 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
         {/* Right Column: Sticky Actions Sidebar */}
         <div className="finding-layout__sidebar">
           <div className="finding-sidebar-sticky">
-            {detail.finding.state !== 'verified' && detail.finding.state !== 'protected' && (
-              <Card className="actions-card">
-                <h3 className="actions-card__title">Remediation</h3>
-                <p className="actions-card__desc">
-                  Propose an AI patch and re-run invariant checks in sandbox.
-                </p>
-                <PrescribeButton
-                  stage={prescribe.stage}
-                  message={prescribe.message}
-                  onStart={prescribe.start}
-                />
-                {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
-              </Card>
-            )}
+            {detail.finding.state !== 'verified' &&
+              detail.finding.state !== 'protected' &&
+              detail.finding.state !== 'patched' && (
+                <Card className="actions-card">
+                  <h3 className="actions-card__title">Remediation</h3>
+                  <p className="actions-card__desc">
+                    Propose an AI patch and re-run invariant checks in sandbox.
+                  </p>
+                  <PrescribeButton
+                    stage={prescribe.stage}
+                    message={prescribe.message}
+                    onStart={prescribe.start}
+                  />
+                  {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
+                </Card>
+              )}
 
-            {detail.finding.state === 'verified' && (
+            {(detail.finding.state === 'verified' || detail.finding.state === 'patched') && (
               <Card className="actions-card actions-card--verified">
-                <h3 className="actions-card__title">Patch Ready</h3>
+                <h3 className="actions-card__title">
+                  {detail.finding.state === 'patched' ? 'Patch Ready (Needs review)' : 'Patch Ready'}
+                </h3>
                 <p className="actions-card__desc">
-                  The generated patch resolved all invariant checks in the sandbox.
+                  {detail.finding.state === 'patched'
+                    ? 'Remote patch generated. Submit pull request to review and deploy to your test environment.'
+                    : 'The generated patch resolved all invariant checks in the sandbox.'}
                 </p>
                 <OpenPrButton
                   findingId={detail.finding.id}
                   client={client.openPr ? (client as Pick<ApiClient, 'openPr'>) : undefined}
+                  onPrOpened={(url) => setPrUrl(url)}
                 />
+                {prUrl && (
+                  <div className="mt-3 text-sm" data-testid="finding-pr-url-box">
+                    <span className="text-muted">Pull Request: </span>
+                    <a
+                      data-testid="finding-pr-link"
+                      href={prUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline"
+                      style={{ wordBreak: 'break-all' }}
+                    >
+                      {prUrl}
+                    </a>
+                  </div>
+                )}
               </Card>
             )}
 

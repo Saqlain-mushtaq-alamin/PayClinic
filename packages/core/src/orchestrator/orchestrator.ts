@@ -318,14 +318,17 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
 
     try {
       const simUrl = await getSimUrl();
-      const result = await executeScenarios(
+      const currentConfig = deps.getConfig ? deps.getConfig() : deps.config;
+      const executed = await executeScenarios(
         {
+          config: currentConfig,
+          getConfig: deps.getConfig,
           scenarios: deps.scenarios,
-          repoRoot: deps.repoRoot,
           storeSourceDir: deps.storeSourceDir,
           newId: deps.newId,
           now: deps.now,
           simUrl,
+          runId: run.id,
           project:
             project.kind === 'remote'
               ? {
@@ -341,21 +344,40 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
                 }
               : undefined,
           repos: deps.repos,
+          onStep: (step) => emit({ type: 'step.recorded', step }),
+          onScenarioStart: (key, scenarioId) => {
+            const scenario: ScenarioResult = {
+              id: scenarioId,
+              runId: run.id,
+              key,
+              status: 'running',
+              startedAt: deps.now().toISOString(),
+            };
+            deps.repos.insertScenario(scenario);
+            emit({ type: 'scenario.started', scenario });
+          },
+          onScenario: async (key, info) => {
+            const existingStepIds = new Set(
+              deps.repos.listSteps(run.id, info.scenarioId).map((s) => s.id),
+            );
+            const newSteps = info.steps.filter((s) => !existingStepIds.has(s.id));
+            if (newSteps.length > 0) {
+              deps.repos.insertSteps(newSteps);
+            }
+            deps.repos.updateScenario(info.scenarioId, {
+              status: info.status,
+              finishedAt: deps.now().toISOString(),
+            });
+          },
         },
-        {
-          target: run.target,
-          mode: run.mode,
-          scenarios: run.scenarioKeys,
-          runId: run.id,
-        },
+        run.scenarioKeys,
       );
 
       const priorFindings = deps.repos.listFindings(run.id);
       for (const prior of priorFindings) {
-        const stillFailing = result.findings.some(
-          (f) => f.scenarioKey === prior.scenarioKey && f.invariantKey === prior.invariantKey,
-        );
-        if (!stillFailing) {
+        const scenario = executed.find((s) => s.key === prior.scenarioKey);
+        const inv = scenario?.results.find((r) => r.key === prior.invariantKey);
+        if (inv && inv.passed) {
           setFindingState(prior.id, 'verified');
         }
       }

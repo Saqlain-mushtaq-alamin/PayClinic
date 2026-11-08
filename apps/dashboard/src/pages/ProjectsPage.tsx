@@ -14,6 +14,7 @@ import {
   Pencil,
   Plus,
   Radio,
+  RotateCcw,
   Trash2,
   X,
   XCircle,
@@ -247,6 +248,29 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
     }
   };
 
+  const [retestingId, setRetestingId] = useState<string | null>(null);
+
+  const handleRetest = async (p: Project) => {
+    if (retestingId) return;
+    setRetestingId(p.id);
+    try {
+      const runs = await (client?.listRuns ? client.listRuns() : api.listRuns());
+      const projectRun = runs.find((r) => r.projectId === p.id);
+      if (!projectRun) {
+        toast.info(`No runs found for project "${p.name}". Run a diagnosis first.`);
+        return;
+      }
+      const res = client?.retestProject
+        ? await client.retestProject(p.id, projectRun.id)
+        : await api.retestProject(p.id, projectRun.id);
+      toast.success(`Re-test completed for ${p.name}! Score: ${res.score}`);
+    } catch (err) {
+      toast.error(`Re-test failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRetestingId(null);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     void navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
@@ -415,6 +439,17 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                   >
                     <Radio size={14} />
                     Check connection
+                  </button>
+
+                  <button
+                    type="button"
+                    className="button button--secondary button--sm"
+                    onClick={() => handleRetest(p)}
+                    disabled={retestingId === p.id}
+                    data-testid={`retest-project-${p.id}`}
+                  >
+                    <RotateCcw size={14} className={retestingId === p.id ? 'spin' : ''} />
+                    {retestingId === p.id ? 'Re-testing…' : 'Re-test'}
                   </button>
 
                   <div className="project-card__edit-actions">
