@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Check, Play, ShieldAlert, Sparkles } from 'lucide-react';
 import type { RunMode, RunTarget, ScenarioInfo } from '@payclinic/contracts';
 import { useHealth, useScenarios } from '../api/hooks';
 import { api, type ApiClient } from '../api/client';
@@ -74,8 +75,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
 
   const onDiagnose = useCallback(async () => {
     const list: ScenarioInfo[] | null = scenarios;
-    if (!list || !mode || posting) return; // never post without the health mode label
-    // Immediate optimistic state before awaiting network call
+    if (!list || !mode || posting) return;
     setPosting(true);
     setPostError(null);
     try {
@@ -98,63 +98,112 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   }, [effectiveChecked, mode, navigate, posting, scenarios, target]);
 
   return (
-    <Card className="start-run">
-      <h2>Diagnose</h2>
-      {mode && <p>Mode: {mode}</p>}
-      <div role="group" aria-label="Target">
-        <Button
-          variant={target === 'store' ? 'primary' : 'secondary'}
-          onClick={() => selectTarget('store')}
-        >
-          Store bugs
-        </Button>{' '}
-        <Button
-          variant={target === 'agent' ? 'primary' : 'secondary'}
-          onClick={() => selectTarget('agent')}
-        >
-          Agent attacks
-        </Button>
+    <Card className="start-run start-run--tall" id="diagnose-card" data-testid="diagnose-panel">
+      {/* Top Gradient Mini-Card */}
+      <div className="diagnose-minicard">
+        <div className="diagnose-minicard__top">
+          <span className="diagnose-minicard__badge">
+            <Sparkles size={13} />
+            SCANNER ENGINE
+          </span>
+          <ShieldAlert size={20} className="diagnose-minicard__icon" />
+        </div>
+        <div className="diagnose-minicard__bottom">
+          <span className="diagnose-minicard__status">Ready to scan</span>
+          {mode && <p className="diagnose-minicard__mode">Mode: {mode}</p>}
+        </div>
       </div>
-      {scenariosLoading && <Spinner label="Loading scenarios..." />}
-      <ul className="start-run__scenarios">
-        {(scenarios ?? [])
-          .filter((scenario) => scenario.target === target)
-          .map((scenario) => (
-            <li key={scenario.key}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={effectiveChecked.has(scenario.key)}
-                  onChange={() =>
-                    setChecked((current) => {
-                      const base = userToggledRef.current.has(target) ? current : effectiveChecked;
-                      userToggledRef.current.add(target);
-                      const next = new Set(base);
-                      if (next.has(scenario.key)) next.delete(scenario.key);
-                      else next.add(scenario.key);
-                      return next;
-                    })
-                  }
-                />{' '}
-                {scenario.key} — {scenario.title}
-              </label>
-            </li>
-          ))}
-      </ul>
-      <Button aria-label="Diagnose" onClick={onDiagnose} disabled={!canStart}>
-        {posting ? (
-          <>
-            <Spinner label="" /> Starting…
-          </>
-        ) : (
-          'Diagnose'
+
+      <div className="start-run__body">
+        <div className="start-run__header">
+          <h2>Diagnose</h2>
+          <span className="start-run__subtitle">Select targets & scenarios</span>
+        </div>
+
+        {/* Segmented Toggle */}
+        <div className="segmented-toggle" role="group" aria-label="Target">
+          <button
+            type="button"
+            className={`segmented-toggle__btn ${target === 'store' ? 'segmented-toggle__btn--active' : ''}`}
+            onClick={() => selectTarget('store')}
+          >
+            Store bugs
+          </button>
+          <button
+            type="button"
+            className={`segmented-toggle__btn ${target === 'agent' ? 'segmented-toggle__btn--active' : ''}`}
+            onClick={() => selectTarget('agent')}
+          >
+            Agent attacks
+          </button>
+        </div>
+
+        {scenariosLoading && <Spinner label="Loading scenarios..." />}
+
+        {/* Scenario checkboxes as selectable chip rows */}
+        <ul className="start-run__scenario-chips">
+          {(scenarios ?? [])
+            .filter((scenario) => scenario.target === target)
+            .map((scenario) => {
+              const isChecked = effectiveChecked.has(scenario.key);
+              return (
+                <li key={scenario.key} className="start-run__scenario-item">
+                  <label
+                    className={`scenario-chip ${isChecked ? 'scenario-chip--checked' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="scenario-chip__input"
+                      checked={isChecked}
+                      onChange={() =>
+                        setChecked((current) => {
+                          const base = userToggledRef.current.has(target)
+                            ? current
+                            : effectiveChecked;
+                          userToggledRef.current.add(target);
+                          const next = new Set(base);
+                          if (next.has(scenario.key)) next.delete(scenario.key);
+                          else next.add(scenario.key);
+                          return next;
+                        })
+                      }
+                    />
+                    <span className="scenario-chip__box">
+                      {isChecked ? <Check size={12} strokeWidth={3} /> : null}
+                    </span>
+                    <span className="scenario-chip__text">
+                      <strong>{scenario.key}</strong> — {scenario.title}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+        </ul>
+
+        {/* Full-width green "Start diagnosis" button with a Play icon */}
+        <Button
+          className="button--primary button--fullwidth button--diagnose"
+          aria-label="Diagnose"
+          onClick={onDiagnose}
+          disabled={!canStart}
+        >
+          {posting ? (
+            <>
+              <Spinner label="" /> Starting…
+            </>
+          ) : (
+            <>
+              <Play size={16} fill="currentColor" /> Start diagnosis
+            </>
+          )}
+        </Button>
+
+        {postError && (
+          <p className="start-run__error" role="alert">
+            {postError}
+          </p>
         )}
-      </Button>
-      {postError && (
-        <p className="start-run__error" role="alert">
-          {postError}
-        </p>
-      )}
+      </div>
     </Card>
   );
 }

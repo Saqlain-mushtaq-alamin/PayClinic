@@ -33,9 +33,19 @@ describe('RunsPage', () => {
     expect(screen.getAllByRole('row')).toHaveLength(4);
   });
 
-  it('shows the empty state', async () => {
+  it('shows the empty state with the diagnosis shortcut button', async () => {
     renderPage(async () => []);
     expect(await screen.findByText('No runs yet')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start your first diagnosis' }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders all 3 cards in the grid: Payment Safety, Score History, Diagnose', async () => {
+    renderPage(async () => runs);
+    expect(await screen.findByText('Payment Safety')).toBeInTheDocument();
+    expect(screen.getByText('Score history')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Diagnose/i })).toBeInTheDocument();
   });
 
   it('shows the error state with a Retry button', async () => {

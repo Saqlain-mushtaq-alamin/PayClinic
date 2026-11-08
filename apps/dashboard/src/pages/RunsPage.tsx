@@ -1,12 +1,22 @@
-import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Bot,
+  FolderLock,
+  MoreVertical,
+  Store,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import { useRuns } from '../api/hooks';
 import type { ApiClient } from '../api/client';
-import { Badge, type BadgeTone } from '../components/ui/Badge';
-import { Card } from '../components/ui/Card';
-import { EmptyState } from '../components/ui/EmptyState';
-import { ErrorState } from '../components/ui/ErrorState';
-import { Spinner } from '../components/ui/Spinner';
+import { useDashboard } from '../context/DashboardContext';
+import { SegmentedGauge } from '../components/SegmentedGauge';
+import { ScoreHistoryChart } from '../components/ScoreHistoryChart';
 import { StartRunPanel } from '../components/StartRunPanel';
+import type { BadgeTone } from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
+import { ErrorState } from '../components/ui/ErrorState';
 
 export type RunsPageClient = Pick<ApiClient, 'listRuns' | 'health' | 'getScenarios' | 'createRun'>;
 
@@ -21,61 +31,278 @@ function statusTone(status: string): BadgeTone {
   return 'neutral';
 }
 
+function scoreTone(score: number): BadgeTone {
+  if (score >= 80) return 'ok';
+  if (score >= 50) return 'high';
+  return 'critical';
+}
+
+function formatRelativeTime(isoString: string): string {
+  try {
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return 'just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}h ago`;
+    const diffDays = Math.floor(diffHour / 24);
+    return `${diffDays}d ago`;
+  } catch {
+    return isoString;
+  }
+}
+
 export function RunsPage({ client }: RunsPageProps) {
   const { data, error, loading, reload } = useRuns(client);
+  const { searchQuery } = useDashboard();
+  const navigate = useNavigate();
 
-  const sorted = data ? [...data].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) : [];
+  const sorted = useMemo(() => {
+    return data ? [...data].sort((a, b) => b.startedAt.localeCompare(a.startedAt)) : [];
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    if (!searchQuery.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter(
+      (r) =>
+        r.id.toLowerCase().includes(q) ||
+        r.target.toLowerCase().includes(q) ||
+        r.scenarioKeys.some((k) => k.toLowerCase().includes(q)),
+    );
+  }, [sorted, searchQuery]);
+
+  // Find latest run with score
+  const latestCompletedRun = useMemo(() => {
+    return sorted.find((r) => r.status === 'completed' && r.score !== undefined);
+  }, [sorted]);
+
+  const latestScore = latestCompletedRun?.score?.score ?? (sorted[0]?.score?.score ?? 0);
+
+  const findingCounts = useMemo(() => {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    if (latestCompletedRun?.score?.penalties) {
+      for (const p of latestCompletedRun.score.penalties) {
+        if (p.severity in counts) {
+          counts[p.severity as keyof typeof counts] += 1;
+        }
+      }
+    }
+    return counts;
+  }, [latestCompletedRun]);
 
   return (
-    <section className="runs-page">
-      <header className="page-header">
-        <h1>Runs</h1>
-      </header>
-      <StartRunPanel client={client} />
-      {loading ? (
-        <Spinner label="Loading runs..." />
-      ) : error ? (
-        <ErrorState message={`Failed to load runs: ${error.message}`} onRetry={reload} />
-      ) : sorted.length > 0 ? (
-        <Card>
-          <table className="runs-table">
-            <thead>
-              <tr>
-                <th>Run</th>
-                <th>Started</th>
-                <th>Target</th>
-                <th>Mode</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th>Scenarios</th>
-                <th>Findings</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((run) => (
-                <tr key={run.id}>
-                  <td>
-                    <Link to={`/runs/${run.id}`}>
-                      {run.id.length > 12 ? run.id.slice(0, 8) : run.id}
-                    </Link>
-                  </td>
-                  <td>{new Date(run.startedAt).toLocaleString()}</td>
-                  <td>{run.target}</td>
-                  <td>{run.mode}</td>
-                  <td>
-                    <Badge tone={statusTone(run.status)}>{run.status}</Badge>
-                  </td>
-                  <td>{run.score ? <strong>{run.score.score}</strong> : '-'}</td>
-                  <td>{run.scenarioKeys.join(', ')}</td>
-                  <td>{run.findingCount}</td>
-                </tr>
+    <section className="runs-page" data-testid="runs-page">
+      {/* 12-Column Grid Row 1: Payment Safety (4) | Score History (5) | Diagnose (3) */}
+      <div className="runs-page__grid">
+        {/* Card 1: Payment Safety */}
+        <div className="runs-page__col runs-page__col--safety">
+          <Card className="runs-card runs-card--safety">
+            <div className="runs-card__header">
+              <h2>Payment Safety</h2>
+              <span className="runs-card__subtitle">Latest safety score</span>
+            </div>
+            <SegmentedGauge
+              score={latestScore}
+              caption={latestCompletedRun ? `Run ${latestCompletedRun.id.slice(0, 8)}` : 'Latest run'}
+              findingCounts={findingCounts}
+            />
+          </Card>
+        </div>
+
+        {/* Card 2: Score History */}
+        <div className="runs-page__col runs-page__col--history">
+          <Card className="runs-card runs-card--history">
+            <ScoreHistoryChart runs={sorted} />
+          </Card>
+        </div>
+
+        {/* Card 3: Diagnose Column */}
+        <div className="runs-page__col runs-page__col--diagnose">
+          <StartRunPanel client={client} />
+        </div>
+      </div>
+
+      {/* Row 2: Recent runs (span 12) transactions-style table */}
+      <div className="runs-page__recent-runs">
+        <Card className="runs-card runs-card--recent">
+          <div className="runs-card__header">
+            <div>
+              <h2>Recent runs</h2>
+              <span className="runs-card__subtitle">
+                {sorted.length > 0
+                  ? `Showing ${filtered.length} ${filtered.length === 1 ? 'evaluation' : 'evaluations'}`
+                  : 'Evaluation activity'}
+              </span>
+            </div>
+          </div>
+
+          {loading ? (
+            /* Skeleton shimmer loading state */
+            <div className="runs-table__skeleton-container" data-testid="runs-skeleton">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="runs-table__skeleton-row shimmer" />
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : error ? (
+            <ErrorState message={`Failed to load runs: ${error.message}`} onRetry={reload} />
+          ) : filtered.length > 0 ? (
+            <div className="runs-table-responsive">
+              <table className="runs-table runs-table--transactions">
+                <thead>
+                  <tr>
+                    <th>Run</th>
+                    <th>Started</th>
+                    <th>Target</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Scenarios</th>
+                    <th>Findings</th>
+                    <th aria-label="Actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((run, index) => {
+                    const scoreVal = run.score?.score;
+                    const delta =
+                      run.scoreBefore !== undefined && run.scoreAfter !== undefined
+                        ? run.scoreAfter - run.scoreBefore
+                        : 0;
+
+                    return (
+                      <tr
+                        key={run.id}
+                        className="runs-table__row"
+                        style={{ animationDelay: `${index * 35}ms` }}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') navigate(`/runs/${run.id}`);
+                        }}
+                      >
+                        <td>
+                          <div className="runs-table__run-cell">
+                            <div className="runs-table__icon-tile">
+                              {run.target === 'agent' ? (
+                                <Bot size={18} className="runs-table__target-icon" />
+                              ) : (
+                                <Store size={18} className="runs-table__target-icon" />
+                              )}
+                            </div>
+                            <div className="runs-table__run-info">
+                              <Link to={`/runs/${run.id}`} className="runs-table__run-id">
+                                {run.id}
+                              </Link>
+                              <span className="runs-table__subtitle-keys">
+                                {run.scenarioKeys.join(', ')}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span
+                            className="runs-table__time"
+                            title={new Date(run.startedAt).toLocaleString()}
+                          >
+                            {formatRelativeTime(run.startedAt)}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="runs-table__target-label">{run.target}</span>
+                        </td>
+
+                        <td>
+                          <span className="runs-table__mode-label">{run.mode}</span>
+                        </td>
+
+                        <td>
+                          <span className={`badge badge--${statusTone(run.status)}`}>
+                            {run.status === 'running' && (
+                              <span className="pulse-dot pulse-dot--live" />
+                            )}
+                            {run.status}
+                          </span>
+                        </td>
+
+                        <td>
+                          {scoreVal !== undefined ? (
+                            <div className="runs-table__score-cell">
+                              <span className={`chip badge--${scoreTone(scoreVal)}`}>
+                                <strong>{scoreVal}</strong>
+                              </span>
+                              {delta > 0 && (
+                                <span className="score-trend score-trend--up" title={`+${delta}`}>
+                                  <TrendingUp size={12} />
+                                </span>
+                              )}
+                              {delta < 0 && (
+                                <span className="score-trend score-trend--down" title={`${delta}`}>
+                                  <TrendingDown size={12} />
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="runs-table__score-empty">-</span>
+                          )}
+                        </td>
+
+                        <td>
+                          <span className="runs-table__scenarios-text">
+                            {run.scenarioKeys.join(', ')}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="chip badge--neutral">
+                            {run.findingCount} {run.findingCount === 1 ? 'finding' : 'findings'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <button
+                            type="button"
+                            className="runs-table__kebab"
+                            aria-label={`Actions for run ${run.id}`}
+                            title="Actions"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/runs/${run.id}`);
+                            }}
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* Empty state with illustration & diagnosis shortcut button */
+            <div className="runs-empty-state" data-testid="runs-empty-state">
+              <div className="runs-empty-state__icon-wrap">
+                <FolderLock size={44} strokeWidth={1.5} />
+              </div>
+              <h3>No runs yet</h3>
+              <p>Start your first payment safety diagnosis to scan scenarios and detect bugs.</p>
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => {
+                  const el = document.getElementById('diagnose-card');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Start your first diagnosis
+              </button>
+            </div>
+          )}
         </Card>
-      ) : (
-        <EmptyState message="No runs yet" />
-      )}
+      </div>
     </section>
   );
 }
