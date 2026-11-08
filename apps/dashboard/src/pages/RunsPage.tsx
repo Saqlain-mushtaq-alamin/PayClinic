@@ -174,8 +174,6 @@ export function RunsPage({ client }: RunsPageProps) {
                       <th>Mode</th>
                       <th>Status</th>
                       <th>Score</th>
-                      <th>Scenarios</th>
-                      <th>Findings</th>
                       <th aria-label="Actions" />
                     </tr>
                   </thead>
@@ -263,18 +261,6 @@ export function RunsPage({ client }: RunsPageProps) {
                             ) : (
                               <span className="runs-table__score-empty">-</span>
                             )}
-                          </td>
-
-                          <td>
-                            <span className="runs-table__scenarios-text">
-                              {run.scenarioKeys.join(', ')}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span className="chip badge--neutral">
-                              {run.findingCount} {run.findingCount === 1 ? 'finding' : 'findings'}
-                            </span>
                           </td>
 
                           <td>
