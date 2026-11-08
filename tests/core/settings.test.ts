@@ -169,7 +169,7 @@ describe('Settings API Routes & Admin Gate', () => {
       listSteps: () => [],
     } as unknown as Repos;
     const dummyOrchestrator = {
-      startRun: (req) => {
+      startRun: (req: { mode: string }) => {
         if (req.mode === 'online' && !settingsStore.get('paypalClientId')) {
           throw new Error('online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
         }

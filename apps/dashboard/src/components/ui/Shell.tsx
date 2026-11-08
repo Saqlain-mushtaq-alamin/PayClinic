@@ -86,15 +86,15 @@ export function Shell({ children, client }: ShellProps) {
           </div>
 
           <div className="shell__sidebar-bottom">
-            <button
-              type="button"
-              className="shell__nav-link"
+            <NavLink
+              to="/settings"
+              role="button"
+              className={({ isActive }) => `shell__nav-link ${isActive ? 'active' : ''}`}
               title="Settings"
               aria-label="Settings"
-              onClick={() => {}}
             >
               <Settings size={20} />
-            </button>
+            </NavLink>
           </div>
         </aside>
 

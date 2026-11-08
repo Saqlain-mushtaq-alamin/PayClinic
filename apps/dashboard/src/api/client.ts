@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import {
+  AuthStatusResponse,
   DecisionList,
   FindingDetail,
   Health,
@@ -9,12 +10,32 @@ import {
   RunDetail,
   RunSummary,
   ScenarioInfo,
+  SettingsResponse,
   StepList,
+  TestSettingsResponse,
   type FirewallDecision,
   type RunCreateRequest,
   type RunSummary as RunSummaryType,
   type Step,
 } from '@payclinic/contracts';
+
+let currentAdminToken: string | null = null;
+const authListeners = new Set<() => void>();
+
+export function setAdminToken(token: string | null): void {
+  currentAdminToken = token;
+}
+
+export function getAdminToken(): string | null {
+  return currentAdminToken;
+}
+
+export function onAuthRequired(listener: () => void): () => void {
+  authListeners.add(listener);
+  return () => {
+    authListeners.delete(listener);
+  };
+}
 
 interface Schema<T> {
   parse(value: unknown): T;
@@ -60,6 +81,10 @@ export interface ApiClient {
   getPolicy(id: string): Promise<PolicyResponse>;
   getDecisions(id: string): Promise<FirewallDecision[]>;
   getScenarios(): Promise<ScenarioInfo[]>;
+  getSettings(): Promise<SettingsResponse>;
+  saveSettings(updates: Record<string, string | null>): Promise<SettingsResponse>;
+  testSetting(kind: 'paypal' | 'gemini' | 'github'): Promise<TestSettingsResponse>;
+  getAuthStatus(): Promise<AuthStatusResponse>;
 }
 
 /**
@@ -75,13 +100,27 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     schema: Schema<T>,
     body?: unknown,
   ): Promise<T> => {
-    const init: RequestInit = { method, headers: { accept: 'application/json' } };
-    if (body !== undefined) {
-      init.headers = { ...init.headers, 'content-type': 'application/json' };
-      init.body = JSON.stringify(body);
+    const headers: Record<string, string> = { accept: 'application/json' };
+    if (currentAdminToken) {
+      headers.authorization = `Bearer ${currentAdminToken}`;
     }
+    if (body !== undefined) {
+      headers['content-type'] = 'application/json';
+    }
+
+    const init: RequestInit = {
+      method,
+      headers,
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    };
+
     const response = await fetchImpl(`${base}${path}`, init);
     if (!response.ok) {
+      if (response.status === 401) {
+        for (const listener of authListeners) {
+          listener();
+        }
+      }
       let message = `${method} ${path} failed with status ${response.status}`;
       try {
         const payload = (await response.json()) as { error?: unknown };
@@ -117,6 +156,11 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     getDecisions: (id) =>
       request('GET', `/api/runs/${encodeURIComponent(id)}/decisions`, DecisionList),
     getScenarios: () => request('GET', '/api/scenarios', ScenarioInfo.array()),
+    getSettings: () => request('GET', '/api/settings', SettingsResponse),
+    saveSettings: (updates) => request('PUT', '/api/settings', SettingsResponse, updates),
+    testSetting: (kind) =>
+      request('POST', `/api/settings/test/${encodeURIComponent(kind)}`, TestSettingsResponse),
+    getAuthStatus: () => request('GET', '/api/auth/status', AuthStatusResponse),
   };
 }
 
