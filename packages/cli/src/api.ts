@@ -1,5 +1,5 @@
 import type { EventEmitter } from 'node:events';
-import { timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
@@ -12,6 +12,9 @@ import {
   Health,
   OpenPrResponse,
   PolicyResponse,
+  Project,
+  ProjectCreateRequest,
+  ProjectUpdateRequest,
   RunCreateRequest,
   RunCreateResponse,
   RunDetail,
@@ -30,10 +33,14 @@ import {
   type Score,
 } from '@payclinic/contracts';
 import {
+  ProjectsRepo,
   ProtectNotApplicableError,
   ProtectNotConfiguredError,
   SettingsStore,
+  assertSafeTarget,
   computeScore,
+  createProjectsRepo,
+  encrypt,
   openDb,
   type Config,
   type Orchestrator,
@@ -53,6 +60,7 @@ export type OpenPr = (finding: Finding) => Promise<z.infer<typeof OpenPrResponse
 export interface ApiDeps {
   orchestrator: Orchestrator;
   repos: Repos;
+  projectsRepo?: ProjectsRepo;
   config: Config;
   bus: EventEmitter;
   version?: string;
@@ -181,6 +189,7 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   const app = Fastify({ logger: false, forceCloseConnections: true });
   const { repos, config, bus } = deps;
   const settingsStore = deps.settingsStore ?? new SettingsStore(openDb(':memory:'));
+  const projectsRepo = deps.projectsRepo ?? createProjectsRepo(openDb(':memory:'));
   const clients = new Set<SseClient>();
   let lastRunId: string | null = null;
 
@@ -197,7 +206,7 @@ export function createApi(deps: ApiDeps): FastifyInstance {
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('access-control-allow-origin', outputOrigin(request.headers.origin));
-    reply.header('access-control-allow-methods', 'GET,POST,PUT,OPTIONS');
+    reply.header('access-control-allow-methods', 'GET,POST,PUT,DELETE,OPTIONS');
     reply.header('access-control-allow-headers', 'content-type,authorization');
     if (request.method === 'OPTIONS') reply.code(204).send();
   });
@@ -207,7 +216,9 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     if (!adminToken) return;
 
     const url = request.url.split('?')[0] ?? '';
-    if (url.startsWith('/api/settings')) {
+    const isSettings = url.startsWith('/api/settings');
+    const isProjectWrite = url.startsWith('/api/projects') && request.method !== 'GET';
+    if (isSettings || isProjectWrite) {
       const authHeader = request.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'unauthorized: missing or invalid Bearer token' });
@@ -275,6 +286,11 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   app.post('/api/runs', async (request, reply) => {
     const parsed = RunCreateRequest.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid run request' });
+    const projectId = parsed.data.projectId ?? 'builtin';
+    const project = projectsRepo.getProject(projectId);
+    if (!project) {
+      return reply.code(400).send({ error: `project '${projectId}' does not exist` });
+    }
     try {
       const runId = deps.orchestrator.startRun(parsed.data);
       return reply.code(202).send(RunCreateResponse.parse({ runId }));
@@ -490,6 +506,157 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     }
 
     return send(reply, TestSettingsResponse, result);
+  });
+
+  app.get('/api/projects', async (request, reply) => {
+    const publicUrl = settingsStore.get('publicUrl');
+    const base = publicUrl || `${request.protocol}://${request.headers.host ?? 'localhost:4000'}`;
+    const list = projectsRepo.listProjects().map((p) =>
+      Project.parse({
+        id: p.id,
+        name: p.name,
+        kind: p.kind,
+        baseUrl: p.baseUrl,
+        proxyToken: p.proxyToken,
+        proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${p.proxyToken}`,
+        hasAdminSecret: Boolean(p.adminSecretEncrypted),
+        repoOwner: p.repoOwner,
+        repoName: p.repoName,
+        repoBranch: p.repoBranch,
+        sourceRoot: p.sourceRoot,
+        createdAt: p.createdAt,
+      }),
+    );
+    return send(reply, Project.array(), list);
+  });
+
+  app.post('/api/projects', async (request, reply) => {
+    const parsed = ProjectCreateRequest.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid project request' });
+    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } =
+      parsed.data;
+
+    if (baseUrl) {
+      try {
+        await assertSafeTarget(baseUrl);
+      } catch (err) {
+        return reply
+          .code(400)
+          .send({ error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    const id = randomUUID();
+    const proxyToken = randomUUID().replace(/-/g, '');
+    const adminSecretEncrypted = adminSecret ? encrypt(adminSecret) : null;
+    const createdAt = new Date().toISOString();
+
+    projectsRepo.insertProject({
+      id,
+      name,
+      kind: 'remote',
+      baseUrl: baseUrl ?? null,
+      adminSecretEncrypted,
+      proxyToken,
+      repoOwner: repoOwner ?? null,
+      repoName: repoName ?? null,
+      repoBranch: repoBranch ?? null,
+      sourceRoot: sourceRoot ?? null,
+      createdAt,
+    });
+
+    const publicUrl = settingsStore.get('publicUrl');
+    const base = publicUrl || `${request.protocol}://${request.headers.host ?? 'localhost:4000'}`;
+    const created = Project.parse({
+      id,
+      name,
+      kind: 'remote',
+      baseUrl: baseUrl ?? null,
+      proxyToken,
+      proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${proxyToken}`,
+      hasAdminSecret: Boolean(adminSecretEncrypted),
+      repoOwner: repoOwner ?? null,
+      repoName: repoName ?? null,
+      repoBranch: repoBranch ?? null,
+      sourceRoot: sourceRoot ?? null,
+      createdAt,
+    });
+
+    return reply.code(201).send(created);
+  });
+
+  app.put('/api/projects/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const existing = projectsRepo.getProject(id);
+    if (!existing) return notFound(reply);
+
+    if (existing.id === 'builtin' || existing.kind === 'builtin') {
+      return reply.code(403).send({ error: 'Cannot edit builtin project' });
+    }
+
+    const parsed = ProjectUpdateRequest.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid project update' });
+    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } =
+      parsed.data;
+
+    if (baseUrl) {
+      try {
+        await assertSafeTarget(baseUrl);
+      } catch (err) {
+        return reply
+          .code(400)
+          .send({ error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    let adminSecretEncrypted: string | null | undefined = undefined;
+    if (adminSecret === null) {
+      adminSecretEncrypted = null;
+    } else if (typeof adminSecret === 'string' && adminSecret !== '') {
+      adminSecretEncrypted = encrypt(adminSecret);
+    }
+
+    projectsRepo.updateProject(id, {
+      name,
+      baseUrl,
+      adminSecretEncrypted,
+      repoOwner,
+      repoName,
+      repoBranch,
+      sourceRoot,
+    });
+
+    const updated = projectsRepo.getProject(id)!;
+    const publicUrl = settingsStore.get('publicUrl');
+    const base = publicUrl || `${request.protocol}://${request.headers.host ?? 'localhost:4000'}`;
+
+    return send(reply, Project, {
+      id: updated.id,
+      name: updated.name,
+      kind: updated.kind,
+      baseUrl: updated.baseUrl,
+      proxyToken: updated.proxyToken,
+      proxyUrl: `${base.replace(/\/+$/, '')}/proxy/${updated.proxyToken}`,
+      hasAdminSecret: Boolean(updated.adminSecretEncrypted),
+      repoOwner: updated.repoOwner,
+      repoName: updated.repoName,
+      repoBranch: updated.repoBranch,
+      sourceRoot: updated.sourceRoot,
+      createdAt: updated.createdAt,
+    });
+  });
+
+  app.delete('/api/projects/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const existing = projectsRepo.getProject(id);
+    if (!existing) return notFound(reply);
+
+    if (existing.id === 'builtin' || existing.kind === 'builtin') {
+      return reply.code(403).send({ error: 'Cannot delete builtin project' });
+    }
+
+    projectsRepo.deleteProject(id);
+    return reply.code(200).send({ ok: true });
   });
 
   return app;

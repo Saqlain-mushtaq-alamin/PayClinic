@@ -33,8 +33,13 @@ import {
  * PUT  /api/settings                      body SettingsUpdateRequest   -> 200 SettingsResponse
  * POST /api/settings/test/:kind                                        -> 200 TestSettingsResponse
  * GET  /api/auth/status                                                -> 200 AuthStatusResponse
+ * GET  /api/projects                                                   -> 200 Project[]
+ * POST /api/projects                      body ProjectCreateRequest    -> 201 Project
+ * PUT  /api/projects/:id                  body ProjectUpdateRequest    -> 200 Project
+ * DELETE /api/projects/:id                                             -> 200 { ok: true }
  */
 export const RunCreateRequest = z.object({
+  projectId: z.string().default('builtin').optional(),
   target: RunTarget,
   mode: RunMode,
   scenarios: z.array(ScenarioKey).min(1),
@@ -117,3 +122,44 @@ export const AuthStatusResponse = z.object({
   required: z.boolean(),
 });
 export type AuthStatusResponse = z.infer<typeof AuthStatusResponse>;
+
+export const ProjectKind = z.enum(['builtin', 'remote']);
+export type ProjectKind = z.infer<typeof ProjectKind>;
+
+export const Project = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: ProjectKind,
+  baseUrl: z.string().nullable().optional(),
+  proxyToken: z.string(),
+  proxyUrl: z.string().optional(),
+  hasAdminSecret: z.boolean(),
+  repoOwner: z.string().nullable().optional(),
+  repoName: z.string().nullable().optional(),
+  repoBranch: z.string().nullable().optional(),
+  sourceRoot: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type Project = z.infer<typeof Project>;
+
+export const ProjectCreateRequest = z.object({
+  name: z.string().min(1),
+  baseUrl: z.string().url().optional().nullable(),
+  adminSecret: z.string().optional().nullable(),
+  repoOwner: z.string().optional().nullable(),
+  repoName: z.string().optional().nullable(),
+  repoBranch: z.string().optional().nullable(),
+  sourceRoot: z.string().optional().nullable(),
+});
+export type ProjectCreateRequest = z.infer<typeof ProjectCreateRequest>;
+
+export const ProjectUpdateRequest = z.object({
+  name: z.string().min(1).optional(),
+  baseUrl: z.string().url().optional().nullable(),
+  adminSecret: z.string().optional().nullable(),
+  repoOwner: z.string().optional().nullable(),
+  repoName: z.string().optional().nullable(),
+  repoBranch: z.string().optional().nullable(),
+  sourceRoot: z.string().optional().nullable(),
+});
+export type ProjectUpdateRequest = z.infer<typeof ProjectUpdateRequest>;

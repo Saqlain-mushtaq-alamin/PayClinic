@@ -18,8 +18,10 @@ import {
 } from '@payclinic/ai';
 import {
   ConfigError,
+  ProjectsRepo,
   SettingsStore,
   createOrchestrator,
+  createProjectsRepo,
   createRepos,
   derivePatchDiff,
   loadConfig,
@@ -57,6 +59,7 @@ const PROTECTOR_SCENARIOS: Partial<Record<ScenarioKey, ProtectorScenario>> = {
 export interface Runtime {
   orchestrator: Orchestrator;
   repos: Repos;
+  projectsRepo: ProjectsRepo;
   config: Config;
   bus: EventEmitter;
   settingsStore: SettingsStore;
@@ -105,6 +108,7 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
   const dbPath = config.dbPath === ':memory:' ? config.dbPath : resolve(REPO_ROOT, config.dbPath);
   const db = openDb(dbPath);
   const repos = createRepos(db);
+  const projectsRepo = createProjectsRepo(db);
   const settingsStore = new SettingsStore(db);
   const getConfig = () => resolveConfig(env, settingsStore);
   const bus = new EventEmitter();
@@ -134,6 +138,7 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
 
   const orchestrator = createOrchestrator({
     repos,
+    projectsRepo,
     config,
     getConfig,
     scenarios: SCENARIOS,
@@ -146,5 +151,5 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
     bus,
   });
 
-  return { orchestrator, repos, config, bus, settingsStore, getConfig };
+  return { orchestrator, repos, projectsRepo, config, bus, settingsStore, getConfig };
 }

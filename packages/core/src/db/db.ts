@@ -15,5 +15,22 @@ export function openDb(path: string): Database {
   if (path !== ':memory:') db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA_SQL);
+
+  // Migration: add project_id to runs if missing (for pre-existing databases)
+  const runColumns = db.prepare('PRAGMA table_info(runs)').all() as Array<{ name: string }>;
+  const hasProjectId = runColumns.some((col) => col.name === 'project_id');
+  if (!hasProjectId) {
+    db.exec('ALTER TABLE runs ADD COLUMN project_id TEXT');
+  }
+
+  // Seed builtin project if missing
+  const builtin = db.prepare('SELECT id FROM projects WHERE id = ?').get('builtin');
+  if (!builtin) {
+    db.prepare(
+      `INSERT OR IGNORE INTO projects (id, name, kind, proxy_token, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run('builtin', 'Demo store', 'builtin', 'builtin', new Date().toISOString());
+  }
+
   return db;
 }

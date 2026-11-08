@@ -36,6 +36,7 @@ export async function runServer(): Promise<void> {
   const app = createApi({
     orchestrator: runtime.orchestrator,
     repos: runtime.repos,
+    projectsRepo: runtime.projectsRepo,
     config: runtime.config,
     bus: runtime.bus,
     settingsStore: runtime.settingsStore,

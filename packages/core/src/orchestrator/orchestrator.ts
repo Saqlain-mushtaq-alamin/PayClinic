@@ -166,9 +166,18 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
       throw new Error('online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
     }
 
+    const projectId = req.projectId ?? 'builtin';
+    if (deps.projectsRepo) {
+      const project = deps.projectsRepo.getProject(projectId);
+      if (!project) {
+        throw new Error(`Project ${projectId} not found`);
+      }
+    }
+
     const id = deps.newId();
     const run: Run = {
       id,
+      projectId,
       target: req.target,
       mode: req.mode,
       scenarioKeys: req.scenarios,

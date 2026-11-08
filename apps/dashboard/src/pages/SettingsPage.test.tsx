@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { SettingsResponse } from '@payclinic/contracts';
-import { ApiError, getAdminToken } from '../api/client';
+import { ApiError, getAdminToken, type ApiClient } from '../api/client';
 import { DashboardProvider } from '../context/DashboardContext';
 import { SettingsPage } from './SettingsPage';
 import '../test-setup';

@@ -76,6 +76,7 @@ function parseRun(row: unknown): Run {
   const r = row as Row;
   return Run.parse({
     id: r.id,
+    projectId: (r.project_id as string | undefined) ?? undefined,
     target: r.target,
     mode: r.mode,
     scenarioKeys: parseJson(r.scenario_keys),
@@ -200,10 +201,11 @@ export function createRepos(db: Database): Repos {
   return {
     insertRun(r) {
       db.prepare(
-        `INSERT INTO runs (id, target, mode, scenario_keys, status, started_at, completed_at, score_before, score_after, error)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO runs (id, project_id, target, mode, scenario_keys, status, started_at, completed_at, score_before, score_after, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         r.id,
+        r.projectId ?? null,
         r.target,
         r.mode,
         JSON.stringify(r.scenarioKeys),
@@ -223,6 +225,7 @@ export function createRepos(db: Database): Repos {
 
     updateRun(id, patch) {
       updateById(db, 'runs', id, {
+        project_id: patch.projectId,
         target: patch.target,
         mode: patch.mode,
         scenario_keys:

@@ -128,6 +128,7 @@ export type Step = z.infer<typeof Step>;
 
 export const Run = z.object({
   id: z.string(),
+  projectId: z.string().optional(),
   target: RunTarget,
   mode: RunMode,
   scenarioKeys: z.array(ScenarioKey),

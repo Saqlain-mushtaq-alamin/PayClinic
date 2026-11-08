@@ -9,6 +9,7 @@ import type {
   Step,
 } from '@payclinic/contracts';
 import type { Config } from '../config';
+import type { ProjectsRepo } from '../db/projects-repo';
 import type { Repos } from '../db/repos';
 import type { ScenarioFn } from '../runner/context';
 
@@ -21,6 +22,7 @@ export type Protector = (run: Run, findings: Finding[]) => Promise<void>;
 
 export interface OrchestratorDeps {
   repos: Repos;
+  projectsRepo?: ProjectsRepo;
   config: Config;
   getConfig?: () => Config;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
