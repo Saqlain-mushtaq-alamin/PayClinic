@@ -53,3 +53,4 @@ describe('ScoreHistoryChart', () => {
     expect(screen.getByText('No score history available for this range')).toBeInTheDocument();
   });
 });
+

@@ -38,3 +38,4 @@ describe('SegmentedGauge', () => {
     expect(filledSegments).toHaveLength(6);
   });
 });
+
