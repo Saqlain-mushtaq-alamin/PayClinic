@@ -80,32 +80,30 @@ export function useScenarios(
 export function useProjects(
   client?: Partial<Pick<ApiClient, 'listProjects'>>,
 ): AsyncState<Project[]> {
-  const fetcher = client?.listProjects ?? (api.listProjects ? () => api.listProjects() : undefined);
-  const fallback = useCallback(async () => {
-    if (fetcher) {
-      try {
-        return await fetcher();
-      } catch {
-        // Fall back to default builtin project
+  const clientRef = useRef(client);
+  clientRef.current = client;
+  return useAsync(async () => {
+    if (clientRef.current) {
+      if (typeof clientRef.current.listProjects === 'function') {
+        return clientRef.current.listProjects();
       }
+      return [
+        {
+          id: 'builtin',
+          name: 'Demo store',
+          kind: 'builtin' as const,
+          baseUrl: null,
+          proxyToken: 'builtin',
+          proxyUrl: '/proxy/builtin',
+          hasAdminSecret: false,
+          repoOwner: null,
+          repoName: null,
+          repoBranch: null,
+          sourceRoot: null,
+          createdAt: new Date().toISOString(),
+        },
+      ];
     }
-    return [
-      {
-        id: 'builtin',
-        name: 'Demo store',
-        kind: 'builtin' as const,
-        baseUrl: null,
-        proxyToken: 'builtin',
-        proxyUrl: '/proxy/builtin',
-        hasAdminSecret: false,
-        repoOwner: null,
-        repoName: null,
-        repoBranch: null,
-        sourceRoot: null,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  }, [fetcher]);
-
-  return useAsync(fallback, [fetcher]);
+    return api.listProjects();
+  }, []);
 }

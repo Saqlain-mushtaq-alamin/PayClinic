@@ -7,7 +7,6 @@ import {
   FolderGit2,
   GitBranch,
   Globe,
-  KeyRound,
   Lock,
   Pencil,
   Plus,

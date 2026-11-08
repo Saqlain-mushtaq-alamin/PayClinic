@@ -39,7 +39,7 @@ const mockProjects: Project[] = [
 
 function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
-    health: vi.fn(async () => ({ ok: true, mode: 'offline' as const, version: '1.0', aiProvider: 'fixture' })),
+    health: vi.fn(async () => ({ ok: true as const, mode: 'offline' as const, version: '1.0', aiProvider: 'fixture' })),
     listRuns: vi.fn(async () => []),
     createRun: vi.fn(async () => ({ runId: 'run-1' })),
     getRun: vi.fn(),
@@ -71,10 +71,10 @@ function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
       createdAt: '2026-11-08T00:00:00.000Z',
     })),
     updateProject: vi.fn(async (id, updates) => ({
-      ...mockProjects[1],
+      ...mockProjects[1]!,
       id,
-      name: updates.name ?? mockProjects[1].name,
-      baseUrl: updates.baseUrl !== undefined ? updates.baseUrl : mockProjects[1].baseUrl,
+      name: updates.name ?? mockProjects[1]!.name,
+      baseUrl: updates.baseUrl !== undefined ? updates.baseUrl : mockProjects[1]!.baseUrl,
     })),
     deleteProject: vi.fn(async () => ({ ok: true })),
     ...overrides,
