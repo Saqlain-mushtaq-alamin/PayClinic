@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import type { FirewallDecision, Finding, PolicyResponse } from '@payclinic/contracts';
 import { useProtect, type ProtectStage } from '../api/useProtect';
 import { api, type ApiClient } from '../api/client';
@@ -71,6 +72,19 @@ export function AgentRunSection({
   const allProtected =
     findings.length > 0 && findings.every((finding) => finding.state === 'protected');
   const effective: ProtectStage = allProtected ? 'done' : stage;
+
+  const toastedRef = useRef<ProtectStage | null>(null);
+  useEffect(() => {
+    if (stage === 'done' && toastedRef.current !== 'done') {
+      toastedRef.current = 'done';
+      toast.success('Agent protected: firewall policy generated & verified');
+    } else if (stage === 'failed' && toastedRef.current !== 'failed') {
+      toastedRef.current = 'failed';
+      toast.error(message ?? 'Protect flow failed');
+    } else if (stage === 'idle') {
+      toastedRef.current = null;
+    }
+  }, [stage, message]);
 
   // While the flow runs, refresh the run so protected findings show up; the
   // poll stops itself once everything is protected.

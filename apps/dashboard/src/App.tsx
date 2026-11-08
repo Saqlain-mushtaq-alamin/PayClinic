@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Layout } from './components/ui/Layout';
+import { Shell } from './components/ui/Shell';
 import { EmptyState } from './components/ui/EmptyState';
 import { FindingPage } from './pages/FindingPage';
 import { RunPage } from './pages/RunPage';
@@ -7,7 +7,7 @@ import { RunsPage } from './pages/RunsPage';
 
 export default function App() {
   return (
-    <Layout>
+    <Shell>
       <Routes>
         <Route path="/" element={<RunsPage />} />
         <Route path="/runs/:id" element={<RunPage />} />
@@ -19,6 +19,6 @@ export default function App() {
           }
         />
       </Routes>
-    </Layout>
+    </Shell>
   );
 }

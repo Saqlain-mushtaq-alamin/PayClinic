@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { FindingDetail, RunDetail } from '@payclinic/contracts';
 import { api, type ApiClient } from '../api/client';
 import { usePrescribe } from '../api/usePrescribe';
@@ -104,8 +105,13 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
   });
 
   useEffect(() => {
-    if (prescribe.stage === 'done') reload();
-  }, [prescribe.stage, reload]);
+    if (prescribe.stage === 'done') {
+      toast.success('Prescription verified and patch ready');
+      reload();
+    } else if (prescribe.stage === 'failed') {
+      toast.error(prescribe.message ?? 'Prescribe failed');
+    }
+  }, [prescribe.stage, prescribe.message, reload]);
 
   if (loading && !detail) return <Spinner label="Loading finding..." />;
   if (error)

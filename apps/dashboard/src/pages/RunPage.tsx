@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { RunEvent } from '@payclinic/contracts';
 import { useRun } from '../api/hooks';
 import { useLiveRun } from '../api/useLiveRun';
@@ -133,8 +134,11 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
         }
       }
       reload();
+      toast.success('Fix all complete');
     } catch (reason: unknown) {
-      setFixError(reason instanceof Error ? reason.message : String(reason));
+      const msg = reason instanceof Error ? reason.message : String(reason);
+      setFixError(msg);
+      toast.error(`Fix all failed: ${msg}`);
     } finally {
       setFixing(false);
       setFixingIndex(null);

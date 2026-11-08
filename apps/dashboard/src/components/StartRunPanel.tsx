@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { RunMode, RunTarget, ScenarioInfo } from '@payclinic/contracts';
 import { useHealth, useScenarios } from '../api/hooks';
 import { api, type ApiClient } from '../api/client';
@@ -85,9 +86,12 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
           .filter((scenario) => effectiveChecked.has(scenario.key))
           .map((scenario) => scenario.key),
       });
+      toast.success(`Run started: ${runId}`);
       navigate(`/runs/${runId}`);
     } catch (reason: unknown) {
-      setPostError(reason instanceof Error ? reason.message : String(reason));
+      const msg = reason instanceof Error ? reason.message : String(reason);
+      setPostError(msg);
+      toast.error(`Failed to start run: ${msg}`);
     } finally {
       setPosting(false);
     }

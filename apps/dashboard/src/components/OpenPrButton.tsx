@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { api, type ApiClient } from '../api/client';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
@@ -29,14 +30,20 @@ export function OpenPrButton({ findingId, client = api }: OpenPrButtonProps) {
     client
       .openPr(findingId)
       .then((result) => {
-        if (result.prUrl) setState({ kind: 'opened', url: result.prUrl });
-        else
+        if (result.prUrl) {
+          toast.success('Pull request opened');
+          setState({ kind: 'opened', url: result.prUrl });
+        } else {
+          toast.info(result.reason ?? 'Pull request is not available');
           setState({ kind: 'reason', message: result.reason ?? 'Pull request is not available' });
+        }
       })
       .catch((reason: unknown) => {
+        const msg = reason instanceof Error ? reason.message : String(reason);
+        toast.error(`Failed to open PR: ${msg}`);
         setState({
           kind: 'error',
-          message: reason instanceof Error ? reason.message : String(reason),
+          message: msg,
         });
       });
   };
