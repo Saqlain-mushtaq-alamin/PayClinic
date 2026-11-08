@@ -22,3 +22,4 @@ export * from './verify/diff';
 export * from './verify/verify';
 export * from './orchestrator/types';
 export * from './orchestrator/orchestrator';
+export * from './settings';

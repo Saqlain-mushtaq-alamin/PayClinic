@@ -24,6 +24,7 @@ export type { ExecuteScenariosEnv, ExecutedScenario, StoreFactory } from './exec
 export interface DiagnoseDeps {
   repos: Repos;
   config: Config;
+  getConfig?: () => Config;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   storeSourceDir: string;
   newId: () => string;
@@ -86,9 +87,11 @@ export async function runDiagnose(
   const startedAt = new Map<string, string>();
 
   try {
+    const runConfig = deps.getConfig ? deps.getConfig() : deps.config;
     await executeScenarios(
       {
-        config: deps.config,
+        config: runConfig,
+        getConfig: deps.getConfig,
         scenarios: deps.scenarios,
         storeSourceDir: deps.storeSourceDir,
         newId: deps.newId,

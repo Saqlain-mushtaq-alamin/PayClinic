@@ -22,6 +22,7 @@ export type Protector = (run: Run, findings: Finding[]) => Promise<void>;
 export interface OrchestratorDeps {
   repos: Repos;
   config: Config;
+  getConfig?: () => Config;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   repoRoot: string;
   storeSourceDir: string;

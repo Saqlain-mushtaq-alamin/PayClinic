@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+export { GoogleGenAI };
 import type { AIProvider, AITask, GenerateJsonOptions } from '@payclinic/contracts';
 import { AIOutputError, AIRateLimitError } from '../errors';
 import { RETRY_DELAYS_MS, defaultSleep, isRetryableError, retryAfterMs } from '../retry';

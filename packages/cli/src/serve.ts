@@ -38,6 +38,8 @@ export async function runServer(): Promise<void> {
     repos: runtime.repos,
     config: runtime.config,
     bus: runtime.bus,
+    settingsStore: runtime.settingsStore,
+    getConfig: runtime.getConfig,
     version: process.env.PAYCLINIC_VERSION ?? '0.0.0',
     staticDir,
     ...(openPrFor === undefined ? {} : { openPr: (finding) => openPrFor(finding.id) }),

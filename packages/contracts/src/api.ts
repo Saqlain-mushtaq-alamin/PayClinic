@@ -29,6 +29,10 @@ import {
  * GET  /api/runs/:id/decisions                                         -> 200 FirewallDecision[]
  * GET  /api/scenarios                                                  -> 200 ScenarioInfo[]
  * GET  /api/health                                                     -> 200 Health
+ * GET  /api/settings                                                   -> 200 SettingsResponse
+ * PUT  /api/settings                      body SettingsUpdateRequest   -> 200 SettingsResponse
+ * POST /api/settings/test/:kind                                        -> 200 TestSettingsResponse
+ * GET  /api/auth/status                                                -> 200 AuthStatusResponse
  */
 export const RunCreateRequest = z.object({
   target: RunTarget,
@@ -87,3 +91,29 @@ export type Health = z.infer<typeof Health>;
 
 export const DecisionList = z.array(FirewallDecision);
 export const StepList = z.array(Step);
+
+export const SettingMaskedValue = z.object({
+  configured: z.boolean(),
+  hint: z.string(),
+});
+export type SettingMaskedValue = z.infer<typeof SettingMaskedValue>;
+
+export const SettingsResponse = z.record(z.string(), SettingMaskedValue);
+export type SettingsResponse = z.infer<typeof SettingsResponse>;
+
+export const SettingsUpdateRequest = z.record(z.string(), z.union([z.string(), z.null()]));
+export type SettingsUpdateRequest = z.infer<typeof SettingsUpdateRequest>;
+
+export const TestKind = z.enum(['paypal', 'gemini', 'github']);
+export type TestKind = z.infer<typeof TestKind>;
+
+export const TestSettingsResponse = z.object({
+  ok: z.boolean(),
+  message: z.string(),
+});
+export type TestSettingsResponse = z.infer<typeof TestSettingsResponse>;
+
+export const AuthStatusResponse = z.object({
+  required: z.boolean(),
+});
+export type AuthStatusResponse = z.infer<typeof AuthStatusResponse>;

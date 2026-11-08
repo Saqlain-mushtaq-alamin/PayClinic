@@ -18,11 +18,13 @@ import {
 } from '@payclinic/ai';
 import {
   ConfigError,
+  SettingsStore,
   createOrchestrator,
   createRepos,
   derivePatchDiff,
   loadConfig,
   openDb,
+  resolveConfig,
   type Config,
   type Orchestrator,
   type Prescriber,
@@ -57,6 +59,8 @@ export interface Runtime {
   repos: Repos;
   config: Config;
   bus: EventEmitter;
+  settingsStore: SettingsStore;
+  getConfig: () => Config;
 }
 
 function createProvider(config: Config): AIProvider {
@@ -101,6 +105,8 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
   const dbPath = config.dbPath === ':memory:' ? config.dbPath : resolve(REPO_ROOT, config.dbPath);
   const db = openDb(dbPath);
   const repos = createRepos(db);
+  const settingsStore = new SettingsStore(db);
+  const getConfig = () => resolveConfig(env, settingsStore);
   const bus = new EventEmitter();
   const newId = () => randomUUID();
   const readSource = createSourceReader(REPO_ROOT);
@@ -129,6 +135,7 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
   const orchestrator = createOrchestrator({
     repos,
     config,
+    getConfig,
     scenarios: SCENARIOS,
     repoRoot: REPO_ROOT,
     storeSourceDir,
@@ -139,5 +146,5 @@ export function buildRuntime(env: Record<string, string | undefined>): Runtime {
     bus,
   });
 
-  return { orchestrator, repos, config, bus };
+  return { orchestrator, repos, config, bus, settingsStore, getConfig };
 }

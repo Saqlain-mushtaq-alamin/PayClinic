@@ -21,6 +21,7 @@ export type StoreFactory = (opts: StartStoreOptions) => Promise<RunningStore>;
 
 export interface ExecuteScenariosEnv {
   config: Config;
+  getConfig?: () => Config;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   storeSourceDir: string;
   newId: () => string;
@@ -159,6 +160,7 @@ export async function executeScenarios(
   const recorder = createRecorder({ runId: env.runId, newId: env.newId, now: env.now });
   recorder.onStep((step) => env.onStep?.(step));
   const launch = env.storeFactory ?? startStore;
+  const config = env.getConfig ? env.getConfig() : env.config;
 
   let sim: Awaited<ReturnType<typeof startSim>> | undefined;
   let proxy: TraceProxy | undefined;
@@ -170,7 +172,7 @@ export async function executeScenarios(
 
   const createApprover = (httpClient: RecordedHttp): BuyerApprover =>
     selectApprover({
-      config: env.config,
+      config,
       http: httpClient,
       ...(sim === undefined ? {} : { simUrl: sim.url }),
       ask: askInTerminal,
@@ -183,8 +185,8 @@ export async function executeScenarios(
     const running = await launch({
       sourceDir: env.storeSourceDir,
       paypalBaseUrl: proxy.url,
-      paypalClientId: env.config.paypalClientId,
-      paypalClientSecret: env.config.paypalClientSecret,
+      paypalClientId: config.paypalClientId,
+      paypalClientSecret: config.paypalClientSecret,
     });
     store = running;
     http = createRecordedHttp({ recorder, baseUrl: running.url });
@@ -194,13 +196,13 @@ export async function executeScenarios(
   const drain = (recorderRef: StepRecorder): Step[] => recorderRef.drain();
 
   try {
-    if (env.config.mode === 'offline') {
+    if (config.mode === 'offline') {
       sim = await startSim();
-    } else if (!env.config.paypalBaseUrl) {
+    } else if (!config.paypalBaseUrl) {
       throw new DiagnoseError('Online mode requires PAYPAL_BASE_URL');
     }
 
-    const paypalTarget = sim?.url ?? env.config.paypalBaseUrl;
+    const paypalTarget = sim?.url ?? config.paypalBaseUrl;
     if (!paypalTarget) throw new DiagnoseError('No PayPal target is available');
     proxy = await startTraceProxy({ target: paypalTarget, recorder });
     await launchStore();

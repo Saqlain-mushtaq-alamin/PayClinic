@@ -158,6 +158,14 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
   let tail: Promise<void> = Promise.resolve();
 
   const startRun = (req: RunCreateRequest): string => {
+    const currentConfig = deps.getConfig ? deps.getConfig() : deps.config;
+    if (
+      req.mode === 'online' &&
+      (!currentConfig.paypalClientId || !currentConfig.paypalClientSecret)
+    ) {
+      throw new Error('online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
+    }
+
     const id = deps.newId();
     const run: Run = {
       id,
@@ -183,7 +191,7 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
       try {
         await Promise.race([
           runDiagnose(
-            { ...deps, emit, signal: controller.signal },
+            { ...deps, config: currentConfig, emit, signal: controller.signal },
             { target: req.target, mode: req.mode, scenarios: req.scenarios, runId: id },
           ),
           timeoutPromise,

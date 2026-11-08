@@ -1,10 +1,12 @@
 import type { EventEmitter } from 'node:events';
+import { timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
 import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify';
 import type { z } from 'zod';
 import {
+  AuthStatusResponse,
   DecisionList,
   FindingDetail,
   Health,
@@ -17,7 +19,11 @@ import {
   RunSummary,
   SCENARIO_META,
   ScenarioInfo,
+  SettingsResponse,
+  SettingsUpdateRequest,
   StepList,
+  TestKind,
+  TestSettingsResponse,
   type Finding,
   type ScenarioKey,
   type ScenarioResult,
@@ -26,11 +32,18 @@ import {
 import {
   ProtectNotApplicableError,
   ProtectNotConfiguredError,
+  SettingsStore,
   computeScore,
+  openDb,
   type Config,
   type Orchestrator,
   type Repos,
 } from '@payclinic/core';
+import {
+  defaultTestGemini,
+  defaultTestGitHub,
+  defaultTestPayPal,
+} from './test-settings';
 
 const ALLOWED_ORIGIN_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const DEFAULT_ORIGIN = 'http://localhost:5173';
@@ -46,6 +59,13 @@ export interface ApiDeps {
   openPr?: OpenPr;
   /** Directory of the built dashboard; enables static hosting with SPA fallback. */
   staticDir?: string;
+  settingsStore?: SettingsStore;
+  getConfig?: () => Config;
+  testers?: {
+    paypal?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+    gemini?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+    github?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+  };
 }
 
 const MIME_TYPES: Record<string, string> = {
@@ -160,6 +180,7 @@ function historyEvents(
 export function createApi(deps: ApiDeps): FastifyInstance {
   const app = Fastify({ logger: false, forceCloseConnections: true });
   const { repos, config, bus } = deps;
+  const settingsStore = deps.settingsStore ?? new SettingsStore(openDb(':memory:'));
   const clients = new Set<SseClient>();
   let lastRunId: string | null = null;
 
@@ -176,9 +197,28 @@ export function createApi(deps: ApiDeps): FastifyInstance {
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('access-control-allow-origin', outputOrigin(request.headers.origin));
-    reply.header('access-control-allow-methods', 'GET,POST,OPTIONS');
-    reply.header('access-control-allow-headers', 'content-type');
+    reply.header('access-control-allow-methods', 'GET,POST,PUT,OPTIONS');
+    reply.header('access-control-allow-headers', 'content-type,authorization');
     if (request.method === 'OPTIONS') reply.code(204).send();
+  });
+
+  app.addHook('preHandler', async (request, reply) => {
+    const adminToken = process.env.PAYCLINIC_ADMIN_TOKEN;
+    if (!adminToken) return;
+
+    const url = request.url.split('?')[0] ?? '';
+    if (url.startsWith('/api/settings')) {
+      const authHeader = request.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({ error: 'unauthorized: missing or invalid Bearer token' });
+      }
+      const token = authHeader.slice(7).trim();
+      const tokenBuf = Buffer.from(token, 'utf8');
+      const expectedBuf = Buffer.from(adminToken, 'utf8');
+      if (tokenBuf.length !== expectedBuf.length || !timingSafeEqual(tokenBuf, expectedBuf)) {
+        return reply.code(401).send({ error: 'unauthorized: invalid admin token' });
+      }
+    }
   });
 
   app.addHook('onClose', async () => {
@@ -235,8 +275,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   app.post('/api/runs', async (request, reply) => {
     const parsed = RunCreateRequest.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid run request' });
-    const runId = deps.orchestrator.startRun(parsed.data);
-    return reply.code(202).send(RunCreateResponse.parse({ runId }));
+    try {
+      const runId = deps.orchestrator.startRun(parsed.data);
+      return reply.code(202).send(RunCreateResponse.parse({ runId }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return reply.code(400).send({ error: message });
+    }
   });
 
   app.get('/api/runs', async (_request, reply) => {
@@ -374,6 +419,77 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     const { id } = request.params as { id: string };
     if (!repos.getRun(id)) return notFound(reply);
     return send(reply, DecisionList, repos.listDecisions(id));
+  });
+
+  app.get('/api/auth/status', async (_request, reply) =>
+    send(reply, AuthStatusResponse, {
+      required: Boolean(process.env.PAYCLINIC_ADMIN_TOKEN),
+    }),
+  );
+
+  app.get('/api/settings', async (_request, reply) =>
+    send(reply, SettingsResponse, settingsStore.masked()),
+  );
+
+  app.put('/api/settings', async (request, reply) => {
+    const parsed = SettingsUpdateRequest.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid settings update body' });
+    const updates = parsed.data;
+
+    if (updates['mode'] === 'online') {
+      const hasVerified = Boolean(
+        settingsStore.get('paypalVerifiedAt') || updates['paypalVerifiedAt'],
+      );
+      if (!hasVerified) {
+        return reply
+          .code(400)
+          .send({ error: "Cannot set mode to 'online' without verified PayPal credentials" });
+      }
+    }
+
+    for (const [key, val] of Object.entries(updates)) {
+      if (val === '') continue;
+      if (val === null) {
+        settingsStore.delete(key);
+        continue;
+      }
+      try {
+        settingsStore.set(key, val);
+      } catch (err) {
+        return reply.code(400).send({ error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    return send(reply, SettingsResponse, settingsStore.masked());
+  });
+
+  app.post('/api/settings/test/:kind', async (request, reply) => {
+    const { kind } = request.params as { kind: string };
+    const parsedKind = TestKind.safeParse(kind);
+    if (!parsedKind.success) {
+      return reply.code(400).send({ error: `Invalid test kind: ${kind}` });
+    }
+
+    let result: { ok: boolean; message: string };
+    switch (parsedKind.data) {
+      case 'paypal':
+        result = deps.testers?.paypal
+          ? await deps.testers.paypal(settingsStore)
+          : await defaultTestPayPal(settingsStore);
+        break;
+      case 'gemini':
+        result = deps.testers?.gemini
+          ? await deps.testers.gemini(settingsStore)
+          : await defaultTestGemini(settingsStore);
+        break;
+      case 'github':
+        result = deps.testers?.github
+          ? await deps.testers.github(settingsStore)
+          : await defaultTestGitHub(settingsStore);
+        break;
+    }
+
+    return send(reply, TestSettingsResponse, result);
   });
 
   return app;

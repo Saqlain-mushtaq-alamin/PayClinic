@@ -53,4 +53,7 @@ CREATE TABLE IF NOT EXISTS firewall_decisions (
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   action TEXT NOT NULL, rule_id TEXT, reason TEXT NOT NULL, request TEXT NOT NULL, ts TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY, value_encrypted TEXT NOT NULL, updated_at TEXT
+);
 `;
