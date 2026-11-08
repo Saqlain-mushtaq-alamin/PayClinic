@@ -8,15 +8,15 @@ describe('Adapter Check (adapterCheck)', () => {
   let serverUrl: string;
   const adminSecret = 'my-secret-key-12345';
   let serverBehavior: {
-    products?: any;
+    products?: unknown;
     productsStatus?: number;
     ordersStatus?: number;
-    ordersBody?: any;
+    ordersBody?: unknown;
     captureStatus?: number;
     refundStatus?: number;
     webhookStatus?: number;
     adminStateStatus?: number;
-    adminStateBody?: any;
+    adminStateBody?: unknown;
     adminResetStatus?: number;
     requireAdminAuth?: boolean;
   } = {};

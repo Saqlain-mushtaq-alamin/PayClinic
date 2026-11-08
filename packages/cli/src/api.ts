@@ -10,7 +10,6 @@ import Fastify, {
 } from 'fastify';
 import type { z } from 'zod';
 import {
-  AdapterCheckItem,
   AdapterCheckResponse,
   AuthStatusResponse,
   DecisionList,

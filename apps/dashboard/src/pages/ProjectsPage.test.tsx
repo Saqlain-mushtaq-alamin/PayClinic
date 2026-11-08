@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import type { Project } from '@payclinic/contracts';
+import type { Project, SettingsResponse } from '@payclinic/contracts';
 import type { ApiClient } from '../api/client';
 import { ProjectsPage } from './ProjectsPage';
 import '../test-setup';
@@ -51,7 +51,7 @@ function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
     getPolicy: vi.fn(),
     getDecisions: vi.fn(async () => []),
     getScenarios: vi.fn(async () => []),
-    getSettings: vi.fn(),
+    getSettings: vi.fn(async () => ({ mode: { configured: true, hint: 'offline' } } as unknown as SettingsResponse)),
     saveSettings: vi.fn(),
     testSetting: vi.fn(),
     getAuthStatus: vi.fn(async () => ({ required: false })),

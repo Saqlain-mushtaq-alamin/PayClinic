@@ -1,6 +1,5 @@
 import { EventEmitter } from 'node:events';
 import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApi } from '@payclinic/cli';
 import {
@@ -9,6 +8,7 @@ import {
   loadConfig,
   openDb,
   type Database,
+  type Orchestrator,
   type Repos,
 } from '@payclinic/core';
 
@@ -17,7 +17,6 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
   let repos: Repos;
   let bus: EventEmitter;
   let mockTargetServer: Server;
-  let mockTargetUrl: string;
 
   beforeEach(async () => {
     db = openDb(':memory:');
@@ -30,8 +29,6 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
     });
 
     await new Promise<void>((resolve) => mockTargetServer.listen(0, '127.0.0.1', resolve));
-    const port = (mockTargetServer.address() as AddressInfo).port;
-    mockTargetUrl = `http://127.0.0.1:${port}`;
   });
 
   afterEach(async () => {
@@ -44,7 +41,7 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       repos,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as any,
+      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as unknown as Orchestrator,
     });
 
     const res = await app.inject({
@@ -71,7 +68,7 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       projectsRepo,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as any,
+      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as unknown as Orchestrator,
     });
 
     const res = await app.inject({
@@ -117,10 +114,10 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       projectsRepo,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as any,
+      orchestrator: { startRun: () => 'run-1', prescribe: async () => {}, protect: async () => {} } as unknown as Orchestrator,
     });
 
-    const recordedEvents: any[] = [];
+    const recordedEvents: { type?: string }[] = [];
     bus.on('event', (ev) => recordedEvents.push(ev));
 
     const res = await app.inject({
@@ -134,7 +131,7 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('id');
+    expect(body).toHaveProperty('access_token');
 
     // Verify step was recorded into active run
     const steps = repos.listSteps('run-active-1');

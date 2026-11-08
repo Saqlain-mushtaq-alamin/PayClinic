@@ -94,11 +94,11 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
   }, []);
 
   useEffect(() => {
-    if (client.getSettings) {
-      client
-        .getSettings()
+    const res = client.getSettings?.();
+    if (res && typeof res.then === 'function') {
+      res
         .then((s) => {
-          if (s.publicUrl?.hint) {
+          if (s?.publicUrl?.hint) {
             setPublicUrl(s.publicUrl.hint);
           }
         })
