@@ -13,7 +13,9 @@ describe('SegmentedGauge', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { name: 'Payment safety score 85 out of 100' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Payment safety score 85 out of 100' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('85')).toBeInTheDocument();
     expect(screen.getByText('Latest run')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
@@ -38,4 +40,3 @@ describe('SegmentedGauge', () => {
     expect(filledSegments).toHaveLength(6);
   });
 });
-

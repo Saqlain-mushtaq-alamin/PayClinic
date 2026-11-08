@@ -61,11 +61,7 @@ export function FindingsGrid({ runId, findings }: FindingsGridProps) {
     if (prevMap.size > 0) {
       for (const f of findings) {
         const prev = prevMap.get(f.id);
-        if (
-          prev &&
-          prev !== f.state &&
-          (f.state === 'verified' || f.state === 'protected')
-        ) {
+        if (prev && prev !== f.state && (f.state === 'verified' || f.state === 'protected')) {
           toast.success(`Finding ${f.id} marked as ${f.state}!`);
         }
       }

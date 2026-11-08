@@ -79,7 +79,7 @@ export function RunsPage({ client }: RunsPageProps) {
     return sorted.find((r) => r.status === 'completed' && r.score !== undefined);
   }, [sorted]);
 
-  const latestScore = latestCompletedRun?.score?.score ?? (sorted[0]?.score?.score ?? 0);
+  const latestScore = latestCompletedRun?.score?.score ?? sorted[0]?.score?.score ?? 0;
 
   const findingCounts = useMemo(() => {
     const counts = { critical: 0, high: 0, medium: 0, low: 0 };
@@ -109,7 +109,9 @@ export function RunsPage({ client }: RunsPageProps) {
             </div>
             <SegmentedGauge
               score={latestScore}
-              caption={latestCompletedRun ? `Run ${latestCompletedRun.id.slice(0, 8)}` : 'Latest run'}
+              caption={
+                latestCompletedRun ? `Run ${latestCompletedRun.id.slice(0, 8)}` : 'Latest run'
+              }
               findingCounts={findingCounts}
             />
           </Card>
@@ -253,7 +255,10 @@ export function RunsPage({ client }: RunsPageProps) {
                                   </span>
                                 )}
                                 {delta < 0 && (
-                                  <span className="score-trend score-trend--down" title={`${delta}`}>
+                                  <span
+                                    className="score-trend score-trend--down"
+                                    title={`${delta}`}
+                                  >
                                     <TrendingDown size={12} />
                                   </span>
                                 )}

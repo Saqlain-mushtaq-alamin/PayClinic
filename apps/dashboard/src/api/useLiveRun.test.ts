@@ -59,9 +59,7 @@ describe('useLiveRun', () => {
   });
 
   it('connects to the SSE endpoint and transitions to live on open', () => {
-    const { result } = renderHook(() =>
-      useLiveRun('run-1', { eventSourceCtor: FakeEventSource }),
-    );
+    const { result } = renderHook(() => useLiveRun('run-1', { eventSourceCtor: FakeEventSource }));
 
     expect(instances).toHaveLength(1);
     expect(instances[0]!.url).toBe(`${API_BASE_URL}/api/runs/run-1/events`);
@@ -75,9 +73,7 @@ describe('useLiveRun', () => {
   });
 
   it('keeps the connection open after run.completed arrives', () => {
-    const { result } = renderHook(() =>
-      useLiveRun('run-1', { eventSourceCtor: FakeEventSource }),
-    );
+    const { result } = renderHook(() => useLiveRun('run-1', { eventSourceCtor: FakeEventSource }));
 
     act(() => {
       instances[0]!.triggerOpen();
@@ -146,9 +142,7 @@ describe('useLiveRun', () => {
   });
 
   it('auto-reconnects with exponential backoff on error', () => {
-    const { result } = renderHook(() =>
-      useLiveRun('run-1', { eventSourceCtor: FakeEventSource }),
-    );
+    const { result } = renderHook(() => useLiveRun('run-1', { eventSourceCtor: FakeEventSource }));
 
     act(() => {
       instances[0]!.triggerOpen();

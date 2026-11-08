@@ -39,9 +39,7 @@ describe('RunsPage', () => {
   it('shows the empty state with the diagnosis shortcut button', async () => {
     renderPage(async () => []);
     expect(await screen.findByText('No runs yet')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Start your first diagnosis' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start your first diagnosis' })).toBeInTheDocument();
   });
 
   it('renders all 3 cards in the grid: Payment Safety, Score History, Diagnose', async () => {

@@ -132,10 +132,7 @@ export function AgentRunSection({
         {(stage !== 'idle' || allProtected) && (
           <div className="stepper-horizontal-container">
             <div className="stepper-track-bar">
-              <div
-                className="stepper-track-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
+              <div className="stepper-track-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <ol className="protect-stepper" data-testid="protect-stepper">
               {STAGES.map((item, index) => {

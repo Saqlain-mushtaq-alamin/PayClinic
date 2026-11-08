@@ -88,7 +88,9 @@ body {
 a {
   color: var(--accent);
   text-decoration: none;
-  transition: color 180ms ease, opacity 180ms ease;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease;
 }
 
 a:hover {
@@ -169,7 +171,9 @@ h2 {
   text-decoration: none;
   margin-bottom: 2rem;
   box-shadow: 0 0 16px var(--accent-glow);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .shell__logo:hover {
@@ -281,7 +285,10 @@ h2 {
   font: inherit;
   font-size: 0.85rem;
   outline: none;
-  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
 }
 
 .shell__search-input:focus {
@@ -343,7 +350,9 @@ h2 {
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .shell__avatar:hover {
@@ -542,9 +551,14 @@ h2 {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   margin-bottom: 1.25rem;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
 /* Buttons */
@@ -982,7 +996,9 @@ h2 {
 }
 
 .segmented-gauge__segment {
-  transition: stroke 240ms ease, filter 240ms ease;
+  transition:
+    stroke 240ms ease,
+    filter 240ms ease;
   animation: segmentPop 300ms ease backwards;
 }
 
@@ -1113,7 +1129,9 @@ h2 {
   border: 1px solid rgba(34, 195, 122, 0.25);
   border-radius: var(--radius-md);
   padding: 14px 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   margin-bottom: 16px;
   position: relative;
   overflow: hidden;
@@ -1336,7 +1354,9 @@ h2 {
   font: inherit;
   font-size: 0.8rem;
   outline: none;
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .recent-runs__search-input:focus {
@@ -1509,7 +1529,10 @@ h2 {
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 180ms ease, background 180ms ease, color 180ms ease;
+  transition:
+    opacity 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
 }
 
 .runs-table--transactions tbody tr:hover .runs-table__kebab {
@@ -1536,10 +1559,12 @@ h2 {
 }
 
 .shimmer {
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0.03) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.03) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -2593,7 +2618,12 @@ h2 {
 }
 
 .timeline__body {
-  font: 0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font:
+    0.75rem ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -2659,12 +2689,17 @@ h2 {
 
 /* Card hover elevation */
 .card {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -2778,7 +2813,6 @@ h2 {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {

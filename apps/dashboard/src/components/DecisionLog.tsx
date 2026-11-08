@@ -18,9 +18,7 @@ const gridTheme = themeQuartz.withPart(colorSchemeDark);
 const actionRenderer = (p: ICellRendererParams<DecisionRow>) => {
   const isBlock = p.value === 'block';
   return (
-    <span className={`chip ${isBlock ? 'badge--critical' : 'badge--ok'}`}>
-      {String(p.value)}
-    </span>
+    <span className={`chip ${isBlock ? 'badge--critical' : 'badge--ok'}`}>{String(p.value)}</span>
   );
 };
 

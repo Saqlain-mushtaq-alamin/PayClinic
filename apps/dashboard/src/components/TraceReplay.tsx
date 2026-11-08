@@ -30,10 +30,7 @@ export function TraceReplay({ steps, evidenceStepIds, verdict }: TraceReplayProp
 
   useEffect(() => {
     if (!state.playing || total === 0) return;
-    const id = window.setInterval(
-      () => dispatch({ type: 'tick', total }),
-      intervalMs(state.speed),
-    );
+    const id = window.setInterval(() => dispatch({ type: 'tick', total }), intervalMs(state.speed));
     return () => window.clearInterval(id);
   }, [state.playing, state.speed, total]);
 
@@ -128,10 +125,7 @@ export function TraceReplay({ steps, evidenceStepIds, verdict }: TraceReplayProp
 
         {/* Thin progress bar */}
         <div className="replay-progress-track">
-          <div
-            className="replay-progress-bar"
-            style={{ width: `${progressPercent}%` }}
-          />
+          <div className="replay-progress-bar" style={{ width: `${progressPercent}%` }} />
         </div>
       </div>
 

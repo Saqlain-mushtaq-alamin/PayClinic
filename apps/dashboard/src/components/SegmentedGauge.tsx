@@ -139,11 +139,7 @@ export function SegmentedGauge({
       aria-label={ariaLabel ?? `Payment safety score ${score} out of 100`}
     >
       <div className="segmented-gauge__arc-wrapper">
-        <svg
-          viewBox="0 0 240 145"
-          className="segmented-gauge__svg"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 240 145" className="segmented-gauge__svg" aria-hidden="true">
           {segments.map((seg) => (
             <path
               key={seg.index}

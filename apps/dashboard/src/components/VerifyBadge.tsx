@@ -8,11 +8,7 @@ export function VerifyBadge({ verify }: VerifyBadgeProps) {
   if (!verify) return <span className="chip chip--neutral">—</span>;
 
   if (verify.verified) {
-    return (
-      <span className="chip chip--ok">
-        Verified ✓ {formatDuration(verify.durationMs)}
-      </span>
-    );
+    return <span className="chip chip--ok">Verified ✓ {formatDuration(verify.durationMs)}</span>;
   }
 
   const lastLogLine = verify.log[verify.log.length - 1] ?? '';

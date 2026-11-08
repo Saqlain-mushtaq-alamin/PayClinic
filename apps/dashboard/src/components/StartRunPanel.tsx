@@ -78,9 +78,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
     setChecked(next);
   };
 
-  const effectiveChecked = userToggledRef.current.has(target)
-    ? checked
-    : defaultKeys;
+  const effectiveChecked = userToggledRef.current.has(target) ? checked : defaultKeys;
 
   const mode: RunMode | undefined = health?.mode;
   const canStart = Boolean(scenarios && mode) && !posting && effectiveChecked.size > 0;
@@ -88,9 +86,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
   const onDiagnose = useCallback(async () => {
     const list: ScenarioInfo[] | null = scenarios;
     if (!list || !mode || posting) return;
-    const activeChecked = userToggledRef.current.has(target)
-      ? checkedRef.current
-      : defaultKeys;
+    const activeChecked = userToggledRef.current.has(target) ? checkedRef.current : defaultKeys;
     if (activeChecked.size === 0) return;
     setPosting(true);
     setPostError(null);
@@ -164,9 +160,7 @@ export function StartRunPanel({ client: injectedClient }: StartRunPanelProps) {
               const isChecked = effectiveChecked.has(scenario.key);
               return (
                 <li key={scenario.key} className="start-run__scenario-item">
-                  <label
-                    className={`scenario-chip ${isChecked ? 'scenario-chip--checked' : ''}`}
-                  >
+                  <label className={`scenario-chip ${isChecked ? 'scenario-chip--checked' : ''}`}>
                     <input
                       type="checkbox"
                       className="scenario-chip__input"

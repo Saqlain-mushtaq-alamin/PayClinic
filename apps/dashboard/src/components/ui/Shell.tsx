@@ -33,7 +33,11 @@ export function Shell({ children, client }: ShellProps) {
 
   const activeMode = localMode ?? contextMode;
   const isOffline = activeMode === 'offline';
-  const modeText = isOffline ? 'Offline demo' : activeMode === 'online' ? 'Live sandbox' : `Live: ${activeMode}`;
+  const modeText = isOffline
+    ? 'Offline demo'
+    : activeMode === 'online'
+      ? 'Live sandbox'
+      : `Live: ${activeMode}`;
 
   // Check if we are currently viewing a specific run
   const runMatch = location.pathname.match(/^\/runs\/([^/]+)/);
@@ -72,9 +76,7 @@ export function Shell({ children, client }: ShellProps) {
 
               <NavLink
                 to={currentRunId ? `/runs/${currentRunId}` : '/'}
-                className={() =>
-                  `shell__nav-link ${liveConnection === 'live' ? 'active' : ''}`
-                }
+                className={() => `shell__nav-link ${liveConnection === 'live' ? 'active' : ''}`}
                 title="Live Activity"
                 aria-label="Live Activity"
               >
@@ -105,8 +107,14 @@ export function Shell({ children, client }: ShellProps) {
             </div>
 
             <div className="shell__topbar-right">
-              <div className="shell__mode-pill" data-testid="mode-badge" title={`Mode: ${activeMode}`}>
-                <span className={`shell__dot ${isOffline ? 'shell__dot--offline' : 'shell__dot--live'}`} />
+              <div
+                className="shell__mode-pill"
+                data-testid="mode-badge"
+                title={`Mode: ${activeMode}`}
+              >
+                <span
+                  className={`shell__dot ${isOffline ? 'shell__dot--offline' : 'shell__dot--live'}`}
+                />
                 <span>{modeText}</span>
               </div>
 
@@ -118,7 +126,11 @@ export function Shell({ children, client }: ShellProps) {
               >
                 <span className={`pulse-dot pulse-dot--${liveConnection}`} />
                 <span className="shell__live-text">
-                  {liveConnection === 'live' ? 'Live' : liveConnection === 'reconnecting' ? 'Reconnecting' : 'Offline'}
+                  {liveConnection === 'live'
+                    ? 'Live'
+                    : liveConnection === 'reconnecting'
+                      ? 'Reconnecting'
+                      : 'Offline'}
                 </span>
               </div>
 

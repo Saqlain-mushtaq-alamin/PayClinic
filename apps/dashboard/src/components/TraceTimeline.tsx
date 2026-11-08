@@ -54,14 +54,8 @@ function TraceRow(props: {
       >
         <span className="timeline__actor">{described.actorLabel}</span>
         <span className="timeline__title">{described.title}</span>
-        <span className={`chip chip--${described.tone}`}>
-          {described.chip}
-        </span>
-        {step.paypalDebugId && (
-          <span className="chip timeline__debug">
-            {step.paypalDebugId}
-          </span>
-        )}
+        <span className={`chip chip--${described.tone}`}>{described.chip}</span>
+        {step.paypalDebugId && <span className="chip timeline__debug">{step.paypalDebugId}</span>}
       </button>
       {isOpen && (
         <div className="timeline__details">

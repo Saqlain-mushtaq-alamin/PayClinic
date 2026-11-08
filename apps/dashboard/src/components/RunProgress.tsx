@@ -202,9 +202,7 @@ export function RunProgress({
     [events, isBusy, error],
   );
 
-  const isStalled = Boolean(
-    isBusy && lastEventAt && now - lastEventAt >= 20_000,
-  );
+  const isStalled = Boolean(isBusy && lastEventAt && now - lastEventAt >= 20_000);
 
   if (lines.length === 0 && !newestFirst) return null;
 
@@ -272,9 +270,7 @@ export function RunProgress({
               </div>
               <div className="activity-feed__item-content">
                 <span className="activity-feed__item-text">{line.text}</span>
-                {line.severity && (
-                  <Badge tone={severityTone(line.severity)}>{line.severity}</Badge>
-                )}
+                {line.severity && <Badge tone={severityTone(line.severity)}>{line.severity}</Badge>}
               </div>
             </li>
           ))}
