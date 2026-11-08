@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Activity, LayoutDashboard, Search, Settings, ShieldCheck } from 'lucide-react';
+import { Activity, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react';
 import type { ApiClient } from '../../api/client';
 import { useDashboard } from '../../context/DashboardContext';
 
@@ -10,7 +10,7 @@ export interface ShellProps {
 }
 
 export function Shell({ children, client }: ShellProps) {
-  const { searchQuery, setSearchQuery, liveConnection, mode: contextMode } = useDashboard();
+  const { liveConnection, mode: contextMode } = useDashboard();
   const [localMode, setLocalMode] = useState<string | null>(null);
   const location = useLocation();
 
@@ -100,17 +100,8 @@ export function Shell({ children, client }: ShellProps) {
         <div className="shell__main-wrapper">
           {/* Top bar */}
           <header className="shell__topbar">
-            <div className="shell__search">
-              <Search size={16} className="shell__search-icon" aria-hidden="true" />
-              <input
-                type="text"
-                data-testid="search-input"
-                className="shell__search-input"
-                placeholder="Search runs, findings, traces…"
-                aria-label="Search runs, findings, traces"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="shell__topbar-brand">
+              <span className="shell__brand-title">PayClinic</span>
             </div>
 
             <div className="shell__topbar-right">

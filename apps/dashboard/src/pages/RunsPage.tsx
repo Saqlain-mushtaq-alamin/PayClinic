@@ -4,6 +4,7 @@ import {
   Bot,
   FolderLock,
   MoreVertical,
+  Search,
   Store,
   TrendingDown,
   TrendingUp,
@@ -55,7 +56,7 @@ function formatRelativeTime(isoString: string): string {
 
 export function RunsPage({ client }: RunsPageProps) {
   const { data, error, loading, reload } = useRuns(client);
-  const { searchQuery } = useDashboard();
+  const { searchQuery, setSearchQuery } = useDashboard();
   const navigate = useNavigate();
 
   const sorted = useMemo(() => {
@@ -94,10 +95,13 @@ export function RunsPage({ client }: RunsPageProps) {
 
   return (
     <section className="runs-page" data-testid="runs-page">
-      {/* 12-Column Grid Row 1: Payment Safety (4) | Score History (5) | Diagnose (3) */}
-      <div className="runs-page__grid">
-        {/* Card 1: Payment Safety */}
-        <div className="runs-page__col runs-page__col--safety">
+      {/* 20% / 80% Layout:
+          Left (20%): Payment Safety (top) + Ready to scan / Diagnose (below)
+          Right (80%): Score History (top) + Recent Runs (below) */}
+      <div className="runs-page__columns">
+        {/* Left Column (20%) */}
+        <div className="runs-page__column-side">
+          {/* Top of Left: Payment Safety */}
           <Card className="runs-card runs-card--safety">
             <div className="runs-card__header">
               <h2>Payment Safety</h2>
@@ -109,199 +113,212 @@ export function RunsPage({ client }: RunsPageProps) {
               findingCounts={findingCounts}
             />
           </Card>
+
+          {/* Below of Left: Ready to scan (Diagnose) */}
+          <div className="runs-page__col--diagnose">
+            <StartRunPanel client={client} />
+          </div>
         </div>
 
-        {/* Card 2: Score History */}
-        <div className="runs-page__col runs-page__col--history">
+        {/* Right Column (80%) */}
+        <div className="runs-page__column-main">
+          {/* Top of Right: Score History */}
           <Card className="runs-card runs-card--history">
             <ScoreHistoryChart runs={sorted} />
           </Card>
-        </div>
 
-        {/* Card 3: Diagnose Column */}
-        <div className="runs-page__col runs-page__col--diagnose">
-          <StartRunPanel client={client} />
-        </div>
-      </div>
-
-      {/* Row 2: Recent runs (span 12) transactions-style table */}
-      <div className="runs-page__recent-runs">
-        <Card className="runs-card runs-card--recent">
-          <div className="runs-card__header">
-            <div>
-              <h2>Recent runs</h2>
-              <span className="runs-card__subtitle">
-                {sorted.length > 0
-                  ? `Showing ${filtered.length} ${filtered.length === 1 ? 'evaluation' : 'evaluations'}`
-                  : 'Evaluation activity'}
-              </span>
-            </div>
-          </div>
-
-          {loading ? (
-            /* Skeleton shimmer loading state */
-            <div className="runs-table__skeleton-container" data-testid="runs-skeleton">
-              {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="runs-table__skeleton-row shimmer" />
-              ))}
-            </div>
-          ) : error ? (
-            <ErrorState message={`Failed to load runs: ${error.message}`} onRetry={reload} />
-          ) : filtered.length > 0 ? (
-            <div className="runs-table-responsive">
-              <table className="runs-table runs-table--transactions">
-                <thead>
-                  <tr>
-                    <th>Run</th>
-                    <th>Started</th>
-                    <th>Target</th>
-                    <th>Mode</th>
-                    <th>Status</th>
-                    <th>Score</th>
-                    <th>Scenarios</th>
-                    <th>Findings</th>
-                    <th aria-label="Actions" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((run, index) => {
-                    const scoreVal = run.score?.score;
-                    const delta =
-                      run.scoreBefore !== undefined && run.scoreAfter !== undefined
-                        ? run.scoreAfter - run.scoreBefore
-                        : 0;
-
-                    return (
-                      <tr
-                        key={run.id}
-                        className="runs-table__row"
-                        style={{ animationDelay: `${index * 35}ms` }}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') navigate(`/runs/${run.id}`);
-                        }}
-                      >
-                        <td>
-                          <div className="runs-table__run-cell">
-                            <div className="runs-table__icon-tile">
-                              {run.target === 'agent' ? (
-                                <Bot size={18} className="runs-table__target-icon" />
-                              ) : (
-                                <Store size={18} className="runs-table__target-icon" />
-                              )}
-                            </div>
-                            <div className="runs-table__run-info">
-                              <Link to={`/runs/${run.id}`} className="runs-table__run-id">
-                                {run.id}
-                              </Link>
-                              <span className="runs-table__subtitle-keys">
-                                {run.scenarioKeys.join(', ')}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
-                          <span
-                            className="runs-table__time"
-                            title={new Date(run.startedAt).toLocaleString()}
-                          >
-                            {formatRelativeTime(run.startedAt)}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span className="runs-table__target-label">{run.target}</span>
-                        </td>
-
-                        <td>
-                          <span className="runs-table__mode-label">{run.mode}</span>
-                        </td>
-
-                        <td>
-                          <span className={`badge badge--${statusTone(run.status)}`}>
-                            {run.status === 'running' && (
-                              <span className="pulse-dot pulse-dot--live" />
-                            )}
-                            {run.status}
-                          </span>
-                        </td>
-
-                        <td>
-                          {scoreVal !== undefined ? (
-                            <div className="runs-table__score-cell">
-                              <span className={`chip badge--${scoreTone(scoreVal)}`}>
-                                <strong>{scoreVal}</strong>
-                              </span>
-                              {delta > 0 && (
-                                <span className="score-trend score-trend--up" title={`+${delta}`}>
-                                  <TrendingUp size={12} />
-                                </span>
-                              )}
-                              {delta < 0 && (
-                                <span className="score-trend score-trend--down" title={`${delta}`}>
-                                  <TrendingDown size={12} />
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="runs-table__score-empty">-</span>
-                          )}
-                        </td>
-
-                        <td>
-                          <span className="runs-table__scenarios-text">
-                            {run.scenarioKeys.join(', ')}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span className="chip badge--neutral">
-                            {run.findingCount} {run.findingCount === 1 ? 'finding' : 'findings'}
-                          </span>
-                        </td>
-
-                        <td>
-                          <button
-                            type="button"
-                            className="runs-table__kebab"
-                            aria-label={`Actions for run ${run.id}`}
-                            title="Actions"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/runs/${run.id}`);
-                            }}
-                          >
-                            <MoreVertical size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            /* Empty state with illustration & diagnosis shortcut button */
-            <div className="runs-empty-state" data-testid="runs-empty-state">
-              <div className="runs-empty-state__icon-wrap">
-                <FolderLock size={44} strokeWidth={1.5} />
+          {/* Below of Right: Recent Runs */}
+          <Card className="runs-card runs-card--recent">
+            <div className="runs-card__header runs-card__header--recent">
+              <div>
+                <h2>Recent runs</h2>
+                <span className="runs-card__subtitle">
+                  {sorted.length > 0
+                    ? `Showing ${filtered.length} ${filtered.length === 1 ? 'evaluation' : 'evaluations'}`
+                    : 'Evaluation activity'}
+                </span>
               </div>
-              <h3>No runs yet</h3>
-              <p>Start your first payment safety diagnosis to scan scenarios and detect bugs.</p>
-              <button
-                type="button"
-                className="button button--primary"
-                onClick={() => {
-                  const el = document.getElementById('diagnose-card');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Start your first diagnosis
-              </button>
+
+              {/* Search bar on top of recent runs */}
+              <div className="recent-runs__search">
+                <Search size={15} className="recent-runs__search-icon" aria-hidden="true" />
+                <input
+                  type="text"
+                  data-testid="search-input"
+                  className="recent-runs__search-input"
+                  placeholder="Search runs, findings, traces…"
+                  aria-label="Search runs, findings, traces"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
-          )}
-        </Card>
+
+            {loading ? (
+              /* Skeleton shimmer loading state */
+              <div className="runs-table__skeleton-container" data-testid="runs-skeleton">
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className="runs-table__skeleton-row shimmer" />
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={`Failed to load runs: ${error.message}`} onRetry={reload} />
+            ) : filtered.length > 0 ? (
+              <div className="runs-table-scrollable">
+                <table className="runs-table runs-table--transactions">
+                  <thead>
+                    <tr>
+                      <th>Run</th>
+                      <th>Started</th>
+                      <th>Target</th>
+                      <th>Mode</th>
+                      <th>Status</th>
+                      <th>Score</th>
+                      <th>Scenarios</th>
+                      <th>Findings</th>
+                      <th aria-label="Actions" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((run, index) => {
+                      const scoreVal = run.score?.score;
+                      const delta =
+                        run.scoreBefore !== undefined && run.scoreAfter !== undefined
+                          ? run.scoreAfter - run.scoreBefore
+                          : 0;
+
+                      return (
+                        <tr
+                          key={run.id}
+                          className="runs-table__row"
+                          style={{ animationDelay: `${index * 35}ms` }}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') navigate(`/runs/${run.id}`);
+                          }}
+                        >
+                          <td>
+                            <div className="runs-table__run-cell">
+                              <div className="runs-table__icon-tile">
+                                {run.target === 'agent' ? (
+                                  <Bot size={18} className="runs-table__target-icon" />
+                                ) : (
+                                  <Store size={18} className="runs-table__target-icon" />
+                                )}
+                              </div>
+                              <div className="runs-table__run-info">
+                                <Link to={`/runs/${run.id}`} className="runs-table__run-id">
+                                  {run.id}
+                                </Link>
+                                <span className="runs-table__subtitle-keys">
+                                  {run.scenarioKeys.join(', ')}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td>
+                            <span
+                              className="runs-table__time"
+                              title={new Date(run.startedAt).toLocaleString()}
+                            >
+                              {formatRelativeTime(run.startedAt)}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className="runs-table__target-label">{run.target}</span>
+                          </td>
+
+                          <td>
+                            <span className="runs-table__mode-label">{run.mode}</span>
+                          </td>
+
+                          <td>
+                            <span className={`badge badge--${statusTone(run.status)}`}>
+                              {run.status === 'running' && (
+                                <span className="pulse-dot pulse-dot--live" />
+                              )}
+                              {run.status}
+                            </span>
+                          </td>
+
+                          <td>
+                            {scoreVal !== undefined ? (
+                              <div className="runs-table__score-cell">
+                                <span className={`chip badge--${scoreTone(scoreVal)}`}>
+                                  <strong>{scoreVal}</strong>
+                                </span>
+                                {delta > 0 && (
+                                  <span className="score-trend score-trend--up" title={`+${delta}`}>
+                                    <TrendingUp size={12} />
+                                  </span>
+                                )}
+                                {delta < 0 && (
+                                  <span className="score-trend score-trend--down" title={`${delta}`}>
+                                    <TrendingDown size={12} />
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="runs-table__score-empty">-</span>
+                            )}
+                          </td>
+
+                          <td>
+                            <span className="runs-table__scenarios-text">
+                              {run.scenarioKeys.join(', ')}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className="chip badge--neutral">
+                              {run.findingCount} {run.findingCount === 1 ? 'finding' : 'findings'}
+                            </span>
+                          </td>
+
+                          <td>
+                            <button
+                              type="button"
+                              className="runs-table__kebab"
+                              aria-label={`Actions for run ${run.id}`}
+                              title="Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/runs/${run.id}`);
+                              }}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* Empty state with illustration & diagnosis shortcut button */
+              <div className="runs-empty-state" data-testid="runs-empty-state">
+                <div className="runs-empty-state__icon-wrap">
+                  <FolderLock size={44} strokeWidth={1.5} />
+                </div>
+                <h3>No runs yet</h3>
+                <p>Start your first payment safety diagnosis to scan scenarios and detect bugs.</p>
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => {
+                    const el = document.getElementById('diagnose-card');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Start your first diagnosis
+                </button>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </section>
   );

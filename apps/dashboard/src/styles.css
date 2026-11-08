@@ -832,6 +832,18 @@ h2 {
    PHASE 3: FINTECH DASHBOARD GRID & RECENT RUNS
    ========================================================================= */
 
+.shell__topbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.shell__brand-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
 .runs-page {
   display: flex;
   flex-direction: column;
@@ -839,27 +851,28 @@ h2 {
   width: 100%;
 }
 
-.runs-page__grid {
+/* 20% / 80% Side-by-side Columns:
+   Left (20%): Payment Safety (top) + Ready to scan / Diagnose (below)
+   Right (80%): Score History (top) + Recent Runs (below) */
+.runs-page__columns {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: minmax(290px, 20%) 1fr;
   gap: 20px;
-  align-items: stretch;
-}
-
-.runs-page__col--safety {
-  grid-column: span 4;
-}
-
-.runs-page__col--history {
-  grid-column: span 5;
-}
-
-.runs-page__col--diagnose {
-  grid-column: span 3;
-}
-
-.runs-page__recent-runs {
+  align-items: start;
   width: 100%;
+}
+
+.runs-page__column-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.runs-page__column-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
 .runs-card {
@@ -1227,9 +1240,56 @@ h2 {
   gap: 0.6rem;
 }
 
-/* Recent Runs Transactions Table */
-.runs-table-responsive {
+/* Recent Runs Search & Scrollable Transactions Table */
+.runs-card__header--recent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.recent-runs__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 290px;
+  max-width: 100%;
+}
+
+.recent-runs__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.recent-runs__search-input {
   width: 100%;
+  background: var(--bg-card-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.9rem 0.45rem 2.2rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.recent-runs__search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.recent-runs__search-input::placeholder {
+  color: var(--muted);
+}
+
+.runs-table-scrollable {
+  width: 100%;
+  max-height: 480px;
+  overflow-y: auto;
   overflow-x: auto;
 }
 
@@ -1240,6 +1300,11 @@ h2 {
 }
 
 .runs-table--transactions thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 2;
+  border-bottom: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 0.75rem 1rem;
   font-size: 0.75rem;
@@ -1462,30 +1527,10 @@ h2 {
   margin: 0 0 1.25rem;
 }
 
-/* Responsive grid breakdown */
-@media (max-width: 1100px) {
-  .runs-page__col--safety {
-    grid-column: span 6;
-  }
-  .runs-page__col--history {
-    grid-column: span 6;
-  }
-  .runs-page__col--diagnose {
-    grid-column: span 12;
-  }
-}
-
-@media (max-width: 800px) {
-  .runs-page__grid {
+/* Responsive columns breakdown */
+@media (max-width: 980px) {
+  .runs-page__columns {
     grid-template-columns: 1fr;
-  }
-  .runs-page__col--safety,
-  .runs-page__col--history,
-  .runs-page__col--diagnose {
-    grid-column: span 1;
-  }
-  .runs-table-responsive {
-    overflow-x: auto;
   }
 }
 

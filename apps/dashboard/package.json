@@ -12,6 +12,7 @@
     "@payclinic/contracts": "*",
     "ag-grid-community": "^36.2.0",
     "ag-grid-react": "^36.2.0",
+    "es-toolkit": "^1.53.2",
     "lucide-react": "^1.70.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
