@@ -315,7 +315,10 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
           lineHeight: '1.4',
         }}
       >
-        <strong>Data Privacy Disclosure:</strong> Diagnostic traces and relevant store source files are transmitted to Google Gemini for root-cause analysis and patch proposals. When you open a PR, PayClinic commits changes to your configured GitHub repo. Credentials and tokens are always masked and never sent to external AI models.
+        <strong>Data Privacy Disclosure:</strong> Diagnostic traces and relevant store source files
+        are transmitted to Google Gemini for root-cause analysis and patch proposals. When you open
+        a PR, PayClinic commits changes to your configured GitHub repo. Credentials and tokens are
+        always masked and never sent to external AI models.
       </div>
 
       {loading && (

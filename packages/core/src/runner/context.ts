@@ -2,7 +2,6 @@ import type { AgentRunState, Cart, CartItem, Product, ScenarioKey } from '@paycl
 import type { MockRule } from '../trace/proxy';
 import type { StepRecorder } from '../trace/recorder';
 import type { BuyerApprover } from './approvers';
-import { safeFetch } from './target-guard';
 
 export type { BuyerApprover } from './approvers';
 

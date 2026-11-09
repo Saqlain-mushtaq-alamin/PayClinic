@@ -60,9 +60,13 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
 
     // IPv4-mapped IPv6 formats (hex and dotted)
     await expect(assertSafeTarget('http://[::ffff:7f00:1]/api')).rejects.toThrow(UnsafeTargetError);
-    await expect(assertSafeTarget('http://[::ffff:a9fe:a9fe]/metadata')).rejects.toThrow(UnsafeTargetError);
+    await expect(assertSafeTarget('http://[::ffff:a9fe:a9fe]/metadata')).rejects.toThrow(
+      UnsafeTargetError,
+    );
     await expect(assertSafeTarget('http://[::ffff:a00:1]/api')).rejects.toThrow(UnsafeTargetError);
-    await expect(assertSafeTarget('http://[::ffff:127.0.0.1]/api')).rejects.toThrow(UnsafeTargetError);
+    await expect(assertSafeTarget('http://[::ffff:127.0.0.1]/api')).rejects.toThrow(
+      UnsafeTargetError,
+    );
 
     // Mock DNS lookup resolving to a private IP
     const mockLookup = async () => [{ address: '10.100.1.50', family: 4 }];

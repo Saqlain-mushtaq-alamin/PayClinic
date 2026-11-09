@@ -70,9 +70,7 @@ const fakeDecision: FirewallDecision = {
   ts: new Date().toISOString(),
 };
 
-function setup(
-  protectImpl: () => Promise<{ accepted: true }> = async () => ({ accepted: true }),
-) {
+function setup(protectImpl: () => Promise<{ accepted: true }> = async () => ({ accepted: true })) {
   const protect = vi.fn(protectImpl);
   const hook = renderHook(() =>
     useProtect('run-1', { client: { protect }, eventSourceCtor: FakeEventSource }),

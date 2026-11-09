@@ -151,10 +151,12 @@ export async function assertSafeTarget(
  * redirects to different hosts.
  */
 export async function safeFetch(
-  urlStr: string,
+  input: URL | RequestInfo,
   init?: RequestInit,
   opts?: AssertSafeTargetOptions,
 ): Promise<Response> {
+  const urlStr =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   const { url: initialUrl } = await assertSafeTarget(urlStr, opts);
 
   // Manual redirect handling to enforce no redirects to a different host

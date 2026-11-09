@@ -30,7 +30,13 @@ export function openDb(path: string): Database {
     db.prepare(
       `INSERT OR IGNORE INTO projects (id, name, kind, proxy_token, created_at)
        VALUES (?, ?, ?, ?, ?)`,
-    ).run('builtin', 'Demo store', 'builtin', randomUUID().replace(/-/g, ''), new Date().toISOString());
+    ).run(
+      'builtin',
+      'Demo store',
+      'builtin',
+      randomUUID().replace(/-/g, ''),
+      new Date().toISOString(),
+    );
   }
 
   return db;
