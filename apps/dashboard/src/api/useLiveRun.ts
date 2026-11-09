@@ -36,8 +36,15 @@ export function getEventKey(event: RunEvent): string {
       return `prescribe.progress:${event.findingId}:${event.stage}:${event.message}`;
     case 'decision.recorded':
       return `decision.recorded:${event.decision.id}`;
-    case 'score.updated':
-      return `score.updated:${event.score.score}:${event.score.unresolvedCount}:${event.score.resolvedCount}`;
+    case 'score.updated': {
+      const penaltyKeys = event.score.penalties
+        ? event.score.penalties
+            .map((p) => p.invariantKey)
+            .sort()
+            .join(',')
+        : '';
+      return `score.updated:${event.score.score}:${event.score.unresolvedCount}:${event.score.resolvedCount}:${penaltyKeys}`;
+    }
     case 'run.completed':
       return `run.completed:${event.run.id}:${event.run.status}:${event.run.scoreAfter ?? ''}`;
     case 'run.failed':
@@ -64,6 +71,10 @@ export function useLiveRun(
   onEventRef.current = onEvent;
 
   useEffect(() => {
+    seenKeysRef.current.clear();
+    setEvents([]);
+    setLastEventAt(null);
+
     if (!runId || !enabled) {
       setConnection('offline');
       return;

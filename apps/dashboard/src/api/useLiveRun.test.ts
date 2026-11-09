@@ -141,6 +141,33 @@ describe('useLiveRun', () => {
     expect(onEvent).toHaveBeenCalledTimes(1);
   });
 
+  it('resets events and seen keys when runId changes', () => {
+    let currentRunId = 'run-1';
+    const { result, rerender } = renderHook(() =>
+      useLiveRun(currentRunId, { eventSourceCtor: FakeEventSource }),
+    );
+
+    act(() => {
+      instances[0]!.triggerOpen();
+    });
+
+    const event1: RunEvent = {
+      type: 'run.started',
+      run: { ...mockRun, id: 'run-1' },
+    };
+    act(() => {
+      instances[0]!.emit(JSON.stringify(event1));
+    });
+
+    expect(result.current.events).toHaveLength(1);
+
+    // Change runId to run-2
+    currentRunId = 'run-2';
+    rerender();
+
+    expect(result.current.events).toHaveLength(0);
+  });
+
   it('auto-reconnects with exponential backoff on error', () => {
     const { result } = renderHook(() => useLiveRun('run-1', { eventSourceCtor: FakeEventSource }));
 
