@@ -207,7 +207,7 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
       {/* 12-Column Header */}
       <header className="run-header">
         <div className="run-header__nav">
-          <Link to="/runs" className="back-link">
+          <Link to="/" className="back-link">
             <ArrowLeft size={16} />
             <span>Back to runs</span>
           </Link>
