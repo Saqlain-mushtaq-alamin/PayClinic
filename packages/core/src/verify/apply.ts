@@ -17,18 +17,46 @@ function countOccurrences(haystack: string, needle: string): number {
   }
 }
 
+export interface ApplyEditsToDirOptions {
+  allowedPrefix?: string;
+}
+
 /** Applies exact-string edits to a copied store directory, in order. */
 export function applyEditsToDir(
   storeDir: string,
   edits: PatchEdit[],
+  opts: ApplyEditsToDirOptions = {},
 ): { ok: true } | { ok: false; reason: string } {
+  const rawPrefix = opts.allowedPrefix ?? STORE_SRC_PREFIX;
+  const normalizedPrefix = posix.normalize(rawPrefix.replace(/\\/g, '/')).replace(/^\/+/, '');
+  const prefixWithSlash = normalizedPrefix.endsWith('/')
+    ? normalizedPrefix
+    : `${normalizedPrefix}/`;
+
   for (const [index, edit] of edits.entries()) {
-    const normalized = posix.normalize(edit.file.replace(/\\/g, '/'));
-    if (!normalized.startsWith(STORE_SRC_PREFIX) || normalized.split('/').includes('..')) {
+    const rawFile = edit.file.replace(/\\/g, '/');
+    const normalized = posix.normalize(rawFile).replace(/^\/+/, '');
+    const isUnderPrefix =
+      normalized.startsWith(prefixWithSlash) || normalized === normalizedPrefix.replace(/\/$/, '');
+
+    if (
+      !isUnderPrefix ||
+      rawFile.split('/').includes('..') ||
+      normalized.split('/').includes('..')
+    ) {
       return { ok: false, reason: `Edit ${index + 1} has an unsafe path: ${edit.file}` };
     }
 
-    const target = join(storeDir, ...normalized.slice(STORE_PREFIX.length).split('/'));
+    let relPath: string;
+    if (rawPrefix === STORE_SRC_PREFIX && normalized.startsWith(STORE_PREFIX)) {
+      relPath = normalized.slice(STORE_PREFIX.length);
+    } else if (normalized.startsWith(prefixWithSlash)) {
+      relPath = normalized.slice(prefixWithSlash.length);
+    } else {
+      relPath = normalized;
+    }
+
+    const target = join(storeDir, ...relPath.split('/'));
     let original: string;
     try {
       original = readFileSync(target, 'utf8');

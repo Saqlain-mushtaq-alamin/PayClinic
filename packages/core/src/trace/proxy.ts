@@ -21,6 +21,31 @@ export interface TraceProxy {
   stop(): Promise<void>;
 }
 
+const proxyMockRules = new Map<string, MockRule[]>();
+
+export function setProxyMockRule(runId: string, rule: MockRule): void {
+  const list = proxyMockRules.get(runId) ?? [];
+  list.push(rule);
+  proxyMockRules.set(runId, list);
+}
+
+export function popProxyMockRule(
+  runId: string,
+  method: string,
+  path: string,
+): MockRule | undefined {
+  const list = proxyMockRules.get(runId);
+  if (!list || list.length === 0) return undefined;
+  const index = list.findIndex((r) => r.method === method && new RegExp(r.pathRegex).test(path));
+  if (index === -1) return undefined;
+  const [rule] = list.splice(index, 1);
+  return rule;
+}
+
+export function clearProxyMockRules(runId: string): void {
+  proxyMockRules.delete(runId);
+}
+
 function headerRecord(raw: IncomingHttpHeaders): Record<string, string> {
   const headers: Record<string, string> = {};
   for (const [name, value] of Object.entries(raw)) {
@@ -88,13 +113,119 @@ function splitUrl(raw: string): { pathname: string } {
   return { pathname: new URL(raw, 'http://placeholder').pathname };
 }
 
+export interface RecordedExchange {
+  method: string;
+  url: string;
+  requestHeaders: Record<string, string>;
+  requestBody: unknown;
+  responseStatus: number;
+  responseHeaders: Record<string, string>;
+  responseBody: unknown;
+  durationMs: number;
+}
+
+export interface ForwardProxyRequestOptions {
+  target: string;
+  subpath?: string;
+  mockRule?: MockRule;
+  body?: unknown;
+  onFinish?: (exchange: RecordedExchange) => void;
+}
+
+/** Forwards an incoming HTTP request to the target and records the full exchange. */
+export async function forwardProxyRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  opts: ForwardProxyRequestOptions,
+): Promise<{ status: number; exchange: RecordedExchange }> {
+  const method = req.method ?? 'GET';
+  const rawUrl = opts.subpath ?? req.url ?? '/';
+  const target = opts.target.replace(/\/+$/, '');
+  const targetUrl = new URL(target);
+  const incoming = headerRecord(req.headers);
+  const started = Date.now();
+
+  let status = 599;
+  let headers: Record<string, string> = {};
+  let body: unknown;
+  let responseBuffer = Buffer.alloc(0);
+  let recordedUrl = `${targetUrl.protocol}//${incoming.host ?? targetUrl.host}${rawUrl}`;
+  let forwardedHeaders: Record<string, string> = incoming;
+  let requestBody: unknown = undefined;
+
+  try {
+    let requestBuffer: Buffer;
+    if (opts.body !== undefined) {
+      requestBody = opts.body;
+      requestBuffer = Buffer.isBuffer(opts.body)
+        ? opts.body
+        : Buffer.from(typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body));
+    } else {
+      requestBuffer = await readBody(req);
+      requestBody = parseBody(requestBuffer, incoming['content-type'] ?? null);
+    }
+    const extra: Record<string, string> = opts.mockRule
+      ? {
+          'paypal-mock-response': JSON.stringify({
+            mock_application_codes: opts.mockRule.mockCode,
+          }),
+        }
+      : {};
+    forwardedHeaders = forwardingHeaders(incoming, extra);
+    const fetchUrl = `${target}${rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`}`;
+    recordedUrl = `${targetUrl.protocol}//${incoming.host ?? targetUrl.host}${rawUrl}`;
+
+    const response = await fetch(fetchUrl, {
+      method,
+      headers: forwardedHeaders,
+      ...(requestBuffer.length > 0 && method !== 'GET' && method !== 'HEAD'
+        ? { body: new Uint8Array(requestBuffer) }
+        : {}),
+    });
+
+    responseBuffer = Buffer.from(await response.arrayBuffer());
+    status = response.status;
+    headers = responseHeaders(response.headers);
+    body = parseBody(responseBuffer, response.headers.get('content-type'));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    status = 599;
+    headers = { 'content-type': 'application/json' };
+    body = { name: 'PROXY_ERROR', message };
+    responseBuffer = Buffer.from(JSON.stringify(body));
+  }
+
+  const exchange: RecordedExchange = {
+    method,
+    url: recordedUrl,
+    requestHeaders: forwardedHeaders,
+    requestBody,
+    responseStatus: status,
+    responseHeaders: headers,
+    responseBody: body,
+    durationMs: Date.now() - started,
+  };
+
+  try {
+    opts.onFinish?.(exchange);
+  } catch {
+    // protect against callback errors
+  }
+
+  if (!res.headersSent) {
+    res.writeHead(status, outgoingHeaders(headers));
+  }
+  res.end(responseBuffer);
+
+  return { status, exchange };
+}
+
 /** Starts an HTTP trace proxy that records every exchange and can inject mock headers. */
 export async function startTraceProxy(o: {
   target: string;
   recorder: StepRecorder;
 }): Promise<TraceProxy> {
   const target = o.target.replace(/\/+$/, '');
-  const targetUrl = new URL(target);
   const mockRules: MockRule[] = [];
   let stopped = false;
 
@@ -112,72 +243,17 @@ export async function startTraceProxy(o: {
   const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const method = req.method ?? 'GET';
     const rawUrl = req.url ?? '/';
-    const incoming = headerRecord(req.headers);
     const { pathname } = splitUrl(rawUrl);
-    const started = Date.now();
+    const rule = consumeMock(method, pathname);
     const seq = o.recorder.start('store', `${method} ${rawUrl}`);
 
-    let status = 599;
-    let headers: Record<string, string> = {};
-    let body: unknown;
-    let responseBuffer = Buffer.alloc(0);
-    let recordedUrl = `${targetUrl.protocol}//${incoming.host ?? targetUrl.host}${rawUrl}`;
-
-    try {
-      const requestBuffer = await readBody(req);
-      const requestBody = parseBody(requestBuffer, incoming['content-type'] ?? null);
-      const rule = consumeMock(method, pathname);
-      const extra: Record<string, string> = rule
-        ? { 'paypal-mock-response': JSON.stringify({ mock_application_codes: rule.mockCode }) }
-        : {};
-      const forwardedHeaders = forwardingHeaders(incoming, extra);
-      const fetchUrl = `${target}${rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`}`;
-      recordedUrl = `${targetUrl.protocol}//${incoming.host ?? targetUrl.host}${rawUrl}`;
-
-      const response = await fetch(fetchUrl, {
-        method,
-        headers: forwardedHeaders,
-        ...(requestBuffer.length > 0 && method !== 'GET' && method !== 'HEAD'
-          ? { body: new Uint8Array(requestBuffer) }
-          : {}),
-      });
-
-      responseBuffer = Buffer.from(await response.arrayBuffer());
-      status = response.status;
-      headers = responseHeaders(response.headers);
-      body = parseBody(responseBuffer, response.headers.get('content-type'));
-
-      o.recorder.finish(seq, {
-        method,
-        url: recordedUrl,
-        requestHeaders: forwardedHeaders,
-        requestBody,
-        responseStatus: status,
-        responseHeaders: headers,
-        responseBody: body,
-        durationMs: Date.now() - started,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      status = 599;
-      headers = { 'content-type': 'application/json' };
-      body = { name: 'PROXY_ERROR', message };
-      responseBuffer = Buffer.from(JSON.stringify(body));
-
-      o.recorder.finish(seq, {
-        method,
-        url: recordedUrl,
-        requestHeaders: incoming,
-        requestBody: undefined,
-        responseStatus: status,
-        responseHeaders: headers,
-        responseBody: body,
-        durationMs: Date.now() - started,
-      });
-    }
-
-    res.writeHead(status, outgoingHeaders(headers));
-    res.end(responseBuffer);
+    await forwardProxyRequest(req, res, {
+      target,
+      mockRule: rule,
+      onFinish: (exchange) => {
+        o.recorder.finish(seq, exchange);
+      },
+    });
   };
 
   const server = createServer((req, res) => {

@@ -32,12 +32,19 @@ export async function runServer(): Promise<void> {
   const runtime = buildRuntime(process.env);
   const distDir = join(repoRoot, 'apps', 'dashboard', 'dist');
   const staticDir = existsSync(join(distDir, 'index.html')) ? distDir : undefined;
-  const openPrFor = openPrFromEnv(process.env, { repos: runtime.repos });
+  const openPrFor = openPrFromEnv(process.env, {
+    repos: runtime.repos,
+    projectsRepo: runtime.projectsRepo,
+    settingsStore: runtime.settingsStore,
+  });
   const app = createApi({
     orchestrator: runtime.orchestrator,
     repos: runtime.repos,
+    projectsRepo: runtime.projectsRepo,
     config: runtime.config,
     bus: runtime.bus,
+    settingsStore: runtime.settingsStore,
+    getConfig: runtime.getConfig,
     version: process.env.PAYCLINIC_VERSION ?? '0.0.0',
     staticDir,
     ...(openPrFor === undefined ? {} : { openPr: (finding) => openPrFor(finding.id) }),

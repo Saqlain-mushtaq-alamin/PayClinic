@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Bot, Sparkles, Store } from 'lucide-react';
+import { ArrowLeft, Bot, FolderGit2, RotateCcw, Sparkles, Store } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { RunEvent } from '@payclinic/contracts';
@@ -19,7 +19,7 @@ import { Spinner } from '../components/ui/Spinner';
 
 export interface RunPageProps {
   client?: Pick<ApiClient, 'getRun' | 'prescribe'> &
-    Partial<Pick<ApiClient, 'protect' | 'getPolicy' | 'getDecisions'>>;
+    Partial<Pick<ApiClient, 'protect' | 'getPolicy' | 'getDecisions' | 'retestProject'>>;
   eventSourceCtor?: RunEventSourceCtor;
 }
 
@@ -48,6 +48,24 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
   const [fixing, setFixing] = useState(false);
   const [fixingIndex, setFixingIndex] = useState<number | null>(null);
   const [fixError, setFixError] = useState<string | null>(null);
+  const [retesting, setRetesting] = useState(false);
+
+  const handleRetest = async () => {
+    if (retesting || !data?.run.id) return;
+    const projId = data.run.projectId || 'builtin';
+    setRetesting(true);
+    try {
+      const res = clientRef.current.retestProject
+        ? await clientRef.current.retestProject(projId, data.run.id)
+        : await api.retestProject(projId, data.run.id);
+      toast.success(`Re-test completed! Score: ${res.score}`);
+      reload();
+    } catch (err) {
+      toast.error(`Re-test failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRetesting(false);
+    }
+  };
   const [flashGauge, setFlashGauge] = useState(false);
 
   const pendingPrescribesRef = useRef<Map<string, () => void>>(new Map());
@@ -198,6 +216,15 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
           <div className="run-header__left">
             <div className="run-header__title-row">
               <h1 className="run-header__title">Run {data.run.id}</h1>
+              <span className="chip chip--project" data-testid="run-project-name">
+                <FolderGit2 size={14} />
+                <span>
+                  {data.run.projectName ??
+                    (data.run.projectId && data.run.projectId !== 'builtin'
+                      ? data.run.projectId
+                      : 'Demo store')}
+                </span>
+              </span>
               <span className="chip chip--target">
                 {isStore ? <Store size={14} /> : <Bot size={14} />}
                 <span>{isStore ? 'Store' : 'Agent'}</span>
@@ -207,6 +234,28 @@ export function RunPage({ client: injectedClient, eventSourceCtor }: RunPageProp
           </div>
 
           <div className="run-header__actions">
+            {isStore && (
+              <Button
+                variant="secondary"
+                aria-label={retesting ? 'Re-testing…' : 'Re-test'}
+                onClick={handleRetest}
+                disabled={retesting || data.run.status === 'running'}
+                className="run-header__retest-btn"
+                data-testid="run-retest-button"
+              >
+                {retesting ? (
+                  <>
+                    <Spinner label="" /> Re-testing…
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw size={15} />
+                    <span>Re-test</span>
+                  </>
+                )}
+              </Button>
+            )}
+
             {isStore && openFindings.length > 0 && (
               <Button
                 variant="primary"

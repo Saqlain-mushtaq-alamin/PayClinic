@@ -1,9 +1,14 @@
 /** SQLite DDL from TECH_DESIGN §11. */
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS runs (
-  id TEXT PRIMARY KEY, target TEXT NOT NULL, mode TEXT NOT NULL, scenario_keys TEXT NOT NULL,
+  id TEXT PRIMARY KEY, project_id TEXT, target TEXT NOT NULL, mode TEXT NOT NULL, scenario_keys TEXT NOT NULL,
   status TEXT NOT NULL, started_at TEXT NOT NULL, completed_at TEXT,
   score_before REAL, score_after REAL, error TEXT
+);
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, base_url TEXT,
+  admin_secret_encrypted TEXT, proxy_token TEXT NOT NULL, repo_owner TEXT,
+  repo_name TEXT, repo_branch TEXT, source_root TEXT, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS scenarios (
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
@@ -52,5 +57,8 @@ CREATE TABLE IF NOT EXISTS policies (
 CREATE TABLE IF NOT EXISTS firewall_decisions (
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   action TEXT NOT NULL, rule_id TEXT, reason TEXT NOT NULL, request TEXT NOT NULL, ts TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY, value_encrypted TEXT NOT NULL, updated_at TEXT
 );
 `;

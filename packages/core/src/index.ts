@@ -22,3 +22,7 @@ export * from './verify/diff';
 export * from './verify/verify';
 export * from './orchestrator/types';
 export * from './orchestrator/orchestrator';
+export * from './settings';
+export * from './db/projects-repo';
+export * from './runner/target-guard';
+export * from './runner/adapter-check';

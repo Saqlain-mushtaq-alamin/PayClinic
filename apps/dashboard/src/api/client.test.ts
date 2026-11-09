@@ -64,4 +64,57 @@ describe('createApiClient', () => {
     await client.getRun('run/1');
     expect(requested).toBe('http://api.test/api/runs/run%2F1');
   });
+
+  it('lists, creates, updates and deletes projects via ApiClient', async () => {
+    const dummyProject = {
+      id: 'proj-1',
+      name: 'Custom Store',
+      kind: 'remote',
+      baseUrl: 'https://store.example.com',
+      proxyToken: 'token123',
+      proxyUrl: 'http://api.test/proxy/token123',
+      hasAdminSecret: true,
+      repoOwner: 'org',
+      repoName: 'repo',
+      repoBranch: 'main',
+      sourceRoot: null,
+      createdAt: '2026-11-08T00:00:00.000Z',
+    };
+
+    let lastMethod = '';
+    let lastUrl = '';
+    const client = createApiClient('http://api.test', (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      lastUrl = String(input);
+      lastMethod = init?.method ?? 'GET';
+      if (lastMethod === 'DELETE') {
+        return response({ ok: true });
+      }
+      if (lastMethod === 'GET') {
+        return response([dummyProject]);
+      }
+      return response(dummyProject);
+    }) as typeof fetch);
+
+    const list = await client.listProjects();
+    expect(list).toEqual([dummyProject]);
+    expect(lastUrl).toBe('http://api.test/api/projects');
+
+    const created = await client.createProject({
+      name: 'Custom Store',
+      baseUrl: 'https://store.example.com',
+    });
+    expect(created).toEqual(dummyProject);
+    expect(lastMethod).toBe('POST');
+
+    const updated = await client.updateProject('proj-1', { name: 'Renamed' });
+    expect(updated).toEqual(dummyProject);
+    expect(lastUrl).toBe('http://api.test/api/projects/proj-1');
+
+    const deleted = await client.deleteProject('proj-1');
+    expect(deleted).toEqual({ ok: true });
+    expect(lastMethod).toBe('DELETE');
+  });
 });

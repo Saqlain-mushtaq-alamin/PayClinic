@@ -35,7 +35,8 @@ const stateRenderer = (p: ICellRendererParams<FindingRow>) => {
     toneClass = 'badge--critical';
   }
 
-  return <span className={`chip ${toneClass}`}>{val}</span>;
+  const label = val === 'patched' ? 'Needs review' : val;
+  return <span className={`chip ${toneClass}`}>{label}</span>;
 };
 
 const columnDefs: ColDef<FindingRow>[] = [

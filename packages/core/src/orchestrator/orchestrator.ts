@@ -8,7 +8,10 @@ import type {
   Step,
   VerifyResult,
 } from '@payclinic/contracts';
+import { startSim } from '@payclinic/sim';
+import type { ProjectRow } from '../db/projects-repo';
 import { computeScore } from '../score';
+import { executeScenarios } from '../runner/execute-scenarios';
 import { runDiagnose } from '../runner/diagnose';
 import { defaultChildRegistry } from '../runner/child-registry';
 import { createVerify } from '../verify/verify';
@@ -117,7 +120,19 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
 
     if (result.patches.length === 0) {
       setFindingState(finding.id, 'unverified');
-      progress(finding.id, 'failed', 'No patches were returned');
+      progress(finding.id, 'failed', result.explanation?.fixSummary || 'No patches were returned');
+      return;
+    }
+
+    const project = run.projectId ? deps.projectsRepo?.getProject(run.projectId) : null;
+    const isRemote = project?.kind === 'remote';
+
+    if (isRemote) {
+      for (const patch of result.patches) {
+        deps.repos.insertPatch(patch);
+      }
+      setFindingState(finding.id, 'patched');
+      progress(finding.id, 'done', 'Patch generated. Needs review.');
       return;
     }
 
@@ -156,11 +171,63 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
   };
 
   let tail: Promise<void> = Promise.resolve();
+  let activeSim: Awaited<ReturnType<typeof startSim>> | null = null;
+  const getSimUrl = async (): Promise<string> => {
+    if (deps.getSimUrl) return deps.getSimUrl();
+    if (!activeSim) {
+      activeSim = await startSim();
+    }
+    return activeSim.url;
+  };
 
   const startRun = (req: RunCreateRequest): string => {
+    const currentConfig = deps.getConfig ? deps.getConfig() : deps.config;
+    if (
+      req.mode === 'online' &&
+      (!currentConfig.paypalClientId || !currentConfig.paypalClientSecret)
+    ) {
+      throw new Error('online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
+    }
+
+    const projectId = req.projectId ?? 'builtin';
+    let project: ProjectRow | null = null;
+    if (deps.projectsRepo) {
+      project = deps.projectsRepo.getProject(projectId);
+      if (!project) {
+        throw new Error(`Project ${projectId} not found`);
+      }
+    }
+
+    if (project && project.kind === 'remote') {
+      // 3. Only store scenarios B1-B5 (and optional B6) are allowed for remote projects. Reject A1/A2 with a clear error.
+      if (req.target === 'agent') {
+        throw new Error(
+          'Remote projects only support store scenarios (B1-B5, B6). Agent attacks (A1, A2) are not supported.',
+        );
+      }
+      const disallowed = req.scenarios.filter((k) => k === 'A1' || k === 'A2');
+      if (disallowed.length > 0) {
+        throw new Error(
+          `Remote projects only support store scenarios (B1-B5, B6). Agent scenarios (${disallowed.join(', ')}) are not supported.`,
+        );
+      }
+
+      // 2. Run lock: only one run per remote project at a time (queue or reject with a clear message)
+      const runs = deps.repos.listRuns();
+      const activeOrQueued = runs.find(
+        (r) => (r.status === 'running' || r.status === 'queued') && r.projectId === projectId,
+      );
+      if (activeOrQueued) {
+        throw new Error(
+          `A run is already active or queued for project '${project.name}' (${activeOrQueued.id}). Please wait for it to complete.`,
+        );
+      }
+    }
+
     const id = deps.newId();
     const run: Run = {
       id,
+      projectId,
       target: req.target,
       mode: req.mode,
       scenarioKeys: req.scenarios,
@@ -183,8 +250,14 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
       try {
         await Promise.race([
           runDiagnose(
-            { ...deps, emit, signal: controller.signal },
-            { target: req.target, mode: req.mode, scenarios: req.scenarios, runId: id },
+            { ...deps, getSimUrl, config: currentConfig, emit, signal: controller.signal },
+            {
+              target: req.target,
+              mode: req.mode,
+              scenarios: req.scenarios,
+              runId: id,
+              projectId,
+            },
           ),
           timeoutPromise,
         ]);
@@ -231,10 +304,113 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     emit({ type: 'score.updated', score });
   };
 
+  const retest = async (
+    projectId: string,
+    runId: string,
+  ): Promise<{ ok: boolean; score: number; findings: Finding[] }> => {
+    const project = deps.projectsRepo?.getProject(projectId);
+    if (!project) throw new Error(`Project ${projectId} not found`);
+
+    const run = deps.repos.getRun(runId);
+    if (!run) throw new Error(`Run ${runId} not found`);
+
+    deps.repos.updateRun(run.id, { status: 'running' });
+
+    try {
+      const simUrl = await getSimUrl();
+      const currentConfig = deps.getConfig ? deps.getConfig() : deps.config;
+      const executed = await executeScenarios(
+        {
+          config: currentConfig,
+          getConfig: deps.getConfig,
+          scenarios: deps.scenarios,
+          storeSourceDir: deps.storeSourceDir,
+          newId: deps.newId,
+          now: deps.now,
+          simUrl,
+          runId: run.id,
+          project:
+            project.kind === 'remote'
+              ? {
+                  id: project.id,
+                  name: project.name,
+                  kind: project.kind,
+                  baseUrl: project.baseUrl,
+                  base_url: project.baseUrl,
+                  adminSecretEncrypted: project.adminSecretEncrypted,
+                  admin_secret_encrypted: project.adminSecretEncrypted,
+                  proxyToken: project.proxyToken,
+                  proxy_token: project.proxyToken,
+                }
+              : undefined,
+          repos: deps.repos,
+          onStep: (step) => emit({ type: 'step.recorded', step }),
+          onScenarioStart: (key, scenarioId) => {
+            const scenario: ScenarioResult = {
+              id: scenarioId,
+              runId: run.id,
+              key,
+              status: 'running',
+              startedAt: deps.now().toISOString(),
+            };
+            deps.repos.insertScenario(scenario);
+            emit({ type: 'scenario.started', scenario });
+          },
+          onScenario: async (key, info) => {
+            const existingStepIds = new Set(
+              deps.repos.listSteps(run.id, info.scenarioId).map((s) => s.id),
+            );
+            const newSteps = info.steps.filter((s) => !existingStepIds.has(s.id));
+            if (newSteps.length > 0) {
+              deps.repos.insertSteps(newSteps);
+            }
+            deps.repos.updateScenario(info.scenarioId, {
+              status: info.status,
+              finishedAt: deps.now().toISOString(),
+            });
+          },
+        },
+        run.scenarioKeys,
+      );
+
+      const priorFindings = deps.repos.listFindings(run.id);
+      for (const prior of priorFindings) {
+        const scenario = executed.find((s) => s.key === prior.scenarioKey);
+        const inv = scenario?.results.find((r) => r.key === prior.invariantKey);
+        if (inv && inv.passed) {
+          setFindingState(prior.id, 'verified');
+        }
+      }
+
+      const updatedFindings = deps.repos.listFindings(run.id);
+      const score = computeScore(updatedFindings);
+      deps.repos.updateRun(run.id, {
+        status: 'completed',
+        completedAt: deps.now().toISOString(),
+        scoreAfter: score.score,
+      });
+      emit({ type: 'score.updated', score });
+
+      return { ok: true, score: score.score, findings: updatedFindings };
+    } finally {
+      const current = deps.repos.getRun(run.id);
+      if (current && current.status === 'running') {
+        const score = computeScore(deps.repos.listFindings(run.id));
+        deps.repos.updateRun(run.id, {
+          status: 'completed',
+          completedAt: deps.now().toISOString(),
+          scoreAfter: score.score,
+        });
+      }
+    }
+  };
+
   return {
     startRun,
     prescribe,
     protect,
+    retest,
     idle: () => Promise.all([tail, prescribeChain]).then(() => undefined),
+    getSimUrl,
   };
 }

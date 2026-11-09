@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import {
+  AuthStatusResponse,
   DecisionList,
   FindingDetail,
   Health,
@@ -9,12 +10,37 @@ import {
   RunDetail,
   RunSummary,
   ScenarioInfo,
+  SettingsResponse,
   StepList,
+  TestSettingsResponse,
+  Project,
+  AdapterCheckItem,
+  Finding,
+  type ProjectCreateRequest,
+  type ProjectUpdateRequest,
   type FirewallDecision,
   type RunCreateRequest,
   type RunSummary as RunSummaryType,
   type Step,
 } from '@payclinic/contracts';
+
+let currentAdminToken: string | null = null;
+const authListeners = new Set<() => void>();
+
+export function setAdminToken(token: string | null): void {
+  currentAdminToken = token;
+}
+
+export function getAdminToken(): string | null {
+  return currentAdminToken;
+}
+
+export function onAuthRequired(listener: () => void): () => void {
+  authListeners.add(listener);
+  return () => {
+    authListeners.delete(listener);
+  };
+}
 
 interface Schema<T> {
   parse(value: unknown): T;
@@ -34,6 +60,37 @@ const Accepted: Schema<AcceptedResponse> = {
       throw new Error('invalid accepted response');
     }
     return { accepted: true };
+  },
+};
+
+export interface OkResponse {
+  ok: boolean;
+}
+
+export interface RetestResponse {
+  ok: boolean;
+  score: number;
+  findings: Finding[];
+}
+
+const RetestResultSchema: Schema<RetestResponse> = {
+  parse(value) {
+    if (typeof value !== 'object' || value === null) throw new Error('invalid retest response');
+    const v = value as { ok?: unknown; score?: unknown; findings?: unknown };
+    return {
+      ok: Boolean(v.ok),
+      score: Number(v.score ?? 0),
+      findings: Finding.array().parse(v.findings ?? []),
+    };
+  },
+};
+
+const Ok: Schema<OkResponse> = {
+  parse(value) {
+    if (typeof value !== 'object' || value === null || (value as { ok?: unknown }).ok !== true) {
+      throw new Error('invalid ok response');
+    }
+    return { ok: true };
   },
 };
 
@@ -60,6 +117,16 @@ export interface ApiClient {
   getPolicy(id: string): Promise<PolicyResponse>;
   getDecisions(id: string): Promise<FirewallDecision[]>;
   getScenarios(): Promise<ScenarioInfo[]>;
+  getSettings(): Promise<SettingsResponse>;
+  saveSettings(updates: Record<string, string | null>): Promise<SettingsResponse>;
+  testSetting(kind: 'paypal' | 'gemini' | 'github'): Promise<TestSettingsResponse>;
+  getAuthStatus(): Promise<AuthStatusResponse>;
+  listProjects(): Promise<Project[]>;
+  createProject(body: ProjectCreateRequest): Promise<Project>;
+  updateProject(id: string, updates: ProjectUpdateRequest): Promise<Project>;
+  deleteProject(id: string): Promise<OkResponse>;
+  checkProject(id: string): Promise<AdapterCheckItem[]>;
+  retestProject(projectId: string, runId: string): Promise<RetestResponse>;
 }
 
 /**
@@ -75,13 +142,27 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     schema: Schema<T>,
     body?: unknown,
   ): Promise<T> => {
-    const init: RequestInit = { method, headers: { accept: 'application/json' } };
-    if (body !== undefined) {
-      init.headers = { ...init.headers, 'content-type': 'application/json' };
-      init.body = JSON.stringify(body);
+    const headers: Record<string, string> = { accept: 'application/json' };
+    if (currentAdminToken) {
+      headers.authorization = `Bearer ${currentAdminToken}`;
     }
+    if (body !== undefined) {
+      headers['content-type'] = 'application/json';
+    }
+
+    const init: RequestInit = {
+      method,
+      headers,
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    };
+
     const response = await fetchImpl(`${base}${path}`, init);
     if (!response.ok) {
+      if (response.status === 401) {
+        for (const listener of authListeners) {
+          listener();
+        }
+      }
       let message = `${method} ${path} failed with status ${response.status}`;
       try {
         const payload = (await response.json()) as { error?: unknown };
@@ -117,6 +198,22 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     getDecisions: (id) =>
       request('GET', `/api/runs/${encodeURIComponent(id)}/decisions`, DecisionList),
     getScenarios: () => request('GET', '/api/scenarios', ScenarioInfo.array()),
+    getSettings: () => request('GET', '/api/settings', SettingsResponse),
+    saveSettings: (updates) => request('PUT', '/api/settings', SettingsResponse, updates),
+    testSetting: (kind) =>
+      request('POST', `/api/settings/test/${encodeURIComponent(kind)}`, TestSettingsResponse),
+    getAuthStatus: () => request('GET', '/api/auth/status', AuthStatusResponse),
+    listProjects: () => request('GET', '/api/projects', Project.array()),
+    createProject: (body) => request('POST', '/api/projects', Project, body),
+    updateProject: (id, updates) =>
+      request('PUT', `/api/projects/${encodeURIComponent(id)}`, Project, updates),
+    deleteProject: (id) => request('DELETE', `/api/projects/${encodeURIComponent(id)}`, Ok),
+    checkProject: (id) =>
+      request('POST', `/api/projects/${encodeURIComponent(id)}/check`, AdapterCheckItem.array()),
+    retestProject: (projectId, runId) =>
+      request('POST', `/api/projects/${encodeURIComponent(projectId)}/retest`, RetestResultSchema, {
+        runId,
+      }),
   };
 }
 

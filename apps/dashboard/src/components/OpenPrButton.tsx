@@ -7,6 +7,7 @@ import { Spinner } from './ui/Spinner';
 export interface OpenPrButtonProps {
   findingId: string;
   client?: Pick<ApiClient, 'openPr'>;
+  onPrOpened?: (url: string) => void;
 }
 
 type OpenPrState =
@@ -21,7 +22,7 @@ type OpenPrState =
  * the server's reason (e.g. "GitHub is not configured") when no PR was opened,
  * and an error with retry when the request fails.
  */
-export function OpenPrButton({ findingId, client = api }: OpenPrButtonProps) {
+export function OpenPrButton({ findingId, client = api, onPrOpened }: OpenPrButtonProps) {
   const [state, setState] = useState<OpenPrState>({ kind: 'idle' });
 
   const open = () => {
@@ -31,8 +32,9 @@ export function OpenPrButton({ findingId, client = api }: OpenPrButtonProps) {
       .openPr(findingId)
       .then((result) => {
         if (result.prUrl) {
-          toast.success('Pull request opened');
+          toast.success(`Pull request opened: ${result.prUrl}`);
           setState({ kind: 'opened', url: result.prUrl });
+          onPrOpened?.(result.prUrl);
         } else {
           toast.info(result.reason ?? 'Pull request is not available');
           setState({ kind: 'reason', message: result.reason ?? 'Pull request is not available' });

@@ -12,6 +12,7 @@ import { buildPatchPrompt } from './prompts';
 export interface PatchDeps {
   provider: AIProvider;
   readSource: (file: string) => string;
+  sourceFiles?: string[];
 }
 
 /** Asks the provider for a validated, exact-substring patch for a finding. */
@@ -20,7 +21,7 @@ export async function generatePatch(
   finding: Finding,
   explanation: ExplainOutput,
 ): Promise<PatchOutputType> {
-  const sources = loadScenarioSources(finding, deps.readSource);
+  const sources = loadScenarioSources(finding, deps.readSource, deps.sourceFiles);
   const { system, prompt } = buildPatchPrompt({ finding, explanation, sources });
   const task = 'patch' as const;
 

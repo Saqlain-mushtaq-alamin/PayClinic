@@ -128,6 +128,8 @@ export type Step = z.infer<typeof Step>;
 
 export const Run = z.object({
   id: z.string(),
+  projectId: z.string().optional(),
+  projectName: z.string().optional(),
   target: RunTarget,
   mode: RunMode,
   scenarioKeys: z.array(ScenarioKey),
@@ -188,8 +190,13 @@ export type Explanation = z.infer<typeof Explanation>;
 
 /** Exact-string edit. `search` MUST occur exactly once in the file. */
 export const PatchEdit = z.object({
-  /** path relative to repo root, MUST start with "apps/buggy-store/src/" */
-  file: z.string().startsWith('apps/buggy-store/src/'),
+  /** path relative to repo root, cannot escape root or target package.json */
+  file: z
+    .string()
+    .min(1)
+    .refine((f) => f !== 'package.json' && !f.split('/').includes('..') && !f.startsWith('/'), {
+      message: 'file must be a safe source file path',
+    }),
   search: z.string().min(1),
   replace: z.string(),
 });

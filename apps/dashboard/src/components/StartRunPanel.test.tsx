@@ -108,4 +108,68 @@ describe('StartRunPanel', () => {
     );
     expect(await screen.findByText('Run page reached')).toBeInTheDocument();
   });
+
+  it('disables agent attacks for remote projects and includes projectId when diagnosed', async () => {
+    const remoteProject = {
+      id: 'proj-remote',
+      name: 'External Store',
+      kind: 'remote' as const,
+      baseUrl: 'https://store.remote.com',
+      proxyToken: 'tok123',
+      proxyUrl: 'http://localhost/proxy/tok123',
+      hasAdminSecret: false,
+      repoOwner: null,
+      repoName: null,
+      repoBranch: null,
+      sourceRoot: null,
+      createdAt: '2026-11-08T00:00:00.000Z',
+    };
+    const builtinProject = {
+      id: 'builtin',
+      name: 'Demo store',
+      kind: 'builtin' as const,
+      baseUrl: null,
+      proxyToken: 'builtin',
+      proxyUrl: '/proxy/builtin',
+      hasAdminSecret: false,
+      repoOwner: null,
+      repoName: null,
+      repoBranch: null,
+      sourceRoot: null,
+      createdAt: '2026-11-08T00:00:00.000Z',
+    };
+
+    const client = makeClient({
+      listProjects: vi.fn(async () => [builtinProject, remoteProject]),
+    });
+    renderPanel(client);
+
+    const projectSelect = await screen.findByTestId('project-selector');
+    expect(projectSelect).toBeInTheDocument();
+
+    const agentToggle = screen.getByTestId('agent-attacks-toggle');
+    expect(agentToggle).not.toBeDisabled();
+
+    // Select remote project
+    fireEvent.change(projectSelect, { target: { value: 'proj-remote' } });
+
+    // Agent attacks must now be disabled with tooltip
+    expect(agentToggle).toBeDisabled();
+    expect(agentToggle).toHaveAttribute(
+      'title',
+      'Agent attacks are only enabled for the builtin project',
+    );
+
+    // Click diagnose on remote project
+    fireEvent.click(screen.getByRole('button', { name: /Diagnose/i }));
+
+    await waitFor(() =>
+      expect(client.createRun).toHaveBeenCalledWith({
+        projectId: 'proj-remote',
+        target: 'store',
+        mode: 'offline',
+        scenarios: ['B1', 'B2'],
+      }),
+    );
+  });
 });

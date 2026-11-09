@@ -11,14 +11,17 @@ import { buildExplainPrompt, type SourceFile } from './prompts';
 export interface ExplainDeps {
   provider: AIProvider;
   readSource: (file: string) => string;
+  sourceFiles?: string[];
 }
 
 /** Reads the scenario's known source files through the injected reader. */
 export function loadScenarioSources(
   finding: Finding,
   readSource: (file: string) => string,
+  sourceFiles?: string[],
 ): SourceFile[] {
-  return (SOURCE_FILES_FOR_SCENARIO[finding.scenarioKey] ?? []).map((file) => ({
+  const files = sourceFiles ?? SOURCE_FILES_FOR_SCENARIO[finding.scenarioKey] ?? [];
+  return files.map((file) => ({
     file,
     content: readSource(file),
   }));
@@ -30,7 +33,7 @@ export async function explain(
   finding: Finding,
   steps: Step[],
 ): Promise<ExplainOutputType> {
-  const sources = loadScenarioSources(finding, deps.readSource);
+  const sources = loadScenarioSources(finding, deps.readSource, deps.sourceFiles);
   const { system, prompt } = buildExplainPrompt({ finding, steps, sources });
   const task = 'explain' as const;
 

@@ -105,3 +105,28 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     dbPath: env.DB_PATH ?? './data/payclinic.db',
   });
 }
+
+/** Resolves configuration by overlaying settings store values over an environment map. */
+export function resolveConfig(
+  env: Record<string, string | undefined>,
+  settings: { get(key: string): string | null },
+): Config {
+  const merged: Record<string, string | undefined> = { ...env };
+  const mappings: Array<[string, string]> = [
+    ['paypalClientId', 'PAYPAL_CLIENT_ID'],
+    ['paypalClientSecret', 'PAYPAL_CLIENT_SECRET'],
+    ['mode', 'PAYCLINIC_MODE'],
+    ['aiProvider', 'AI_PROVIDER'],
+    ['geminiApiKey', 'GEMINI_API_KEY'],
+    ['geminiModel', 'GEMINI_MODEL'],
+  ];
+
+  for (const [settingsKey, envKey] of mappings) {
+    const val = settings.get(settingsKey);
+    if (val !== null && val !== undefined && val !== '') {
+      merged[envKey] = val;
+    }
+  }
+
+  return loadConfig(merged);
+}

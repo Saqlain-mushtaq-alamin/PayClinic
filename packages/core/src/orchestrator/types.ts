@@ -9,6 +9,7 @@ import type {
   Step,
 } from '@payclinic/contracts';
 import type { Config } from '../config';
+import type { ProjectsRepo } from '../db/projects-repo';
 import type { Repos } from '../db/repos';
 import type { ScenarioFn } from '../runner/context';
 
@@ -21,7 +22,10 @@ export type Protector = (run: Run, findings: Finding[]) => Promise<void>;
 
 export interface OrchestratorDeps {
   repos: Repos;
+  projectsRepo?: ProjectsRepo;
   config: Config;
+  getConfig?: () => Config;
+  getSimUrl?: () => Promise<string>;
   scenarios: Partial<Record<ScenarioKey, ScenarioFn>>;
   repoRoot: string;
   storeSourceDir: string;
@@ -33,11 +37,19 @@ export interface OrchestratorDeps {
   runTimeoutMs?: number;
 }
 
+export interface RetestResult {
+  ok: boolean;
+  score: number;
+  findings: Finding[];
+}
+
 export interface Orchestrator {
   startRun(req: RunCreateRequest): string;
   prescribe(findingId: string): Promise<void>;
   protect(runId: string): Promise<void>;
+  retest?(projectId: string, runId: string): Promise<RetestResult>;
   idle(): Promise<void>;
+  getSimUrl?: () => Promise<string>;
 }
 
 /** Raised when protect is requested for a run that is not an agent run. */

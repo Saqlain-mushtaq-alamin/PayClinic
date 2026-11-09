@@ -15,22 +15,38 @@ const DENYLIST = [
   'writeFile',
 ];
 
+export interface CheckEditsSafetyOptions {
+  maxEdits?: number;
+  allowedPrefix?: string;
+}
+
 /** Returns a failure when AI-generated edits could escape the store source or execute code. */
 export function checkEditsSafety(
   edits: PatchEdit[],
-  opts: { maxEdits?: number } = {},
+  opts: CheckEditsSafetyOptions = {},
 ): { ok: true } | { ok: false; reason: string } {
   const maxEdits = opts.maxEdits ?? DEFAULT_MAX_EDITS;
   if (edits.length > maxEdits) {
     return { ok: false, reason: `Patch has ${edits.length} edits; the maximum is ${maxEdits}` };
   }
 
+  const rawPrefix = opts.allowedPrefix ?? STORE_SRC_PREFIX;
+  const normalizedPrefix = posix.normalize(rawPrefix.replace(/\\/g, '/')).replace(/^\/+/, '');
+  const prefixWithSlash = normalizedPrefix.endsWith('/')
+    ? normalizedPrefix
+    : `${normalizedPrefix}/`;
+
   for (const [index, edit] of edits.entries()) {
-    const normalized = posix.normalize(edit.file.replace(/\\/g, '/'));
+    const rawFile = edit.file.replace(/\\/g, '/');
+    const normalized = posix.normalize(rawFile).replace(/^\/+/, '');
+    const isUnderPrefix =
+      normalized.startsWith(prefixWithSlash) || normalized === normalizedPrefix.replace(/\/$/, '');
+
     if (
-      !normalized.startsWith(STORE_SRC_PREFIX) ||
+      !isUnderPrefix ||
+      rawFile.split('/').includes('..') ||
       normalized.split('/').includes('..') ||
-      posix.isAbsolute(normalized)
+      posix.isAbsolute(rawFile)
     ) {
       return {
         ok: false,

@@ -50,6 +50,11 @@ function stateTone(state: string): BadgeTone {
   }
 }
 
+function stateLabel(state: string): string {
+  if (state === 'patched') return 'Needs review';
+  return state;
+}
+
 export function FindingPage({ client: injectedClient, eventSourceCtor }: FindingPageProps) {
   const client = injectedClient ?? api;
   const clientRef = useRef(client);
@@ -58,6 +63,7 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prUrl, setPrUrl] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const reload = useCallback(() => setTick((value) => value + 1), []);
   const { fid = '' } = useParams();
@@ -134,7 +140,9 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
             <h1 className="finding-header__title">{detail.finding.title}</h1>
             <div className="finding-header__badges">
               <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
-              <Badge tone={stateTone(detail.finding.state)}>{detail.finding.state}</Badge>
+              <Badge tone={stateTone(detail.finding.state)}>
+                {stateLabel(detail.finding.state)}
+              </Badge>
               <VerifyBadge verify={detail.verify} />
             </div>
           </div>
@@ -165,7 +173,18 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
 
           {detail.patch && (
             <Card className="finding-diff-card">
-              <h3 className="section-title">Proposed patch</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="section-title">Proposed patch</h3>
+                <span className="chip chip--neutral" data-testid="patch-model-chip">
+                  {detail.patch.source === 'template' ? (
+                    'Reference fix'
+                  ) : (
+                    <>
+                      AI: <span>{detail.patch.model ?? 'gemini'}</span>
+                    </>
+                  )}
+                </span>
+              </div>
               <UnifiedDiff diff={detail.patch.diff} />
             </Card>
           )}
@@ -183,31 +202,55 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
         {/* Right Column: Sticky Actions Sidebar */}
         <div className="finding-layout__sidebar">
           <div className="finding-sidebar-sticky">
-            {detail.finding.state !== 'verified' && detail.finding.state !== 'protected' && (
-              <Card className="actions-card">
-                <h3 className="actions-card__title">Remediation</h3>
-                <p className="actions-card__desc">
-                  Propose an AI patch and re-run invariant checks in sandbox.
-                </p>
-                <PrescribeButton
-                  stage={prescribe.stage}
-                  message={prescribe.message}
-                  onStart={prescribe.start}
-                />
-                {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
-              </Card>
-            )}
+            {detail.finding.state !== 'verified' &&
+              detail.finding.state !== 'protected' &&
+              detail.finding.state !== 'patched' && (
+                <Card className="actions-card">
+                  <h3 className="actions-card__title">Remediation</h3>
+                  <p className="actions-card__desc">
+                    Propose an AI patch and re-run invariant checks in sandbox.
+                  </p>
+                  <PrescribeButton
+                    stage={prescribe.stage}
+                    message={prescribe.message}
+                    onStart={prescribe.start}
+                  />
+                  {prescribe.stage !== 'idle' && <PrescribeStepper stage={prescribe.stage} />}
+                </Card>
+              )}
 
-            {detail.finding.state === 'verified' && (
+            {(detail.finding.state === 'verified' || detail.finding.state === 'patched') && (
               <Card className="actions-card actions-card--verified">
-                <h3 className="actions-card__title">Patch Ready</h3>
+                <h3 className="actions-card__title">
+                  {detail.finding.state === 'patched'
+                    ? 'Patch Ready (Needs review)'
+                    : 'Patch Ready'}
+                </h3>
                 <p className="actions-card__desc">
-                  The generated patch resolved all invariant checks in the sandbox.
+                  {detail.finding.state === 'patched'
+                    ? 'Remote patch generated. Submit pull request to review and deploy to your test environment.'
+                    : 'The generated patch resolved all invariant checks in the sandbox.'}
                 </p>
                 <OpenPrButton
                   findingId={detail.finding.id}
                   client={client.openPr ? (client as Pick<ApiClient, 'openPr'>) : undefined}
+                  onPrOpened={(url) => setPrUrl(url)}
                 />
+                {prUrl && (
+                  <div className="mt-3 text-sm" data-testid="finding-pr-url-box">
+                    <span className="text-muted">Pull Request: </span>
+                    <a
+                      data-testid="finding-pr-link"
+                      href={prUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline"
+                      style={{ wordBreak: 'break-all' }}
+                    >
+                      {prUrl}
+                    </a>
+                  </div>
+                )}
               </Card>
             )}
 

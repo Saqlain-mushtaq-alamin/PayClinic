@@ -76,6 +76,7 @@ function parseRun(row: unknown): Run {
   const r = row as Row;
   return Run.parse({
     id: r.id,
+    projectId: (r.project_id as string | undefined) ?? undefined,
     target: r.target,
     mode: r.mode,
     scenarioKeys: parseJson(r.scenario_keys),
@@ -200,10 +201,11 @@ export function createRepos(db: Database): Repos {
   return {
     insertRun(r) {
       db.prepare(
-        `INSERT INTO runs (id, target, mode, scenario_keys, status, started_at, completed_at, score_before, score_after, error)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO runs (id, project_id, target, mode, scenario_keys, status, started_at, completed_at, score_before, score_after, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         r.id,
+        r.projectId ?? null,
         r.target,
         r.mode,
         JSON.stringify(r.scenarioKeys),
@@ -223,6 +225,7 @@ export function createRepos(db: Database): Repos {
 
     updateRun(id, patch) {
       updateById(db, 'runs', id, {
+        project_id: patch.projectId,
         target: patch.target,
         mode: patch.mode,
         scenario_keys:
@@ -286,19 +289,19 @@ export function createRepos(db: Database): Repos {
             s.id,
             s.runId,
             s.scenarioId,
-            s.seq,
-            s.actor,
+            s.seq ?? 0,
+            s.actor ?? 'runner',
             s.label ?? null,
-            s.method,
-            s.url,
-            JSON.stringify(s.requestHeaders),
+            s.method ?? 'GET',
+            s.url ?? '',
+            s.requestHeaders ? JSON.stringify(s.requestHeaders) : '{}',
             toJson(s.requestBody),
-            s.responseStatus,
-            JSON.stringify(s.responseHeaders),
+            s.responseStatus ?? 0,
+            s.responseHeaders ? JSON.stringify(s.responseHeaders) : '{}',
             toJson(s.responseBody),
             s.paypalDebugId ?? null,
-            s.durationMs,
-            s.timestamp,
+            s.durationMs ?? 0,
+            s.timestamp ?? new Date().toISOString(),
           );
         }
       });

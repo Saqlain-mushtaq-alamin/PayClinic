@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Health, RunDetail, RunSummary, ScenarioInfo } from '@payclinic/contracts';
+import type { Health, Project, RunDetail, RunSummary, ScenarioInfo } from '@payclinic/contracts';
 import { api, type ApiClient } from './client';
 
 export interface AsyncState<T> {
@@ -75,4 +75,35 @@ export function useScenarios(
   const clientRef = useRef(client);
   clientRef.current = client;
   return useAsync(() => clientRef.current.getScenarios(), []);
+}
+
+export function useProjects(
+  client?: Partial<Pick<ApiClient, 'listProjects'>>,
+): AsyncState<Project[]> {
+  const clientRef = useRef(client);
+  clientRef.current = client;
+  return useAsync(async () => {
+    if (clientRef.current) {
+      if (typeof clientRef.current.listProjects === 'function') {
+        return clientRef.current.listProjects();
+      }
+      return [
+        {
+          id: 'builtin',
+          name: 'Demo store',
+          kind: 'builtin' as const,
+          baseUrl: null,
+          proxyToken: 'builtin',
+          proxyUrl: '/proxy/builtin',
+          hasAdminSecret: false,
+          repoOwner: null,
+          repoName: null,
+          repoBranch: null,
+          sourceRoot: null,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+    }
+    return api.listProjects();
+  }, []);
 }

@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Octokit } from '@octokit/rest';
-import type { Explanation, Finding, Patch, VerifyResult } from '@payclinic/contracts';
-import { applyEditsToString, checkEditsSafety, type Repos } from '@payclinic/core';
+import type { Explanation, Finding, Patch, Step, VerifyResult } from '@payclinic/contracts';
+import {
+  applyEditsToString,
+  checkEditsSafety,
+  type ProjectsRepo,
+  type Repos,
+} from '@payclinic/core';
 
 /** Raised when a finding may not be turned into a pull request. */
 export class PrNotAllowedError extends Error {
@@ -81,6 +86,8 @@ function prBody(
   patch: Patch,
   verify: VerifyResult | null,
   now: () => Date,
+  evidenceSteps?: Step[],
+  isRemote?: boolean,
 ): string {
   const lines: string[] = [];
   lines.push('## PayClinic fix');
@@ -103,11 +110,35 @@ function prBody(
   lines.push(patch.diff);
   lines.push('```');
   lines.push('');
+  if (evidenceSteps && evidenceSteps.length > 0) {
+    lines.push('### Failing trace evidence');
+    for (const step of evidenceSteps) {
+      lines.push(
+        `- **${step.actor}** \`${step.method} ${step.url}\` -> \`${step.responseStatus}\``,
+      );
+      if (step.responseBody) {
+        lines.push('  ```json');
+        lines.push(
+          typeof step.responseBody === 'string'
+            ? step.responseBody
+            : JSON.stringify(step.responseBody, null, 2),
+        );
+        lines.push('  ```');
+      }
+    }
+    lines.push('');
+  }
   if (verify) {
     lines.push(
       `### Verification: ${verify.verified ? 'verified' : 'not verified'} ` +
         `(applied=${verify.applied}, started=${verify.started}, ` +
         `invariants=${verify.invariantPassed}, tests=${verify.testsPassed ?? 'not run'})`,
+    );
+    lines.push('');
+  }
+  if (isRemote || finding.state === 'patched') {
+    lines.push(
+      '> **Next step:** Merge, deploy to your test environment, then press Re-test in PayClinic.',
     );
     lines.push('');
   }
@@ -120,11 +151,15 @@ function prBody(
 }
 
 export interface OpenPrDeps {
-  github: GitHubLike;
+  github?: GitHubLike;
   repos: Repos;
-  owner: string;
-  repo: string;
-  baseBranch: string;
+  projectsRepo?: ProjectsRepo;
+  settingsStore?: { get(key: string): string | null };
+  env?: OpenPrEnv;
+  allowedPrefix?: string;
+  owner?: string;
+  repo?: string;
+  baseBranch?: string;
   now: () => Date;
   /** Used only to redact the token out of error messages; never sent anywhere. */
   token?: string;
@@ -136,23 +171,108 @@ export interface OpenPrDeps {
  * TECH_DESIGN §8), commits them on a fresh branch and opens a pull request.
  */
 export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{ prUrl: string }> {
-  const { github, repos, owner, repo, baseBranch, now } = deps;
+  const { repos, now } = deps;
 
   return async (findingId: string): Promise<{ prUrl: string }> => {
+    let resolvedToken = deps.token ?? '';
     try {
       const finding = repos.getFinding(findingId);
       if (!finding) throw new PrNotAllowedError(`finding ${findingId} does not exist`);
       const patch = repos.getPatchForFinding(findingId);
-      if (finding.state !== 'verified') {
-        throw new PrNotAllowedError(`finding ${findingId} is ${finding.state}, not verified`);
-      }
       if (!patch) throw new PrNotAllowedError(`finding ${findingId} has no patch`);
 
-      const safety = checkEditsSafety(patch.edits);
+      const run = repos.getRun(finding.runId);
+      const project = run?.projectId ? deps.projectsRepo?.getProject(run.projectId) : null;
+      const isRemote = project?.kind === 'remote';
+
+      if (isRemote) {
+        if (finding.state !== 'verified' && finding.state !== 'patched') {
+          throw new PrNotAllowedError(
+            `finding ${findingId} is ${finding.state}; remote projects require state 'patched' or 'verified'`,
+          );
+        }
+      } else {
+        if (finding.state !== 'verified') {
+          throw new PrNotAllowedError(`finding ${findingId} is ${finding.state}, not verified`);
+        }
+      }
+
+      resolvedToken =
+        deps.token ??
+        deps.settingsStore?.get('githubToken') ??
+        deps.env?.GITHUB_TOKEN ??
+        process.env.GITHUB_TOKEN ??
+        '';
+
+      let owner = deps.owner;
+      let repo = deps.repo;
+      let baseBranch = deps.baseBranch;
+
+      // 1. Per-project repo overrides the global one
+      if (project && project.repoOwner && project.repoName) {
+        owner = project.repoOwner;
+        repo = project.repoName;
+        if (project.repoBranch) {
+          baseBranch = project.repoBranch;
+        }
+      }
+
+      // 2. Settings fallback
+      if (!owner || !repo) {
+        const settingsRepo = deps.settingsStore?.get('githubRepo');
+        if (settingsRepo) {
+          const slash = settingsRepo.indexOf('/');
+          if (slash > 0 && slash < settingsRepo.length - 1) {
+            owner = settingsRepo.slice(0, slash);
+            repo = settingsRepo.slice(slash + 1);
+          }
+        }
+      }
+
+      // 3. Env fallback
+      if (!owner || !repo) {
+        const envRepo = deps.env?.GITHUB_REPO ?? process.env.GITHUB_REPO;
+        if (envRepo) {
+          const slash = envRepo.indexOf('/');
+          if (slash > 0 && slash < envRepo.length - 1) {
+            owner = envRepo.slice(0, slash);
+            repo = envRepo.slice(slash + 1);
+          }
+        }
+      }
+
+      if (!baseBranch) {
+        baseBranch =
+          deps.settingsStore?.get('githubBaseBranch') ??
+          deps.env?.GITHUB_BASE_BRANCH ??
+          process.env.GITHUB_BASE_BRANCH ??
+          'main';
+      }
+
+      if (!owner || !repo) {
+        throw new PrNotAllowedError(
+          'GitHub repository is not configured in Project, Settings, or environment',
+        );
+      }
+
+      const client = deps.github ?? (resolvedToken ? createGitHubClient(resolvedToken) : null);
+      if (!client) {
+        throw new PrNotAllowedError('GitHub token is not configured in Settings or environment');
+      }
+
+      let allowedPrefix = deps.allowedPrefix;
+      if (!allowedPrefix && project && isRemote && project.sourceRoot) {
+        allowedPrefix = project.sourceRoot;
+      }
+
+      const safety = checkEditsSafety(patch.edits, {
+        ...(allowedPrefix ? { allowedPrefix } : {}),
+      });
       if (!safety.ok) throw new PrNotAllowedError(safety.reason);
 
       const explanation = repos.getExplanation(findingId);
       const verify = repos.getVerifyForPatch(patch.id);
+      const evidenceSteps = repos.listStepsByIds(finding.evidenceStepIds);
 
       // Read and apply all edits against the BASE branch content first: any
       // failure here aborts before a branch or commit is created.
@@ -164,7 +284,7 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
         else byFile.set(edit.file, [edit]);
       }
       for (const [file, fileEdits] of byFile) {
-        const response = await github.getContent({ owner, repo, path: file, ref: baseBranch });
+        const response = await client.getContent({ owner, repo, path: file, ref: baseBranch });
         if (response.data.type !== 'file') {
           throw new Error(`${file} on ${baseBranch} is not a file`);
         }
@@ -173,8 +293,8 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
       }
 
       const branch = `payclinic/fix-${finding.scenarioKey}-${shortId(findingId)}`;
-      const base = await github.getRef({ owner, repo, ref: `heads/${baseBranch}` });
-      await github.createRef({
+      const base = await client.getRef({ owner, repo, ref: `heads/${baseBranch}` });
+      await client.createRef({
         owner,
         repo,
         ref: `refs/heads/${branch}`,
@@ -183,7 +303,7 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
 
       const commitMessage = `fix(${finding.scenarioKey}): ${finding.title}`;
       for (const [file, content] of edited) {
-        await github.createOrUpdateFileContents({
+        await client.createOrUpdateFileContents({
           owner,
           repo,
           path: file,
@@ -193,18 +313,18 @@ export function createOpenPr(deps: OpenPrDeps): (findingId: string) => Promise<{
         });
       }
 
-      const pull = await github.createPullRequest({
+      const pull = await client.createPullRequest({
         owner,
         repo,
         title: commitMessage,
         head: branch,
         base: baseBranch,
-        body: prBody(finding, explanation, patch, verify, now),
+        body: prBody(finding, explanation, patch, verify, now, evidenceSteps, isRemote),
       });
       return { prUrl: pull.data.html_url };
     } catch (error) {
       if (error instanceof PrNotAllowedError) throw error;
-      throw sanitize(error, deps.token ?? '');
+      throw sanitize(error, resolvedToken);
     }
   };
 }
@@ -222,25 +342,27 @@ export interface OpenPrEnv {
  */
 export function openPrFromEnv(
   env: OpenPrEnv,
-  deps: { repos: Repos },
+  deps: {
+    repos: Repos;
+    projectsRepo?: ProjectsRepo;
+    settingsStore?: { get(key: string): string | null };
+  },
 ): ((findingId: string) => Promise<{ prUrl: string }>) | undefined {
-  const token = env.GITHUB_TOKEN;
-  const repoFull = env.GITHUB_REPO;
-  if (token === undefined || token === '' || repoFull === undefined || repoFull === '') {
-    return undefined;
+  const token = env.GITHUB_TOKEN ?? deps.settingsStore?.get('githubToken');
+  const repoFull = env.GITHUB_REPO ?? deps.settingsStore?.get('githubRepo');
+
+  const [owner, repo] = repoFull ? repoFull.split('/') : [];
+  const hasGlobalRepo = Boolean(owner && repo);
+
+  if (!deps.projectsRepo && !deps.settingsStore) {
+    if (!token || !hasGlobalRepo) return undefined;
   }
-  const slash = repoFull.indexOf('/');
-  if (slash <= 0 || slash === repoFull.length - 1) return undefined;
-  const owner = repoFull.slice(0, slash);
-  const repo = repoFull.slice(slash + 1);
-  const baseBranch = env.GITHUB_BASE_BRANCH ?? 'main';
+
   return createOpenPr({
-    github: createGitHubClient(token),
     repos: deps.repos,
-    owner,
-    repo,
-    baseBranch,
+    projectsRepo: deps.projectsRepo,
+    settingsStore: deps.settingsStore,
+    env,
     now: () => new Date(),
-    token,
   });
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Activity, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react';
+import { Activity, FolderGit2, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react';
 import type { ApiClient } from '../../api/client';
 import { useDashboard } from '../../context/DashboardContext';
 
@@ -82,19 +82,29 @@ export function Shell({ children, client }: ShellProps) {
               >
                 <Activity size={20} />
               </NavLink>
+
+              <NavLink
+                to="/projects"
+                role="button"
+                className={({ isActive }) => `shell__nav-link ${isActive ? 'active' : ''}`}
+                title="Projects"
+                aria-label="Projects"
+              >
+                <FolderGit2 size={20} />
+              </NavLink>
             </nav>
           </div>
 
           <div className="shell__sidebar-bottom">
-            <button
-              type="button"
-              className="shell__nav-link"
+            <NavLink
+              to="/settings"
+              role="button"
+              className={({ isActive }) => `shell__nav-link ${isActive ? 'active' : ''}`}
               title="Settings"
               aria-label="Settings"
-              onClick={() => {}}
             >
               <Settings size={20} />
-            </button>
+            </NavLink>
           </div>
         </aside>
 
