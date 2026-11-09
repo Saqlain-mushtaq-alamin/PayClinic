@@ -13,10 +13,18 @@ describe('money', () => {
     expect(toMinor('25', 'USD')).toBe(2500n);
     expect(toMinor('25.5', 'USD')).toBe(2550n);
     expect(toMinor('2400', 'JPY')).toBe(2400n);
+    expect(toMinor('15000', 'HUF')).toBe(15000n);
+    expect(toMinor('500', 'TWD')).toBe(500n);
+    // Arbitrarily large number beyond JS MAX_SAFE_INTEGER
+    expect(toMinor('9007199254740991.00', 'USD')).toBe(900719925474099100n);
   });
   it('rejects amounts that violate the currency exponent', () => {
     expect(() => toMinor('2400.00', 'JPY')).toThrow(InvalidAmountError);
+    expect(() => toMinor('15000.50', 'HUF')).toThrow(InvalidAmountError);
+    expect(() => toMinor('500.0', 'TWD')).toThrow(InvalidAmountError);
     expect(() => toMinor('25.999', 'USD')).toThrow(InvalidAmountError);
+    expect(() => toMinor('-25.00', 'USD')).toThrow(InvalidAmountError);
+    expect(() => toMinor('-100', 'JPY')).toThrow(InvalidAmountError);
     expect(() => toMinor('abc', 'USD')).toThrow(InvalidAmountError);
   });
   it('throws for unknown currencies', () => {

@@ -113,7 +113,7 @@ export function createRecordedHttp(o: {
   baseUrl: string;
   fetchImpl?: typeof fetch;
 }): RecordedHttp {
-  const fetchImpl = o.fetchImpl ?? safeFetch;
+  const fetchImpl = o.fetchImpl ?? fetch;
   const baseUrl = o.baseUrl.replace(/\/+$/, '');
 
   return {

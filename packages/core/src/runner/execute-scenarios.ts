@@ -22,6 +22,7 @@ import {
 } from '../trace/proxy';
 import { createApprover as selectApprover, type BuyerApprover } from './approvers';
 import { buildContext, createRecordedHttp, type RecordedHttp, type ScenarioFn } from './context';
+import { safeFetch } from './target-guard';
 import { startStore, type RunningStore, type StartStoreOptions } from './store-process';
 import { assertSafeTarget } from './target-guard';
 
@@ -256,7 +257,7 @@ export async function executeScenarios(
         }
       }
 
-      http = createRecordedHttp({ recorder, baseUrl: remoteStoreUrl });
+      http = createRecordedHttp({ recorder, baseUrl: remoteStoreUrl, fetchImpl: safeFetch });
       approver = createApprover(http, activeSimUrl);
 
       try {

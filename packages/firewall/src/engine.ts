@@ -22,6 +22,16 @@ function decision(
 export const firewallEngine: FirewallEngine = {
   evaluate(request: GuardRequest, policy: Policy, history: GuardHistory): Decision {
     const currency = policy.currency;
+
+    if (request.currency !== currency) {
+      return decision(
+        request,
+        'block',
+        'R1',
+        `Currency ${request.currency} does not match policy currency ${currency}`,
+      );
+    }
+
     const amount = toMinor(request.amount, currency);
 
     if (policy.merchantAllowlist !== undefined) {
