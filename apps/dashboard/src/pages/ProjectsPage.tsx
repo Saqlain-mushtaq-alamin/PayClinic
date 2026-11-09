@@ -301,6 +301,23 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
         </div>
       </div>
 
+      <div
+        className="projects-privacy-notice"
+        data-testid="projects-privacy-notice"
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          marginBottom: '1.5rem',
+          fontSize: '0.84rem',
+          color: '#94a3b8',
+          lineHeight: '1.4',
+        }}
+      >
+        <strong>Data Privacy Disclosure:</strong> Diagnostic traces and relevant store source files are transmitted to Google Gemini for root-cause analysis and patch proposals. When you open a PR, PayClinic commits changes to your configured GitHub repo. Credentials and tokens are always masked and never sent to external AI models.
+      </div>
+
       {loading && (
         <div className="projects-loading" data-testid="projects-loading">
           <Spinner label="Loading projects…" />

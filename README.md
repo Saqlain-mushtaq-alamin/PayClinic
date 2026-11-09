@@ -202,6 +202,13 @@ official PayPal software.
 - **Render** hosts the free-tier demo deployment (`render.yaml`).
 - Sponsor tools evaluated and not used: APIMatic, Channel3, Bryntum.
 
+## Data Privacy & AI Disclosure
+
+- **AI Diagnostics:** When running diagnostics in online mode (`AI_PROVIDER=gemini`), sanitized checkout trace steps and relevant store source code are sent to Google Gemini via the Gemini API to analyze root causes and propose fixes.
+- **Secret Redaction:** All sensitive credentials—including PayPal client secrets, OAuth bearer tokens, webhook assertion signatures, and admin tokens—are automatically masked with `***` prior to storage, display, or transmission to external models.
+- **Pull Request Automation:** When clicking **Open PR**, PayClinic uses your configured GitHub Personal Access Token to commit fix patches and open a pull request on your designated repository. Your GitHub token is never stored in plaintext in the database or returned via the API.
+- **Public Deployment Security:** On public deployments (such as Render), setting `PAYCLINIC_ADMIN_TOKEN` secures the `/api/settings` and project mutation endpoints behind HTTP Bearer token authentication.
+
 ## License
 
 MIT.
