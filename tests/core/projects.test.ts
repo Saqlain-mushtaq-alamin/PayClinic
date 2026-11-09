@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -104,7 +104,9 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
   });
 
   it('old DB gets the new project_id column via migration', () => {
-    const tempDbPath = join(process.cwd(), '.payclinic-tmp', `test-migration-${Date.now()}.db`);
+    const tmpDir = join(process.cwd(), '.payclinic-tmp');
+    mkdirSync(tmpDir, { recursive: true });
+    const tempDbPath = join(tmpDir, `test-migration-${Date.now()}.db`);
     try {
       // 1. Create a database with the old schema (without project_id column)
       const rawDb = new BetterSqlite3(tempDbPath);
