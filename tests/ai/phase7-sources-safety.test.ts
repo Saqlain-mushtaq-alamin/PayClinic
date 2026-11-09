@@ -238,7 +238,9 @@ describe('Phase 7: Remote Prescribe without Gemini', () => {
     const result = await prescribe(deps, sampleFinding, []);
 
     expect(result.explanation.rootCause).toContain('Configure Gemini in Settings to get an AI fix');
-    expect(result.explanation.fixSummary).toContain('Configure Gemini in Settings to get an AI fix');
+    expect(result.explanation.fixSummary).toContain(
+      'Configure Gemini in Settings to get an AI fix',
+    );
     expect(result.patches).toEqual([]);
     expect(result.message).toContain('Configure Gemini in Settings to get an AI fix');
   });

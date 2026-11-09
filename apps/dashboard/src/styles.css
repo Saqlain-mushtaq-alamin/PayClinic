@@ -2963,7 +2963,9 @@ h2 {
   color: var(--text);
   font-size: 0.92rem;
   font-family: inherit;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   outline: none;
 }
 
@@ -3170,7 +3172,9 @@ h2 {
   border: 1px solid var(--border, #2a2d36);
   border-radius: 12px;
   padding: 1.25rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .project-card:hover {
@@ -3341,5 +3345,3 @@ h2 {
 .text-danger {
   color: #ef4444;
 }
-
-

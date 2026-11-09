@@ -19,10 +19,7 @@ import type { BadgeTone } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { ErrorState } from '../components/ui/ErrorState';
 
-export type RunsPageClient = Pick<
-  ApiClient,
-  'listRuns' | 'health' | 'getScenarios' | 'createRun'
-> &
+export type RunsPageClient = Pick<ApiClient, 'listRuns' | 'health' | 'getScenarios' | 'createRun'> &
   Partial<Pick<ApiClient, 'listProjects'>>;
 
 export interface RunsPageProps {

@@ -12,12 +12,9 @@ export interface FetchSourcesProject {
 }
 
 export interface GitHubSourcesClient {
-  getTree(params: {
-    owner: string;
-    repo: string;
-    tree_sha: string;
-    recursive?: string;
-  }): Promise<{ data: { tree?: Array<{ path?: string; type?: string; size?: number; sha?: string }> } }>;
+  getTree(params: { owner: string; repo: string; tree_sha: string; recursive?: string }): Promise<{
+    data: { tree?: Array<{ path?: string; type?: string; size?: number; sha?: string }> };
+  }>;
   getContent(params: {
     owner: string;
     repo: string;
@@ -119,7 +116,9 @@ export async function fetchProjectSources(
       },
     });
     if (!res.ok) {
-      throw new Error(`Failed to fetch repo tree from GitHub: HTTP ${res.status} ${res.statusText}`);
+      throw new Error(
+        `Failed to fetch repo tree from GitHub: HTTP ${res.status} ${res.statusText}`,
+      );
     }
     const data = (await res.json()) as {
       tree?: Array<{ path?: string; size?: number; type?: string }>;

@@ -293,11 +293,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
             <Download size={16} />
             Download integration guide
           </a>
-          <Button
-            className="button--primary"
-            onClick={openAdd}
-            data-testid="add-website-button"
-          >
+          <Button className="button--primary" onClick={openAdd} data-testid="add-website-button">
             <Plus size={16} />
             Add website
           </Button>
@@ -327,11 +323,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
               : `http://localhost:4000/paypal-proxy/${p.proxyToken}`;
 
             return (
-              <Card
-                key={p.id}
-                className="project-card"
-                data-testid={`project-card-${p.id}`}
-              >
+              <Card key={p.id} className="project-card" data-testid={`project-card-${p.id}`}>
                 <div className="project-card__header">
                   <div className="project-card__title-group">
                     <div className="project-card__icon-tile">
@@ -342,11 +334,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                       <span className="project-card__id">{p.id}</span>
                     </div>
                   </div>
-                  {isBuiltin ? (
-                    <Badge tone="ok">Demo</Badge>
-                  ) : (
-                    <Badge tone="medium">Remote</Badge>
-                  )}
+                  {isBuiltin ? <Badge tone="ok">Demo</Badge> : <Badge tone="medium">Remote</Badge>}
                 </div>
 
                 <div className="project-card__body">
@@ -369,7 +357,10 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                     </span>
                   </div>
 
-                  <div className="project-card__detail" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+                  <div
+                    className="project-card__detail"
+                    style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
+                  >
                     <span className="project-card__label">PAYPAL_BASE_URL for site</span>
                     <div
                       style={{
@@ -384,21 +375,40 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                         fontFamily: 'monospace',
                       }}
                     >
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span
+                        style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         PAYPAL_BASE_URL={paypalBaseUrl}
                       </span>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(`PAYPAL_BASE_URL=${paypalBaseUrl}`)}
                         className="button button--icon button--sm"
-                        style={{ border: 'none', background: 'transparent', padding: '0.1rem', cursor: 'pointer' }}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          padding: '0.1rem',
+                          cursor: 'pointer',
+                        }}
                         title="Copy configuration"
                       >
                         <Copy size={13} />
                       </button>
                     </div>
                     {!publicUrl && !isBuiltin && (
-                      <span style={{ color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span
+                        style={{
+                          color: '#f59e0b',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                      >
                         <AlertTriangle size={12} /> Public URL empty in Settings
                       </span>
                     )}
@@ -412,9 +422,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                           <CheckCircle2 size={12} /> Configured
                         </span>
                       ) : (
-                        <span className="project-card__badge-tag neutral">
-                          Not set
-                        </span>
+                        <span className="project-card__badge-tag neutral">Not set</span>
                       )}
                     </span>
                   </div>
@@ -523,12 +531,21 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                       style={{
                         padding: '0.85rem',
                         borderRadius: '8px',
-                        background: item.ok ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                        background: item.ok
+                          ? 'rgba(16, 185, 129, 0.08)'
+                          : 'rgba(239, 68, 68, 0.08)',
                         border: `1px solid ${item.ok ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
                       }}
                       data-testid={`checklist-row-${item.id}`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '0.35rem',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {item.ok ? (
                             <CheckCircle2 size={18} color="#10b981" />
@@ -542,7 +559,13 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                         </Badge>
                       </div>
 
-                      <p style={{ margin: '0.2rem 0 0 1.6rem', fontSize: '0.84rem', color: 'var(--muted, #aaa)' }}>
+                      <p
+                        style={{
+                          margin: '0.2rem 0 0 1.6rem',
+                          fontSize: '0.84rem',
+                          color: 'var(--muted, #aaa)',
+                        }}
+                      >
                         {item.detail}
                       </p>
 
@@ -567,11 +590,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
             </div>
 
             <div className="settings-modal__actions">
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={closeDialogs}
-              >
+              <button type="button" className="button button--secondary" onClick={closeDialogs}>
                 Close
               </button>
               <button
@@ -622,9 +641,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                   className="settings-input"
                   placeholder="My Store"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   required
                   autoFocus
                 />
@@ -650,11 +667,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                   }}
                 />
                 {urlError && (
-                  <span
-                    className="field-error-text"
-                    data-testid="url-error"
-                    role="alert"
-                  >
+                  <span className="field-error-text" data-testid="url-error" role="alert">
                     {urlError}
                   </span>
                 )}
@@ -702,9 +715,7 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                     className="settings-input"
                     placeholder="store-repo"
                     value={formData.repoName}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, repoName: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, repoName: e.target.value }))}
                   />
                 </div>
               </div>
@@ -781,8 +792,8 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
               </h3>
             </div>
             <p className="settings-modal__desc">
-              Are you sure you want to delete <strong>{deletingProject.name}</strong>?
-              This action cannot be undone.
+              Are you sure you want to delete <strong>{deletingProject.name}</strong>? This action
+              cannot be undone.
             </p>
             <div className="settings-modal__actions">
               <button

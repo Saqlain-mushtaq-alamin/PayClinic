@@ -50,26 +50,16 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
   });
 
   it('SSRF guard blocks 127.0.0.1, 10.0.0.5, 169.254.169.254, and private hostnames', async () => {
-    await expect(assertSafeTarget('http://127.0.0.1:8080/')).rejects.toThrow(
+    await expect(assertSafeTarget('http://127.0.0.1:8080/')).rejects.toThrow(UnsafeTargetError);
+    await expect(assertSafeTarget('http://10.0.0.5/api')).rejects.toThrow(UnsafeTargetError);
+    await expect(assertSafeTarget('http://169.254.169.254/latest/meta-data')).rejects.toThrow(
       UnsafeTargetError,
     );
-    await expect(assertSafeTarget('http://10.0.0.5/api')).rejects.toThrow(
-      UnsafeTargetError,
-    );
-    await expect(
-      assertSafeTarget('http://169.254.169.254/latest/meta-data'),
-    ).rejects.toThrow(UnsafeTargetError);
-    await expect(assertSafeTarget('http://localhost:3000/')).rejects.toThrow(
-      UnsafeTargetError,
-    );
-    await expect(assertSafeTarget('ftp://example.com/')).rejects.toThrow(
-      UnsafeTargetError,
-    );
+    await expect(assertSafeTarget('http://localhost:3000/')).rejects.toThrow(UnsafeTargetError);
+    await expect(assertSafeTarget('ftp://example.com/')).rejects.toThrow(UnsafeTargetError);
 
     // Mock DNS lookup resolving to a private IP
-    const mockLookup = async () => [
-      { address: '10.100.1.50', family: 4 },
-    ];
+    const mockLookup = async () => [{ address: '10.100.1.50', family: 4 }];
 
     await expect(
       assertSafeTarget('http://internal.company.corp/api', {
@@ -125,10 +115,12 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
           score_before REAL, score_after REAL, error TEXT
         );
       `);
-      rawDb.prepare(
-        `INSERT INTO runs (id, target, mode, scenario_keys, status, started_at)
+      rawDb
+        .prepare(
+          `INSERT INTO runs (id, target, mode, scenario_keys, status, started_at)
          VALUES ('old-run-1', 'store', 'offline', '["B1"]', 'completed', '2026-01-01T00:00:00.000Z')`,
-      ).run();
+        )
+        .run();
       rawDb.close();
 
       // 2. Open via openDb, triggering automatic migration
@@ -137,7 +129,9 @@ describe('Projects Backend & Target Guard (SSRF)', () => {
       expect(cols.some((c) => c.name === 'project_id')).toBe(true);
 
       // Verify old row is preserved and has null project_id
-      const row = migratedDb.prepare('SELECT id, project_id FROM runs WHERE id = ?').get('old-run-1') as {
+      const row = migratedDb
+        .prepare('SELECT id, project_id FROM runs WHERE id = ?')
+        .get('old-run-1') as {
         id: string;
         project_id: string | null;
       };

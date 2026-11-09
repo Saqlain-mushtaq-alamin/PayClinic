@@ -113,7 +113,7 @@ async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   if (!response.ok) {
     throw new DiagnoseError(
       `Request ${init?.method ?? 'GET'} ${url} failed with ${response.status}` +
-      (text === '' ? '' : `: ${text}`),
+        (text === '' ? '' : `: ${text}`),
     );
   }
   if (text === '') return undefined;
@@ -358,8 +358,7 @@ export async function executeScenarios(
         );
 
         const runnerSteps = drain(recorder);
-        const proxySteps =
-          isRemote && env.repos ? env.repos.listSteps(env.runId, scenarioId) : [];
+        const proxySteps = isRemote && env.repos ? env.repos.listSteps(env.runId, scenarioId) : [];
         const runnerIds = new Set(runnerSteps.map((s) => s.id));
         const scenarioSteps = [
           ...runnerSteps,
@@ -388,10 +387,9 @@ export async function executeScenarios(
           const proxySteps =
             isRemote && env.repos ? env.repos.listSteps(env.runId, scenarioId) : [];
           const runnerIds = new Set(runnerSteps.map((s) => s.id));
-          const steps = [
-            ...runnerSteps,
-            ...proxySteps.filter((s) => !runnerIds.has(s.id)),
-          ].sort((a, b) => a.seq - b.seq);
+          const steps = [...runnerSteps, ...proxySteps.filter((s) => !runnerIds.has(s.id))].sort(
+            (a, b) => a.seq - b.seq,
+          );
           error = errorMessage(caught);
           const info = { scenarioId, status: 'error' as const, error, steps, state, results };
           await env.onScenario?.(key, info);

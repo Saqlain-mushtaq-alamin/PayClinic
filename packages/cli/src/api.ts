@@ -3,11 +3,7 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { ServerResponse } from 'node:http';
-import Fastify, {
-  type FastifyInstance,
-  type FastifyReply,
-  type FastifyRequest,
-} from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import type { z } from 'zod';
 import {
   AdapterCheckResponse,
@@ -56,11 +52,7 @@ import {
   type Repos,
 } from '@payclinic/core';
 import { startSim } from '@payclinic/sim';
-import {
-  defaultTestGemini,
-  defaultTestGitHub,
-  defaultTestPayPal,
-} from './test-settings';
+import { defaultTestGemini, defaultTestGitHub, defaultTestPayPal } from './test-settings';
 
 const ALLOWED_ORIGIN_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const DEFAULT_ORIGIN = 'http://localhost:5173';
@@ -330,7 +322,8 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     const runs = repos.listRuns().map((run) => {
       const findings = repos.listFindings(run.id);
       const projectName = run.projectId
-        ? projects.get(run.projectId) ?? (run.projectId === 'builtin' ? 'Demo store' : run.projectId)
+        ? (projects.get(run.projectId) ??
+          (run.projectId === 'builtin' ? 'Demo store' : run.projectId))
         : 'Demo store';
       return { ...run, projectName, findingCount: findings.length, score: computeScore(findings) };
     });
@@ -343,7 +336,8 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     if (!run) return notFound(reply);
     const projects = new Map(projectsRepo.listProjects().map((p) => [p.id, p.name]));
     const projectName = run.projectId
-      ? projects.get(run.projectId) ?? (run.projectId === 'builtin' ? 'Demo store' : run.projectId)
+      ? (projects.get(run.projectId) ??
+        (run.projectId === 'builtin' ? 'Demo store' : run.projectId))
       : 'Demo store';
     const runWithProjectName = { ...run, projectName };
     const scenarios = repos.listScenarios(id);
@@ -572,16 +566,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
   app.post('/api/projects', async (request, reply) => {
     const parsed = ProjectCreateRequest.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid project request' });
-    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } =
-      parsed.data;
+    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } = parsed.data;
 
     if (baseUrl) {
       try {
         await assertSafeTarget(baseUrl);
       } catch (err) {
-        return reply
-          .code(400)
-          .send({ error: err instanceof Error ? err.message : String(err) });
+        return reply.code(400).send({ error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -635,16 +626,13 @@ export function createApi(deps: ApiDeps): FastifyInstance {
 
     const parsed = ProjectUpdateRequest.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid project update' });
-    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } =
-      parsed.data;
+    const { name, baseUrl, adminSecret, repoOwner, repoName, repoBranch, sourceRoot } = parsed.data;
 
     if (baseUrl) {
       try {
         await assertSafeTarget(baseUrl);
       } catch (err) {
-        return reply
-          .code(400)
-          .send({ error: err instanceof Error ? err.message : String(err) });
+        return reply.code(400).send({ error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -758,7 +746,8 @@ export function createApi(deps: ApiDeps): FastifyInstance {
     const activeRun = runs.find(
       (r) =>
         r.status === 'running' &&
-        (r.projectId === project.id || (project.id === 'builtin' && (!r.projectId || r.projectId === 'builtin'))),
+        (r.projectId === project.id ||
+          (project.id === 'builtin' && (!r.projectId || r.projectId === 'builtin'))),
     );
 
     if (!activeRun) {

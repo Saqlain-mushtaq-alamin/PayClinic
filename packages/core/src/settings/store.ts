@@ -41,9 +41,8 @@ export class SettingsStore {
   get(key: string): string | null {
     if (!ALLOWED_SET.has(key)) return null;
 
-    const row = this.db
-      .prepare('SELECT value_encrypted FROM settings WHERE key = ?')
-      .get(key) as { value_encrypted: string } | undefined;
+    const row = this.db.prepare('SELECT value_encrypted FROM settings WHERE key = ?').get(key) as
+      { value_encrypted: string } | undefined;
 
     if (!row) return null;
     return decrypt(row.value_encrypted);
@@ -100,4 +99,3 @@ export class SettingsStore {
     return result;
   }
 }
-

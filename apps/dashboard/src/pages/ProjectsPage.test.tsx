@@ -39,7 +39,12 @@ const mockProjects: Project[] = [
 
 function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
-    health: vi.fn(async () => ({ ok: true as const, mode: 'offline' as const, version: '1.0', aiProvider: 'fixture' })),
+    health: vi.fn(async () => ({
+      ok: true as const,
+      mode: 'offline' as const,
+      version: '1.0',
+      aiProvider: 'fixture',
+    })),
     listRuns: vi.fn(async () => []),
     createRun: vi.fn(async () => ({ runId: 'run-1' })),
     getRun: vi.fn(),
@@ -51,7 +56,9 @@ function createMockClient(overrides: Partial<ApiClient> = {}): ApiClient {
     getPolicy: vi.fn(),
     getDecisions: vi.fn(async () => []),
     getScenarios: vi.fn(async () => []),
-    getSettings: vi.fn(async () => ({ mode: { configured: true, hint: 'offline' } } as unknown as SettingsResponse)),
+    getSettings: vi.fn(
+      async () => ({ mode: { configured: true, hint: 'offline' } }) as unknown as SettingsResponse,
+    ),
     saveSettings: vi.fn(),
     testSetting: vi.fn(),
     getAuthStatus: vi.fn(async () => ({ required: false })),
@@ -246,9 +253,7 @@ describe('ProjectsPage', () => {
     fireEvent.click(screen.getByTestId('delete-project-remote-1'));
 
     expect(screen.getByTestId('delete-project-dialog')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Are you sure you want to delete/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to delete/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('confirm-delete-button'));
 

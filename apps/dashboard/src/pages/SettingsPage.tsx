@@ -50,12 +50,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
       }
       setShowUnlockDialog(false);
     } catch (err: unknown) {
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'status' in err &&
-        err.status === 401
-      ) {
+      if (typeof err === 'object' && err !== null && 'status' in err && err.status === 401) {
         setShowUnlockDialog(true);
       } else {
         toast.error('Failed to load settings');
@@ -215,9 +210,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.paypalClientId?.hint || '••••••••'}
                   value={draft.paypalClientId ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, paypalClientId: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, paypalClientId: e.target.value }))}
                 />
               </div>
 
@@ -230,9 +223,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.paypalClientSecret?.hint || '••••••••'}
                   value={draft.paypalClientSecret ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, paypalClientSecret: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, paypalClientSecret: e.target.value }))}
                 />
               </div>
 
@@ -243,10 +234,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="button button--primary"
                   disabled={saving === 'paypal'}
                   onClick={() =>
-                    handleSave('paypal', 'PayPal sandbox', [
-                      'paypalClientId',
-                      'paypalClientSecret',
-                    ])
+                    handleSave('paypal', 'PayPal sandbox', ['paypalClientId', 'paypalClientSecret'])
                   }
                 >
                   {saving === 'paypal' ? (
@@ -280,11 +268,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   }`}
                   data-testid="paypal-test-result"
                 >
-                  {testResults.paypal.ok ? (
-                    <CheckCircle2 size={16} />
-                  ) : (
-                    <XCircle size={16} />
-                  )}
+                  {testResults.paypal.ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
                   <span>{testResults.paypal.message}</span>
                 </div>
               )}
@@ -314,9 +298,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   data-testid="ai-provider-select"
                   className="settings-select"
                   value={currentProvider}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, aiProvider: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, aiProvider: e.target.value }))}
                 >
                   <option value="fixture">fixture</option>
                   <option value="gemini">gemini</option>
@@ -332,9 +314,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.geminiApiKey?.hint || '••••••••'}
                   value={draft.geminiApiKey ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, geminiApiKey: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, geminiApiKey: e.target.value }))}
                 />
               </div>
 
@@ -347,9 +327,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.geminiModel?.hint || 'gemini-2.5-flash'}
                   value={draft.geminiModel ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, geminiModel: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, geminiModel: e.target.value }))}
                 />
               </div>
 
@@ -360,11 +338,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="button button--primary"
                   disabled={saving === 'ai'}
                   onClick={() =>
-                    handleSave('ai', 'AI settings', [
-                      'aiProvider',
-                      'geminiApiKey',
-                      'geminiModel',
-                    ])
+                    handleSave('ai', 'AI settings', ['aiProvider', 'geminiApiKey', 'geminiModel'])
                   }
                 >
                   {saving === 'ai' ? (
@@ -398,11 +372,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   }`}
                   data-testid="ai-test-result"
                 >
-                  {testResults.gemini.ok ? (
-                    <CheckCircle2 size={16} />
-                  ) : (
-                    <XCircle size={16} />
-                  )}
+                  {testResults.gemini.ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
                   <span>{testResults.gemini.message}</span>
                 </div>
               )}
@@ -434,9 +404,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.githubToken?.hint || '••••••••'}
                   value={draft.githubToken ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, githubToken: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, githubToken: e.target.value }))}
                 />
               </div>
 
@@ -449,9 +417,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.githubRepo?.hint || 'owner/repo'}
                   value={draft.githubRepo ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, githubRepo: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, githubRepo: e.target.value }))}
                 />
               </div>
 
@@ -464,9 +430,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.githubBaseBranch?.hint || 'main'}
                   value={draft.githubBaseBranch ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, githubBaseBranch: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, githubBaseBranch: e.target.value }))}
                 />
               </div>
 
@@ -515,11 +479,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   }`}
                   data-testid="github-test-result"
                 >
-                  {testResults.github.ok ? (
-                    <CheckCircle2 size={16} />
-                  ) : (
-                    <XCircle size={16} />
-                  )}
+                  {testResults.github.ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
                   <span>{testResults.github.message}</span>
                 </div>
               )}
@@ -634,9 +594,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="settings-input"
                   placeholder={settings?.publicUrl?.hint || 'http://localhost:4000'}
                   value={draft.publicUrl ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, publicUrl: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, publicUrl: e.target.value }))}
                 />
               </div>
 
@@ -646,9 +604,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   data-testid="save-public-url-button"
                   className="button button--primary"
                   disabled={saving === 'publicUrl'}
-                  onClick={() =>
-                    handleSave('publicUrl', 'Public URL', ['publicUrl'])
-                  }
+                  onClick={() => handleSave('publicUrl', 'Public URL', ['publicUrl'])}
                 >
                   {saving === 'publicUrl' ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -734,9 +690,7 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
                   className="button button--primary"
                   disabled={unlocking || !adminTokenInput.trim()}
                 >
-                  {unlocking ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : null}
+                  {unlocking ? <Loader2 size={16} className="animate-spin" /> : null}
                   Unlock
                 </button>
               </div>
@@ -747,4 +701,3 @@ export function SettingsPage({ client = api }: SettingsPageProps) {
     </div>
   );
 }
-

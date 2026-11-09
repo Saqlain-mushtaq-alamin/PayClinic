@@ -140,7 +140,9 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
             <h1 className="finding-header__title">{detail.finding.title}</h1>
             <div className="finding-header__badges">
               <Badge tone={severityTone(detail.finding.severity)}>{detail.finding.severity}</Badge>
-              <Badge tone={stateTone(detail.finding.state)}>{stateLabel(detail.finding.state)}</Badge>
+              <Badge tone={stateTone(detail.finding.state)}>
+                {stateLabel(detail.finding.state)}
+              </Badge>
               <VerifyBadge verify={detail.verify} />
             </div>
           </div>
@@ -220,7 +222,9 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
             {(detail.finding.state === 'verified' || detail.finding.state === 'patched') && (
               <Card className="actions-card actions-card--verified">
                 <h3 className="actions-card__title">
-                  {detail.finding.state === 'patched' ? 'Patch Ready (Needs review)' : 'Patch Ready'}
+                  {detail.finding.state === 'patched'
+                    ? 'Patch Ready (Needs review)'
+                    : 'Patch Ready'}
                 </h3>
                 <p className="actions-card__desc">
                   {detail.finding.state === 'patched'

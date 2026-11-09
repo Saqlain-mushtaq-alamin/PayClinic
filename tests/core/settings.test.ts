@@ -1,9 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  SettingsResponse,
-  TestSettingsResponse,
-} from '@payclinic/contracts';
+import { SettingsResponse, TestSettingsResponse } from '@payclinic/contracts';
 import {
   ConfigError,
   SettingsStore,
@@ -143,14 +140,16 @@ describe('Settings API Routes & Admin Gate', () => {
     process.env = { ...previousEnv };
   });
 
-  function createTestApi(options: {
-    adminToken?: string;
-    testers?: {
-      paypal?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
-      gemini?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
-      github?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
-    };
-  } = {}) {
+  function createTestApi(
+    options: {
+      adminToken?: string;
+      testers?: {
+        paypal?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+        gemini?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+        github?: (store: SettingsStore) => Promise<{ ok: boolean; message: string }>;
+      };
+    } = {},
+  ) {
     if (options.adminToken) {
       process.env.PAYCLINIC_ADMIN_TOKEN = options.adminToken;
     } else {

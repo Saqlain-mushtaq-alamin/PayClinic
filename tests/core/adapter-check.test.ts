@@ -126,7 +126,9 @@ describe('Adapter Check (adapterCheck)', () => {
           res.end(JSON.stringify({ error: 'unauthorized' }));
           return;
         }
-        res.writeHead(serverBehavior.adminStateStatus ?? 200, { 'content-type': 'application/json' });
+        res.writeHead(serverBehavior.adminStateStatus ?? 200, {
+          'content-type': 'application/json',
+        });
         res.end(JSON.stringify(serverBehavior.adminStateBody));
         return;
       }
@@ -137,7 +139,9 @@ describe('Adapter Check (adapterCheck)', () => {
           res.end(JSON.stringify({ error: 'unauthorized' }));
           return;
         }
-        res.writeHead(serverBehavior.adminResetStatus ?? 200, { 'content-type': 'application/json' });
+        res.writeHead(serverBehavior.adminResetStatus ?? 200, {
+          'content-type': 'application/json',
+        });
         res.end(JSON.stringify({ ok: true }));
         return;
       }

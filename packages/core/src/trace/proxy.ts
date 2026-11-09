@@ -36,9 +36,7 @@ export function popProxyMockRule(
 ): MockRule | undefined {
   const list = proxyMockRules.get(runId);
   if (!list || list.length === 0) return undefined;
-  const index = list.findIndex(
-    (r) => r.method === method && new RegExp(r.pathRegex).test(path),
-  );
+  const index = list.findIndex((r) => r.method === method && new RegExp(r.pathRegex).test(path));
   if (index === -1) return undefined;
   const [rule] = list.splice(index, 1);
   return rule;
@@ -167,7 +165,11 @@ export async function forwardProxyRequest(
       requestBody = parseBody(requestBuffer, incoming['content-type'] ?? null);
     }
     const extra: Record<string, string> = opts.mockRule
-      ? { 'paypal-mock-response': JSON.stringify({ mock_application_codes: opts.mockRule.mockCode }) }
+      ? {
+          'paypal-mock-response': JSON.stringify({
+            mock_application_codes: opts.mockRule.mockCode,
+          }),
+        }
       : {};
     forwardedHeaders = forwardingHeaders(incoming, extra);
     const fetchUrl = `${target}${rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`}`;

@@ -87,11 +87,7 @@ const RetestResultSchema: Schema<RetestResponse> = {
 
 const Ok: Schema<OkResponse> = {
   parse(value) {
-    if (
-      typeof value !== 'object' ||
-      value === null ||
-      (value as { ok?: unknown }).ok !== true
-    ) {
+    if (typeof value !== 'object' || value === null || (value as { ok?: unknown }).ok !== true) {
       throw new Error('invalid ok response');
     }
     return { ok: true };
@@ -215,12 +211,9 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
     checkProject: (id) =>
       request('POST', `/api/projects/${encodeURIComponent(id)}/check`, AdapterCheckItem.array()),
     retestProject: (projectId, runId) =>
-      request(
-        'POST',
-        `/api/projects/${encodeURIComponent(projectId)}/retest`,
-        RetestResultSchema,
-        { runId },
-      ),
+      request('POST', `/api/projects/${encodeURIComponent(projectId)}/retest`, RetestResultSchema, {
+        runId,
+      }),
   };
 }
 

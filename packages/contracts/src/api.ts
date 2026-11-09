@@ -177,4 +177,3 @@ export type AdapterCheckItem = z.infer<typeof AdapterCheckItem>;
 
 export const AdapterCheckResponse = z.array(AdapterCheckItem);
 export type AdapterCheckResponse = z.infer<typeof AdapterCheckResponse>;
-

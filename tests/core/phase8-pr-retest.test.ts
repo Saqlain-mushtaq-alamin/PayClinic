@@ -4,11 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Finding, Patch, Run, Step } from '@payclinic/contracts';
 import { createApi } from '@payclinic/cli';
-import {
-  PrNotAllowedError,
-  createOpenPr,
-  type GitHubLike,
-} from '../../packages/cli/src/open-pr';
+import { PrNotAllowedError, createOpenPr, type GitHubLike } from '../../packages/cli/src/open-pr';
 import {
   createOrchestrator,
   createProjectsRepo,
@@ -294,9 +290,7 @@ describe('Phase 8: Pull Requests Permissions & Rules', () => {
       now: () => new Date('2026-10-18T10:00:00Z'),
     });
 
-    await expect(openPr('fnd-builtin-patched')).rejects.toThrow(
-      /is patched, not verified/,
-    );
+    await expect(openPr('fnd-builtin-patched')).rejects.toThrow(/is patched, not verified/);
   });
 });
 
@@ -469,7 +463,9 @@ describe('Phase 8: Re-Test (POST /api/projects/:id/retest)', () => {
           return;
         }
         orders.clear();
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: true }));
+        res
+          .writeHead(200, { 'content-type': 'application/json' })
+          .end(JSON.stringify({ ok: true }));
         return;
       }
 
@@ -585,7 +581,9 @@ describe('Phase 8: Re-Test (POST /api/projects/:id/retest)', () => {
     expect(findingAfterRetest2?.state).toBe('verified');
 
     // SSE events emitted
-    expect(eventsEmitted.some((e) => e.type === 'finding.updated' && e.finding?.state === 'verified')).toBe(true);
+    expect(
+      eventsEmitted.some((e) => e.type === 'finding.updated' && e.finding?.state === 'verified'),
+    ).toBe(true);
     expect(eventsEmitted.some((e) => e.type === 'score.updated')).toBe(true);
   });
 });

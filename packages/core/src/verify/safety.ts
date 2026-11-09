@@ -32,7 +32,9 @@ export function checkEditsSafety(
 
   const rawPrefix = opts.allowedPrefix ?? STORE_SRC_PREFIX;
   const normalizedPrefix = posix.normalize(rawPrefix.replace(/\\/g, '/')).replace(/^\/+/, '');
-  const prefixWithSlash = normalizedPrefix.endsWith('/') ? normalizedPrefix : `${normalizedPrefix}/`;
+  const prefixWithSlash = normalizedPrefix.endsWith('/')
+    ? normalizedPrefix
+    : `${normalizedPrefix}/`;
 
   for (const [index, edit] of edits.entries()) {
     const rawFile = edit.file.replace(/\\/g, '/');

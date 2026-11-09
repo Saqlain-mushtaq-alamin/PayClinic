@@ -41,7 +41,11 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       repos,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => { }, protect: async () => { } } as unknown as Orchestrator,
+      orchestrator: {
+        startRun: () => 'run-1',
+        prescribe: async () => {},
+        protect: async () => {},
+      } as unknown as Orchestrator,
     });
 
     const res = await app.inject({
@@ -68,7 +72,11 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       projectsRepo,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => { }, protect: async () => { } } as unknown as Orchestrator,
+      orchestrator: {
+        startRun: () => 'run-1',
+        prescribe: async () => {},
+        protect: async () => {},
+      } as unknown as Orchestrator,
     });
 
     const res = await app.inject({
@@ -114,7 +122,11 @@ describe('Public PayPal Proxy Mount (/paypal-proxy/:token/*)', () => {
       projectsRepo,
       config: loadConfig({}),
       bus,
-      orchestrator: { startRun: () => 'run-1', prescribe: async () => { }, protect: async () => { } } as unknown as Orchestrator,
+      orchestrator: {
+        startRun: () => 'run-1',
+        prescribe: async () => {},
+        protect: async () => {},
+      } as unknown as Orchestrator,
     });
 
     const recordedEvents: { type?: string }[] = [];

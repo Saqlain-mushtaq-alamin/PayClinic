@@ -5,10 +5,7 @@ import { assertSafePayPalBase, type SettingsStore } from '@payclinic/core';
 const SANDBOX_BASE_URL = 'https://api-m.sandbox.paypal.com';
 const TIMEOUT_MS = 10_000;
 
-export function sanitizeSecrets(
-  text: string,
-  secrets: Array<string | null | undefined>,
-): string {
+export function sanitizeSecrets(text: string, secrets: Array<string | null | undefined>): string {
   let result = text;
   for (const secret of secrets) {
     if (secret !== null && secret !== undefined && secret.length > 0) {
@@ -169,4 +166,3 @@ export async function defaultTestGitHub(
     };
   }
 }
-

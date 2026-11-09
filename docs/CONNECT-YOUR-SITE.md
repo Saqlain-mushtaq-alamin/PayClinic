@@ -28,6 +28,7 @@ PayClinic acts as a security scanner and PayPal proxy for your store:
 ```
 
 ### Key Benefits
+
 - **Zero Live Secrets in Offline Mode:** In offline mode, your store needs no PayPal credentials because requests are routed through PayClinic's proxy to a deterministic simulator.
 - **Trace & Replay:** All store-to-PayPal interactions are recorded as trace steps for automated invariant validation.
 
@@ -50,21 +51,23 @@ When your store calls `POST $PAYPAL_BASE_URL/v2/checkout/orders` or `$PAYPAL_BAS
 
 The PayClinic scanner evaluates scenarios such as double-capture prevention, currency validation, and refund idempotency. In test mode, your `GET /api/products` catalog must include at least these three test SKUs:
 
-| SKU | Name | Price | Currency | Purpose |
-|-----|------|-------|----------|---------|
-| `tee-001` | Logo Tee | `25.00` | `USD` | Standard order creation and double-capture testing |
-| `mug-003` | Logo Mug | `12.00` | `USD` | Multi-item cart & idempotency validation |
-| `jp-pen-01` | Gel Pen (JP) | `1200` | `JPY` | Zero-decimal & non-USD currency handling |
+| SKU         | Name         | Price   | Currency | Purpose                                            |
+| ----------- | ------------ | ------- | -------- | -------------------------------------------------- |
+| `tee-001`   | Logo Tee     | `25.00` | `USD`    | Standard order creation and double-capture testing |
+| `mug-003`   | Logo Mug     | `12.00` | `USD`    | Multi-item cart & idempotency validation           |
+| `jp-pen-01` | Gel Pen (JP) | `1200`  | `JPY`    | Zero-decimal & non-USD currency handling           |
 
 ---
 
 ## 4. The 7 Required Adapter Endpoints
 
 ### 1. `GET /api/products`
+
 Returns the product catalog.
 
 - **Request:** `GET /api/products`
 - **Response:** `200 OK`
+
 ```json
 [
   {
@@ -97,19 +100,21 @@ Returns the product catalog.
 ---
 
 ### 2. `POST /api/orders`
+
 Initiates a checkout order with PayPal via `PAYPAL_BASE_URL`.
 
 - **Request:** `POST /api/orders`
+
 ```json
 {
   "cartId": "cart-1234",
-  "items": [
-    { "sku": "tee-001", "qty": 1 }
-  ],
+  "items": [{ "sku": "tee-001", "qty": 1 }],
   "currency": "USD"
 }
 ```
+
 - **Response:** `200 OK` or `201 Created`
+
 ```json
 {
   "orderId": "5O190127TN364715T",
@@ -121,10 +126,12 @@ Initiates a checkout order with PayPal via `PAYPAL_BASE_URL`.
 ---
 
 ### 3. `POST /api/orders/:orderId/capture`
+
 Captures an approved PayPal order.
 
 - **Request:** `POST /api/orders/5O190127TN364715T/capture`
 - **Response:** `200 OK`
+
 ```json
 {
   "merchantOrderId": "mo-1234",
@@ -135,9 +142,11 @@ Captures an approved PayPal order.
 ---
 
 ### 4. `POST /api/orders/:orderId/refund`
+
 Issues a full or partial refund for a captured order.
 
 - **Request:** `POST /api/orders/5O190127TN364715T/refund`
+
 ```json
 {
   "amount": {
@@ -146,7 +155,9 @@ Issues a full or partial refund for a captured order.
   }
 }
 ```
+
 - **Response:** `200 OK`
+
 ```json
 {
   "status": "refunded",
@@ -157,10 +168,12 @@ Issues a full or partial refund for a captured order.
 ---
 
 ### 5. `POST /webhooks/paypal`
+
 Receives asynchronous PayPal webhook notifications.
 
 - **Request:** `POST /webhooks/paypal`
 - **Headers:** `x-payclinic-delivery-id: <deliveryId>`
+
 ```json
 {
   "id": "WH-12345",
@@ -171,7 +184,9 @@ Receives asynchronous PayPal webhook notifications.
   }
 }
 ```
+
 - **Response:** `200 OK`
+
 ```json
 {
   "received": true
@@ -181,11 +196,13 @@ Receives asynchronous PayPal webhook notifications.
 ---
 
 ### 6. `GET /__admin/state`
+
 Returns the test database state for invariant evaluation.
 
 - **Request:** `GET /__admin/state`
 - **Headers:** `x-payclinic-admin: <YOUR_PROJECT_ADMIN_SECRET>`
 - **Response:** `200 OK`
+
 ```json
 {
   "merchantOrders": [
@@ -213,11 +230,13 @@ Returns the test database state for invariant evaluation.
 ---
 
 ### 7. `POST /__admin/reset`
+
 Clears test orders, captures, and webhooks between test scenarios.
 
 - **Request:** `POST /__admin/reset`
 - **Headers:** `x-payclinic-admin: <YOUR_PROJECT_ADMIN_SECRET>`
 - **Response:** `200 OK`
+
 ```json
 {
   "ok": true
@@ -245,9 +264,30 @@ let deliveries = [];
 // 1. Catalog
 app.get('/api/products', (req, res) => {
   res.json([
-    { sku: 'tee-001', name: 'Logo Tee', description: 'Cotton tee', price: '25.00', currency: 'USD', merchantId: 'store' },
-    { sku: 'mug-003', name: 'Logo Mug', description: 'Coffee mug', price: '12.00', currency: 'USD', merchantId: 'store' },
-    { sku: 'jp-pen-01', name: 'Gel Pen (JP)', description: 'Ink pen', price: '1200', currency: 'JPY', merchantId: 'store' },
+    {
+      sku: 'tee-001',
+      name: 'Logo Tee',
+      description: 'Cotton tee',
+      price: '25.00',
+      currency: 'USD',
+      merchantId: 'store',
+    },
+    {
+      sku: 'mug-003',
+      name: 'Logo Mug',
+      description: 'Coffee mug',
+      price: '12.00',
+      currency: 'USD',
+      merchantId: 'store',
+    },
+    {
+      sku: 'jp-pen-01',
+      name: 'Gel Pen (JP)',
+      description: 'Ink pen',
+      price: '1200',
+      currency: 'JPY',
+      merchantId: 'store',
+    },
   ]);
 });
 
@@ -260,18 +300,28 @@ app.post('/api/orders', async (req, res) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       intent: 'CAPTURE',
-      purchase_units: [{ custom_id: cartId, amount: { currency_code: currency, value: '25.00' } }]
-    })
+      purchase_units: [{ custom_id: cartId, amount: { currency_code: currency, value: '25.00' } }],
+    }),
   });
   const data = await paypalRes.json();
-  const order = { id: `mo-${data.id}`, cartId, paypalOrderId: data.id, status: 'created', paid: false, capturedTotal: '0.00', refundedTotal: '0.00' };
+  const order = {
+    id: `mo-${data.id}`,
+    cartId,
+    paypalOrderId: data.id,
+    status: 'created',
+    paid: false,
+    capturedTotal: '0.00',
+    refundedTotal: '0.00',
+  };
   orders.push(order);
-  res.status(201).json({ orderId: data.id, merchantOrderId: order.id, approveUrl: data.links?.[1]?.href || '' });
+  res
+    .status(201)
+    .json({ orderId: data.id, merchantOrderId: order.id, approveUrl: data.links?.[1]?.href || '' });
 });
 
 // 3. Capture
 app.post('/api/orders/:orderId/capture', async (req, res) => {
-  const order = orders.find(o => o.paypalOrderId === req.params.orderId);
+  const order = orders.find((o) => o.paypalOrderId === req.params.orderId);
   if (!order) return res.status(404).json({ error: 'order not found' });
   order.status = 'paid';
   order.paid = true;
@@ -281,7 +331,7 @@ app.post('/api/orders/:orderId/capture', async (req, res) => {
 
 // 4. Refund
 app.post('/api/orders/:orderId/refund', async (req, res) => {
-  const order = orders.find(o => o.paypalOrderId === req.params.orderId);
+  const order = orders.find((o) => o.paypalOrderId === req.params.orderId);
   if (!order) return res.status(404).json({ error: 'order not found' });
   order.refundedTotal = req.body?.amount?.value || '25.00';
   res.json({ status: 'refunded' });
@@ -293,7 +343,7 @@ app.post('/webhooks/paypal', (req, res) => {
     deliveryId: req.headers['x-payclinic-delivery-id'] || `del-${Date.now()}`,
     eventId: req.body?.id || 'evt-unknown',
     eventType: req.body?.event_type || 'PAYMENT.CAPTURE.COMPLETED',
-    applied: 1
+    applied: 1,
   });
   res.json({ received: true });
 });
@@ -335,19 +385,48 @@ let orders = [];
 let deliveries = [];
 
 app.get('/api/products', async () => [
-  { sku: 'tee-001', name: 'Logo Tee', description: 'Cotton tee', price: '25.00', currency: 'USD', merchantId: 'store' },
-  { sku: 'mug-003', name: 'Logo Mug', description: 'Coffee mug', price: '12.00', currency: 'USD', merchantId: 'store' },
-  { sku: 'jp-pen-01', name: 'Gel Pen (JP)', description: 'Ink pen', price: '1200', currency: 'JPY', merchantId: 'store' },
+  {
+    sku: 'tee-001',
+    name: 'Logo Tee',
+    description: 'Cotton tee',
+    price: '25.00',
+    currency: 'USD',
+    merchantId: 'store',
+  },
+  {
+    sku: 'mug-003',
+    name: 'Logo Mug',
+    description: 'Coffee mug',
+    price: '12.00',
+    currency: 'USD',
+    merchantId: 'store',
+  },
+  {
+    sku: 'jp-pen-01',
+    name: 'Gel Pen (JP)',
+    description: 'Ink pen',
+    price: '1200',
+    currency: 'JPY',
+    merchantId: 'store',
+  },
 ]);
 
 app.post('/api/orders', async (req, reply) => {
   const orderId = `SIM-ORD-${Date.now()}`;
-  orders.push({ id: `mo-${orderId}`, cartId: req.body.cartId, paypalOrderId: orderId, status: 'created', paid: false, capturedTotal: '0.00', refundedTotal: '0.00' });
+  orders.push({
+    id: `mo-${orderId}`,
+    cartId: req.body.cartId,
+    paypalOrderId: orderId,
+    status: 'created',
+    paid: false,
+    capturedTotal: '0.00',
+    refundedTotal: '0.00',
+  });
   return reply.code(201).send({ orderId, merchantOrderId: `mo-${orderId}` });
 });
 
 app.post('/api/orders/:orderId/capture', async (req, reply) => {
-  const order = orders.find(o => o.paypalOrderId === req.params.orderId);
+  const order = orders.find((o) => o.paypalOrderId === req.params.orderId);
   if (!order) return reply.code(404).send({ error: 'order not found' });
   order.status = 'paid';
   order.paid = true;
@@ -356,7 +435,7 @@ app.post('/api/orders/:orderId/capture', async (req, reply) => {
 });
 
 app.post('/api/orders/:orderId/refund', async (req, reply) => {
-  const order = orders.find(o => o.paypalOrderId === req.params.orderId);
+  const order = orders.find((o) => o.paypalOrderId === req.params.orderId);
   if (!order) return reply.code(404).send({ error: 'order not found' });
   order.refundedTotal = req.body?.amount?.value || '25.00';
   return { status: 'refunded' };
@@ -367,18 +446,20 @@ app.post('/webhooks/paypal', async (req) => {
     deliveryId: req.headers['x-payclinic-delivery-id'] || `del-${Date.now()}`,
     eventId: req.body?.id || 'evt-unknown',
     eventType: req.body?.event_type || 'PAYMENT.CAPTURE.COMPLETED',
-    applied: 1
+    applied: 1,
   });
   return { received: true };
 });
 
 app.get('/__admin/state', async (req, reply) => {
-  if (req.headers['x-payclinic-admin'] !== ADMIN_SECRET) return reply.code(401).send({ error: 'unauthorized' });
+  if (req.headers['x-payclinic-admin'] !== ADMIN_SECRET)
+    return reply.code(401).send({ error: 'unauthorized' });
   return { merchantOrders: orders, webhookDeliveries: deliveries };
 });
 
 app.post('/__admin/reset', async (req, reply) => {
-  if (req.headers['x-payclinic-admin'] !== ADMIN_SECRET) return reply.code(401).send({ error: 'unauthorized' });
+  if (req.headers['x-payclinic-admin'] !== ADMIN_SECRET)
+    return reply.code(401).send({ error: 'unauthorized' });
   orders = [];
   deliveries = [];
   return { ok: true };
@@ -386,4 +467,3 @@ app.post('/__admin/reset', async (req, reply) => {
 
 app.listen({ port: 3000 });
 ```
-

@@ -313,10 +313,10 @@ export function createRepos(db: Database): Repos {
         scenarioId === undefined
           ? db.prepare('SELECT * FROM steps WHERE run_id = ? ORDER BY scenario_id, seq').all(runId)
           : db
-            .prepare(
-              'SELECT * FROM steps WHERE run_id = ? AND scenario_id = ? ORDER BY scenario_id, seq',
-            )
-            .all(runId, scenarioId)
+              .prepare(
+                'SELECT * FROM steps WHERE run_id = ? AND scenario_id = ? ORDER BY scenario_id, seq',
+              )
+              .all(runId, scenarioId)
       ) as Row[];
       return rows.map(parseStep);
     },

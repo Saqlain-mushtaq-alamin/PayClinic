@@ -83,20 +83,20 @@ describe('createApiClient', () => {
 
     let lastMethod = '';
     let lastUrl = '';
-    const client = createApiClient(
-      'http://api.test',
-      (async (input: RequestInfo | URL, init?: RequestInit) => {
-        lastUrl = String(input);
-        lastMethod = init?.method ?? 'GET';
-        if (lastMethod === 'DELETE') {
-          return response({ ok: true });
-        }
-        if (lastMethod === 'GET') {
-          return response([dummyProject]);
-        }
-        return response(dummyProject);
-      }) as typeof fetch,
-    );
+    const client = createApiClient('http://api.test', (async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      lastUrl = String(input);
+      lastMethod = init?.method ?? 'GET';
+      if (lastMethod === 'DELETE') {
+        return response({ ok: true });
+      }
+      if (lastMethod === 'GET') {
+        return response([dummyProject]);
+      }
+      return response(dummyProject);
+    }) as typeof fetch);
 
     const list = await client.listProjects();
     expect(list).toEqual([dummyProject]);

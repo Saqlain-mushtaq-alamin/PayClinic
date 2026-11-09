@@ -1,9 +1,4 @@
-import {
-  AdapterCheckItem,
-  MerchantOrder,
-  Product,
-  WebhookDelivery,
-} from '@payclinic/contracts';
+import { AdapterCheckItem, MerchantOrder, Product, WebhookDelivery } from '@payclinic/contracts';
 import { z } from 'zod';
 import { decrypt } from '../settings/crypto';
 import { assertSafeTarget } from './target-guard';
@@ -431,4 +426,3 @@ export async function adapterCheck(
 
   return results;
 }
-

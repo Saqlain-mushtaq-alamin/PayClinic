@@ -60,7 +60,10 @@ export function isPrivateOrLocalIp(ip: string): boolean {
 }
 
 export interface AssertSafeTargetOptions {
-  dnsLookup?: (hostname: string, options: { all: boolean }) => Promise<Array<{ address: string; family: number }>>;
+  dnsLookup?: (
+    hostname: string,
+    options: { all: boolean },
+  ) => Promise<Array<{ address: string; family: number }>>;
 }
 
 /**

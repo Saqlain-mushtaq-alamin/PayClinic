@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Octokit } from '@octokit/rest';
 import type { Explanation, Finding, Patch, Step, VerifyResult } from '@payclinic/contracts';
-import { applyEditsToString, checkEditsSafety, type ProjectsRepo, type Repos } from '@payclinic/core';
+import {
+  applyEditsToString,
+  checkEditsSafety,
+  type ProjectsRepo,
+  type Repos,
+} from '@payclinic/core';
 
 /** Raised when a finding may not be turned into a pull request. */
 export class PrNotAllowedError extends Error {
@@ -108,7 +113,9 @@ function prBody(
   if (evidenceSteps && evidenceSteps.length > 0) {
     lines.push('### Failing trace evidence');
     for (const step of evidenceSteps) {
-      lines.push(`- **${step.actor}** \`${step.method} ${step.url}\` -> \`${step.responseStatus}\``);
+      lines.push(
+        `- **${step.actor}** \`${step.method} ${step.url}\` -> \`${step.responseStatus}\``,
+      );
       if (step.responseBody) {
         lines.push('  ```json');
         lines.push(
