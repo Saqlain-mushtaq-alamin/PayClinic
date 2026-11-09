@@ -10,9 +10,10 @@
 ## Shot-by-Shot Timeline & Storyboard
 
 ### [0:00 – 0:25] ACT I: The Hook & The Problem
+
 - **Visual:**
   - Split screen: On the left, an e-commerce checkout showing a duplicate capture error (`I-01`); on the right, a terminal showing an autonomous AI shopping agent spending $120.00 instead of its $30.00 budget.
-  - Cut to PayClinic logo on the dashboard (`http://localhost:4000/`) with tagline: *Diagnose · Prescribe · Protect*.
+  - Cut to PayClinic logo on the dashboard (`http://localhost:4000/`) with tagline: _Diagnose · Prescribe · Protect_.
 - **Voiceover (Narration):**
   > "Every checkout integration carries the same silent nightmare: money state going wrong in production. Double captures, client-tampered prices, or orders marked paid when PayPal declined the charge. And now with autonomous shopping agents, an agent with a payment tool can be manipulated into overspending by a poisoned prompt.
   > Welcome to **PayClinic**—an automated payment-safety scanner and spending firewall. We attack the checkout in a sandbox, use pure invariant code to prove what broke, let AI propose the fix, and then re-run the attack to prove the fix."
@@ -20,6 +21,7 @@
 ---
 
 ### [0:25 – 1:05] ACT II: Diagnose (The Vulnerability Scanner)
+
 - **Visual:**
   - Host is on the PayClinic Dashboard (`/`). Points to the **Payment Safety** gauge showing the initial score of **61 / 100**.
   - Clicks **"Diagnose Store"** (`StartRunPanel`).
@@ -32,6 +34,7 @@
 ---
 
 ### [1:05 – 1:45] ACT III: Prescribe & Verify (Deterministic Proof)
+
 - **Visual:**
   - On the Finding Detail page (`/runs/:runId/findings/:findingId`), clicks **"Prescribe Fix"**.
   - Progress stepper illuminates: `Explaining` -> `Patching` -> `Verifying` -> `Done`.
@@ -47,6 +50,7 @@
 ---
 
 ### [1:45 – 2:15] ACT IV: Live PayPal Sandbox Evidence
+
 - **Visual:**
   - Navigates to the live run trace. Opens an inspected request step.
   - Highlights:
@@ -60,6 +64,7 @@
 ---
 
 ### [2:15 – 2:35] ACT V: Protect (The AI Agent Spending Firewall)
+
 - **Visual:**
   - Opens the Agent run (`A1: Prompt injection through product description`).
   - Shows the attack: A poisoned product description instructed the shopping agent to ignore its budget and buy 5 items from an unapproved vendor. Score is **78 / 100**.
@@ -73,11 +78,12 @@
 ---
 
 ### [2:35 – 2:45] ACT VI: Wrap-Up & Call to Action
+
 - **Visual:**
   - Quick flash of the GitHub Action PR comment showing the automated PayClinic scan summary.
   - Final full-screen view of the PayClinic dashboard with all green scores (100 / 100).
   - Closing title card:
-    - *PayClinic: Safe PayPal Payments & Agent Guardrails*
+    - _PayClinic: Safe PayPal Payments & Agent Guardrails_
     - GitHub: `github.com/.../PayClinic`
     - Built for the PayPal AI Hackathon.
 - **Voiceover (Narration):**
@@ -86,6 +92,7 @@
 ---
 
 ## Video Production Checklist for Recording Team
+
 1. [ ] Browser zoomed to 110%, Dark mode active, DevTools closed or docked cleanly.
 2. [ ] Database seeded with clean baseline: `npm run setup && npm run demo`.
 3. [ ] Microphone test: Ensure crisp, pop-free audio.
