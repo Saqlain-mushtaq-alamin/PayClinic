@@ -178,27 +178,27 @@ PayClinic exercises core PayPal developer platform capabilities across all layer
 
 ## Environment Variables
 
-| Variable | Description | Default | Allowed Values / Format |
-|---|---|---|---|
-| `PAYCLINIC_MODE` | Pipeline mode | `offline` | `offline` (simulator + fixtures) \| `online` (live PayPal sandbox + Gemini) |
-| `BUYER_APPROVER` | Buyer approval method | `sim` | `sim` (auto) \| `manual` (web browser) \| `playwright` \| `card` |
-| `AI_PROVIDER` | AI diagnostic provider | `fixture` | `fixture` (cached) \| `gemini` (live Google AI Studio) \| `fake` |
-| `AI_RECORD` | Save Gemini outputs to disk | `0` | `0` \| `1` |
-| `PAYPAL_BASE_URL` | Target PayPal URL | `http://127.0.0.1:4010` | `https://api-m.sandbox.paypal.com` (sandbox only, never live) |
-| `PAYPAL_CLIENT_ID` | Sandbox Client ID | `""` | PayPal Developer Sandbox App Client ID |
-| `PAYPAL_CLIENT_SECRET` | Sandbox Secret | `""` | PayPal Developer Sandbox App Client Secret |
-| `PAYPAL_BUYER_EMAIL` | Sandbox Buyer Email | `""` | Personal Sandbox test buyer email |
-| `PAYPAL_BUYER_PASSWORD` | Sandbox Buyer Password | `""` | Personal Sandbox test buyer password |
-| `GEMINI_API_KEY` | Google AI Studio Key | `""` | Google AI Studio Gemini API Key |
-| `GEMINI_MODEL` | Gemini Model ID | `gemini-2.5-flash` | `gemini-2.5-flash` \| `gemini-1.5-flash` \| `gemini-2.5-pro` |
-| `PAYCLINIC_ADMIN_TOKEN` | Admin protection token | `""` (unauthenticated) | Optional Bearer token protecting `/api/settings` and project writes |
-| `SETTINGS_SECRET` | Encryption secret | Auto-generated in `data/.secret` | 32+ character or 64 hex character AES-256-GCM secret |
-| `GITHUB_TOKEN` | GitHub PAT | `""` | Optional token for opening fix pull requests on demo repos |
-| `API_PORT` | Fastify REST/SSE API port | `4000` | integer (default: 4000) |
-| `SIM_PORT` | Standalone simulator port | `4010` | integer (default: 4010) |
-| `MOCK_API_PORT` | Mock server port | `4001` | integer (default: 4001) |
-| `DASHBOARD_PORT` | Vite development port | `5173` | integer (default: 5173) |
-| `DB_PATH` | SQLite database file | `./data/payclinic.db` | filesystem path |
+| Variable                | Description                 | Default                          | Allowed Values / Format                                                     |
+| ----------------------- | --------------------------- | -------------------------------- | --------------------------------------------------------------------------- |
+| `PAYCLINIC_MODE`        | Pipeline mode               | `offline`                        | `offline` (simulator + fixtures) \| `online` (live PayPal sandbox + Gemini) |
+| `BUYER_APPROVER`        | Buyer approval method       | `sim`                            | `sim` (auto) \| `manual` (web browser) \| `playwright` \| `card`            |
+| `AI_PROVIDER`           | AI diagnostic provider      | `fixture`                        | `fixture` (cached) \| `gemini` (live Google AI Studio) \| `fake`            |
+| `AI_RECORD`             | Save Gemini outputs to disk | `0`                              | `0` \| `1`                                                                  |
+| `PAYPAL_BASE_URL`       | Target PayPal URL           | `http://127.0.0.1:4010`          | `https://api-m.sandbox.paypal.com` (sandbox only, never live)               |
+| `PAYPAL_CLIENT_ID`      | Sandbox Client ID           | `""`                             | PayPal Developer Sandbox App Client ID                                      |
+| `PAYPAL_CLIENT_SECRET`  | Sandbox Secret              | `""`                             | PayPal Developer Sandbox App Client Secret                                  |
+| `PAYPAL_BUYER_EMAIL`    | Sandbox Buyer Email         | `""`                             | Personal Sandbox test buyer email                                           |
+| `PAYPAL_BUYER_PASSWORD` | Sandbox Buyer Password      | `""`                             | Personal Sandbox test buyer password                                        |
+| `GEMINI_API_KEY`        | Google AI Studio Key        | `""`                             | Google AI Studio Gemini API Key                                             |
+| `GEMINI_MODEL`          | Gemini Model ID             | `gemini-2.5-flash`               | `gemini-2.5-flash` \| `gemini-1.5-flash` \| `gemini-2.5-pro`                |
+| `PAYCLINIC_ADMIN_TOKEN` | Admin protection token      | `""` (unauthenticated)           | Optional Bearer token protecting `/api/settings` and project writes         |
+| `SETTINGS_SECRET`       | Encryption secret           | Auto-generated in `data/.secret` | 32+ character or 64 hex character AES-256-GCM secret                        |
+| `GITHUB_TOKEN`          | GitHub PAT                  | `""`                             | Optional token for opening fix pull requests on demo repos                  |
+| `API_PORT`              | Fastify REST/SSE API port   | `4000`                           | integer (default: 4000)                                                     |
+| `SIM_PORT`              | Standalone simulator port   | `4010`                           | integer (default: 4010)                                                     |
+| `MOCK_API_PORT`         | Mock server port            | `4001`                           | integer (default: 4001)                                                     |
+| `DASHBOARD_PORT`        | Vite development port       | `5173`                           | integer (default: 5173)                                                     |
+| `DB_PATH`               | SQLite database file        | `./data/payclinic.db`            | filesystem path                                                             |
 
 ## Meaningful PayPal Developer Platform Integration
 
