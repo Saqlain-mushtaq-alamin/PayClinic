@@ -144,9 +144,16 @@ export const Project = z.object({
 });
 export type Project = z.infer<typeof Project>;
 
+const HttpUrl = z
+  .string()
+  .url()
+  .refine((url) => /^https?:\/\//i.test(url), {
+    message: 'URL must start with http:// or https://',
+  });
+
 export const ProjectCreateRequest = z.object({
   name: z.string().min(1),
-  baseUrl: z.string().url().optional().nullable(),
+  baseUrl: HttpUrl.optional().nullable(),
   adminSecret: z.string().optional().nullable(),
   repoOwner: z.string().optional().nullable(),
   repoName: z.string().optional().nullable(),
@@ -157,7 +164,7 @@ export type ProjectCreateRequest = z.infer<typeof ProjectCreateRequest>;
 
 export const ProjectUpdateRequest = z.object({
   name: z.string().min(1).optional(),
-  baseUrl: z.string().url().optional().nullable(),
+  baseUrl: HttpUrl.optional().nullable(),
   adminSecret: z.string().optional().nullable(),
   repoOwner: z.string().optional().nullable(),
   repoName: z.string().optional().nullable(),

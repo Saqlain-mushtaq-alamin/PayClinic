@@ -26,6 +26,7 @@ import type {
   ProjectUpdateRequest,
 } from '@payclinic/contracts';
 import { api, onAuthRequired, setAdminToken, type ApiClient } from '../api/client';
+import { isSafeHttpUrl } from '../lib/url';
 import { useProjects } from '../api/hooks';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -342,15 +343,19 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                     <span className="project-card__label">Base URL</span>
                     <span className="project-card__value">
                       {p.baseUrl ? (
-                        <a
-                          href={p.baseUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="project-card__link"
-                        >
-                          {p.baseUrl}
-                          <ExternalLink size={12} />
-                        </a>
+                        isSafeHttpUrl(p.baseUrl) ? (
+                          <a
+                            href={p.baseUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="project-card__link"
+                          >
+                            {p.baseUrl}
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <span className="project-card__link text-muted">{p.baseUrl}</span>
+                        )
                       ) : (
                         <span className="text-muted">None (local test store)</span>
                       )}
