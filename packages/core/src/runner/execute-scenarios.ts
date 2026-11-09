@@ -113,7 +113,7 @@ async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   if (!response.ok) {
     throw new DiagnoseError(
       `Request ${init?.method ?? 'GET'} ${url} failed with ${response.status}` +
-        (text === '' ? '' : `: ${text}`),
+      (text === '' ? '' : `: ${text}`),
     );
   }
   if (text === '') return undefined;
