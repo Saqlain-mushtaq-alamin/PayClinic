@@ -74,6 +74,20 @@ describe('formatPrComment', () => {
 describe('format-pr-comment CLI', () => {
   const scriptPath = join('scripts', 'format-pr-comment.ts');
 
+  it('parses valid JSON with a UTF-8 BOM', () => {
+    const dir = join('.payclinic-tmp', 'format-pr-comment-test');
+    mkdirSync(dir, { recursive: true });
+    const filePath = join(dir, 'bom-report.json');
+    const validJson = JSON.stringify(buildReport());
+    writeFileSync(filePath, `\uFEFF${validJson}`, 'utf8');
+
+    const out = execFileSync('node', ['--import', 'tsx', scriptPath, filePath], {
+      stdio: 'pipe',
+      encoding: 'utf8',
+    });
+    expect(out).toContain('### PayClinic payment-safety report');
+  });
+
   it('exits non-zero with a message for invalid JSON', () => {
     const dir = join('.payclinic-tmp', 'format-pr-comment-test');
     mkdirSync(dir, { recursive: true });

@@ -14,8 +14,13 @@
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
+    "@payclinic/ai": "*",
     "@payclinic/contracts": "*",
     "@payclinic/core": "*",
-    "fastify": "^5.0.0"
+    "@payclinic/firewall": "*",
+    "@payclinic/shopping-agent": "*",
+    "@payclinic/sim": "*",
+    "fastify": "^5.0.0",
+    "zod": "^3.23.8"
   }
 }
