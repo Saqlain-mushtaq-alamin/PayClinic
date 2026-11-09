@@ -58,8 +58,8 @@ export class SettingsStore {
       throw new Error(`Invalid mode: must be 'offline' or 'online'`);
     }
 
-    if (key === 'aiProvider' && val !== 'fixture' && val !== 'gemini') {
-      throw new Error(`Invalid aiProvider: must be 'fixture' or 'gemini'`);
+    if (key === 'aiProvider' && val !== 'fixture' && val !== 'gemini' && val !== 'fake') {
+      throw new Error(`Invalid aiProvider: must be 'fixture', 'gemini', or 'fake'`);
     }
 
     const encrypted = encrypt(val);
