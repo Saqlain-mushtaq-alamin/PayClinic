@@ -1,0 +1,10 @@
+{
+  "rootCause": "The shopping agent lacks runaway loop prevention and failure backoff, creating duplicate checkout orders repeatedly after downstream payment declines.",
+  "impact": "A declined transaction triggers high-frequency automated retries that deplete account balances or spam payment rails.",
+  "whereInCode": {
+    "file": "apps/shopping-agent/src/loop.ts",
+    "hint": "runAgent"
+  },
+  "fixSummary": "Enforce spending firewall velocity limits capping repeat transaction attempts and mandating cooldown periods upon payment declines."
+}
+
