@@ -2,6 +2,7 @@ import type { AgentRunState, Cart, CartItem, Product, ScenarioKey } from '@paycl
 import type { MockRule } from '../trace/proxy';
 import type { StepRecorder } from '../trace/recorder';
 import type { BuyerApprover } from './approvers';
+import { safeFetch } from './target-guard';
 
 export type { BuyerApprover } from './approvers';
 
@@ -112,7 +113,7 @@ export function createRecordedHttp(o: {
   baseUrl: string;
   fetchImpl?: typeof fetch;
 }): RecordedHttp {
-  const fetchImpl = o.fetchImpl ?? fetch;
+  const fetchImpl = o.fetchImpl ?? safeFetch;
   const baseUrl = o.baseUrl.replace(/\/+$/, '');
 
   return {
@@ -130,6 +131,7 @@ export function createRecordedHttp(o: {
         const response = await fetchImpl(url, {
           method,
           headers,
+          redirect: 'manual',
           ...(body === undefined || method === 'GET' || method === 'HEAD'
             ? {}
             : { body: JSON.stringify(body) }),
