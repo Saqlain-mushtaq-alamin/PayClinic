@@ -9,6 +9,9 @@ each fix. A spending firewall then blocks the agent attacks at runtime.
 
 > AI generates and explains. Deterministic code decides.
 
+> [!WARNING]
+> The vulnerabilities in `apps/buggy-store` (B1–B6) and the poisoned item in `apps/buggy-store/src/catalog.ts` are **intentional demo vulnerabilities** designed to demonstrate PayClinic's deterministic invariant scanner and AI prescription verification. Do not copy or deploy the buggy-store implementation to production.
+
 ## The three stages (15-second version)
 
 1. **Diagnose** — attack the target with scripted scenarios (B1..B5 for the
@@ -98,6 +101,71 @@ GEMINI_MODEL=<model id>
 `npm run record:online` runs the scenarios once against the real sandbox and
 saves the traces to `fixtures/traces-online/`; the dashboard can then show real
 sandbox evidence while staying offline.
+
+## Tech Stack
+
+- **Runtime & Language:** Node.js (>=20.6), TypeScript (v5.6, strict mode, ES modules).
+- **Backend & APIs:** Fastify v4, Server-Sent Events (SSE), SQLite via `better-sqlite3` with WAL mode.
+- **Frontend Dashboard:** React 18, Vite 5, AG Grid Community v32, Lucide React icons, dark theme styling.
+- **Testing & Verification:** Vitest v2, `@testing-library/react`. 554 tests across 89 files.
+- **PayPal Integration:** PayPal Orders v2 REST API, Webhooks v1 signature verification, Sandbox negative testing headers (`PayPal-Mock-Response`).
+- **AI Integration:** Google Gemini API (`@google/genai`, `gemini-2.5-flash`), structured JSON outputs, zero-temperature deterministic prompts.
+
+## Environment Variables
+
+| Variable | Description | Default | Allowed Values / Format |
+|---|---|---|---|
+| `PAYCLINIC_MODE` | Pipeline mode | `offline` | `offline` (simulator + fixtures) \| `online` (live PayPal sandbox + Gemini) |
+| `BUYER_APPROVER` | Buyer approval method | `sim` | `sim` (auto) \| `manual` (web browser) \| `playwright` \| `card` |
+| `AI_PROVIDER` | AI diagnostic provider | `fixture` | `fixture` (cached) \| `gemini` (live Google AI Studio) \| `fake` |
+| `AI_RECORD` | Save Gemini outputs to disk | `0` | `0` \| `1` |
+| `PAYPAL_BASE_URL` | Target PayPal URL | `http://127.0.0.1:4010` | `https://api-m.sandbox.paypal.com` (sandbox only, never live) |
+| `PAYPAL_CLIENT_ID` | Sandbox Client ID | `""` | PayPal Developer Sandbox App Client ID |
+| `PAYPAL_CLIENT_SECRET` | Sandbox Secret | `""` | PayPal Developer Sandbox App Client Secret |
+| `PAYPAL_BUYER_EMAIL` | Sandbox Buyer Email | `""` | Personal Sandbox test buyer email |
+| `PAYPAL_BUYER_PASSWORD` | Sandbox Buyer Password | `""` | Personal Sandbox test buyer password |
+| `GEMINI_API_KEY` | Google AI Studio Key | `""` | Google AI Studio Gemini API Key |
+| `GEMINI_MODEL` | Gemini Model ID | `gemini-2.5-flash` | `gemini-2.5-flash` \| `gemini-1.5-flash` \| `gemini-2.5-pro` |
+| `PAYCLINIC_ADMIN_TOKEN` | Admin protection token | `""` (unauthenticated) | Optional Bearer token protecting `/api/settings` and project writes |
+| `SETTINGS_SECRET` | Encryption secret | Auto-generated in `data/.secret` | 32+ character or 64 hex character AES-256-GCM secret |
+| `GITHUB_TOKEN` | GitHub PAT | `""` | Optional token for opening fix pull requests on demo repos |
+| `API_PORT` | Fastify REST/SSE API port | `4000` | integer (default: 4000) |
+| `SIM_PORT` | Standalone simulator port | `4010` | integer (default: 4010) |
+| `MOCK_API_PORT` | Mock server port | `4001` | integer (default: 4001) |
+| `DASHBOARD_PORT` | Vite development port | `5173` | integer (default: 5173) |
+| `DB_PATH` | SQLite database file | `./data/payclinic.db` | filesystem path |
+
+## Meaningful PayPal Developer Platform Integration
+
+PayClinic exercises core PayPal developer platform capabilities across all layers of the application:
+
+1. **Orders v2 API (`/v2/checkout/orders`)**:
+   - `POST /v2/checkout/orders`: Creates orders with currency validation, item breakdowns, and idempotency headers (`PayPal-Request-Id`).
+   - `POST /v2/checkout/orders/:id/capture`: Authorizes and captures payments, testing capture status verification and double-capture defenses.
+   - `GET /v2/checkout/orders/:id`: Queries authoritative order status from PayPal.
+2. **Payments v2 API (`/v2/payments/captures/:id/refund`)**:
+   - Handles partial and full refunds, verifying that refund amounts cannot exceed captured totals (`REFUND_AMOUNT_EXCEEDED`).
+3. **Webhooks v1 Signature Verification (`/v1/notifications/verify-webhook-signature`)**:
+   - Verifies asymmetric cryptographic signatures (`paypal-auth-assertion`, `paypal-transmission-sig`, `paypal-cert-url`) to detect forged webhooks and replay attacks before side-effects occur.
+4. **Negative Testing & Simulation (`PayPal-Mock-Response`)**:
+   - Injects mock application codes (e.g. `INSTRUMENT_DECLINED`) into real sandbox requests to prove store decline handling and recovery.
+5. **Trace Proxy with Automated Secret Redaction (`packages/core/src/trace/`)**:
+   - Transparent in-process proxy that logs every request/response with its `paypal-debug-id` while redacting authorization tokens and client secrets.
+
+## Meaningful AI Integration (Gemini & Agent Firewall)
+
+1. **Root-Cause Analysis (Explain)**:
+   - When invariants fail, Google Gemini analyzes the normalized evidence trace, PayPal error structures, and relevant store source code to produce a structured explanation (`rootCause`, `impact`, `whereInCode`, `fixSummary`).
+2. **Deterministic Patch Generation (Prescribe)**:
+   - Gemini proposes targeted code fixes as exact search/replace tuples (`file`, `search`, `replace`).
+   - All AI patches are subjected to an AST/safety check (`packages/core/src/verify/safety.ts`) that denies dangerous constructs (`eval`, `child_process`, `process`, `globalThis`, etc.).
+3. **Verification Loop (Prove the Fix)**:
+   - PayClinic never trusts AI blindly. It applies the patch inside an ephemeral sandbox directory (`.payclinic-tmp/`), re-runs the attack scenario, and confirms that pure invariants pass. A patch is marked `verified` only when deterministic code confirms it.
+4. **AI Shopping Agent Spending Firewall (Protect)**:
+   - When an autonomous shopping agent is manipulated by a prompt-injection attack in a product description (A1), PayClinic synthesizes an enforceable spending firewall policy (`policy.yaml`).
+   - The pure code firewall intercepts tool calls at runtime, evaluating merchant allowlists (R3), transaction caps (R1), session budgets (R2), and deduplication windows (R5), neutralizing the attack before calls reach PayPal.
+5. **Honest Operational Mode Labeling**:
+   - The UI displays an explicit badge: `Offline demo` (using recorded fixtures and local simulator for $0 zero-credential review) vs `Live sandbox` (making live calls to Google AI Studio and PayPal Sandbox).
 
 ## Architecture
 
