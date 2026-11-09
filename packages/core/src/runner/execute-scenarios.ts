@@ -11,7 +11,7 @@ import type {
 import { startSim } from '@payclinic/sim';
 import type { Config } from '../config';
 import type { Repos } from '../db/repos';
-import { INVARIANTS, runInvariants } from '../invariants';
+import { runInvariants } from '../invariants';
 import { decrypt } from '../settings/crypto';
 import { createRecorder, type StepRecorder } from '../trace/recorder';
 import {
@@ -353,9 +353,7 @@ export async function executeScenarios(
           ...(declared.agent === undefined ? {} : { agent: declared.agent }),
         };
 
-        const invariantKeys = SCENARIO_META[key].invariantKeys.filter(
-          (invariantKey) => INVARIANTS[invariantKey] !== undefined,
-        );
+        const invariantKeys = SCENARIO_META[key].invariantKeys;
 
         const runnerSteps = drain(recorder);
         const proxySteps = isRemote && env.repos ? env.repos.listSteps(env.runId, scenarioId) : [];
