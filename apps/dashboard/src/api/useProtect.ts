@@ -38,6 +38,10 @@ export function useProtect(
   const [decisions, setDecisions] = useState<FirewallDecision[]>([]);
   const stageRef = useRef<ProtectStage>('idle');
   stageRef.current = stage;
+  const updateStage = (next: ProtectStage) => {
+    stageRef.current = next;
+    setStage(next);
+  };
   const clientRef = useRef(client);
   clientRef.current = client;
   const sourceRef = useRef<{ close(): void } | null>(null);
@@ -52,12 +56,12 @@ export function useProtect(
 
   const start = useCallback(() => {
     if (!runId) return;
-    if (RUNNING_STAGES.includes(stage)) return;
+    if (RUNNING_STAGES.includes(stageRef.current)) return;
 
     sourceRef.current?.close();
     const Ctor = eventSourceCtor ?? (typeof EventSource !== 'undefined' ? EventSource : undefined);
     if (!Ctor) {
-      setStage('failed');
+      updateStage('failed');
       setMessage('Live updates are not supported in this browser');
       return;
     }
@@ -77,43 +81,38 @@ export function useProtect(
         setDecisions((prev) =>
           prev.some((item) => item.id === next.decision.id) ? prev : [...prev, next.decision],
         );
-        if (stageRef.current === 'generating') setStage('rerunning');
+        if (stageRef.current === 'generating') updateStage('rerunning');
         return;
       }
       if (next.type === 'finding.updated') {
         if (next.finding.state === 'protected') {
-          setStage('done');
+          updateStage('done');
           source.close();
           sourceRef.current = null;
           return;
         }
         if (stageRef.current === 'generating' || stageRef.current === 'rerunning') {
-          setStage('verifying');
+          updateStage('verifying');
         }
         return;
       }
       if (next.type === 'score.updated') {
         if (stageRef.current === 'generating' || stageRef.current === 'rerunning') {
-          setStage('verifying');
+          updateStage('verifying');
         }
         return;
       }
-      if (next.type === 'run.completed' || next.type === 'run.failed') {
-        setStage('done');
-        source.close();
-        sourceRef.current = null;
-      }
     };
 
-    setStage('generating');
+    updateStage('generating');
     setMessage(null);
     clientRef.current.protect(runId).catch((reason: unknown) => {
       source.close();
       sourceRef.current = null;
-      setStage('failed');
+      updateStage('failed');
       setMessage(reason instanceof Error ? reason.message : String(reason));
     });
-  }, [eventSourceCtor, runId, stage]);
+  }, [eventSourceCtor, runId]);
 
   return { stage, message, decisions, start };
 }
