@@ -1,11 +1,25 @@
-const SECRET_HEADERS = new Set(['authorization', 'paypal-auth-assertion']);
+const SECRET_HEADERS = new Set([
+  'authorization',
+  'paypal-auth-assertion',
+  'x-payclinic-admin',
+  'x-payclinic-admin-token',
+  'proxy-authorization',
+  'x-api-key',
+  'api-key',
+]);
 
 /** Masks authentication and secret-bearing headers, lower-casing header names. */
 export function redactHeaders(h: Record<string, string>): Record<string, string> {
   const redacted: Record<string, string> = {};
   for (const [name, value] of Object.entries(h)) {
     const key = name.toLowerCase();
-    redacted[key] = SECRET_HEADERS.has(key) || key.includes('secret') ? '***' : value;
+    const isSensitive =
+      SECRET_HEADERS.has(key) ||
+      key.includes('secret') ||
+      key.includes('token') ||
+      key.includes('password') ||
+      key.includes('admin');
+    redacted[key] = isSensitive ? '***' : value;
   }
   return redacted;
 }

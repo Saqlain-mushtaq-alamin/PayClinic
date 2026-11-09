@@ -45,7 +45,11 @@ export class SettingsStore {
       { value_encrypted: string } | undefined;
 
     if (!row) return null;
-    return decrypt(row.value_encrypted);
+    try {
+      return decrypt(row.value_encrypted);
+    } catch {
+      return null;
+    }
   }
 
   /** Encrypts and persists a whitelisted setting. */
