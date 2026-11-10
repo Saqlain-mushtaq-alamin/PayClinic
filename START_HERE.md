@@ -1,41 +1,138 @@
-# START HERE: PayClinic agent kit
+# Welcome to PayClinic 🩺⚡
 
-You have three developers, each driving a coding agent, building **PayClinic** for the PayPal AI Hackathon. This kit is what the agents (and you) work from.
+> **The Payment Safety Scanner & Autonomous Agent Spending Firewall**  
+> Built for the PayPal AI Hackathon (2026).
 
-## What is in the box
+This guide will walk you through setting up PayClinic, understanding the core concepts, and exploring every feature of the interactive developer dashboard in under 5 minutes.
 
-| Path                                 | What it is                                                                                                                            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `AGENTS.md`                          | Rules every agent reads before every task (copy to the repo root as is)                                                               |
-| `docs/TECH_DESIGN.md`                | The mechanisms: process model, simulator, trace proxy, runner, invariants, verify loop, AI layer, firewall, DDL, API. Wins over cards |
-| `docs/plan/00_INDEX_AND_WORKFLOW.md` | How to run an agent on a card, the status board, order of work, cut order                                                             |
-| `docs/plan/PHASE_0…` to `PHASE_4…`   | One file per phase with the task cards (tests first, exact files, commit message)                                                     |
-| `docs/CHANGELOG_FROM_V1.md`          | What changed from your first plan and why                                                                                             |
-| `docs/TEAM.md`, `docs/SPONSORS.md`   | Templates to fill in on day one                                                                                                       |
-| `packages/contracts/`                | **Real, tested code**: shared schemas, API and event contracts, golden traces, test builders                                          |
-| `scripts/`                           | Spike script for the real sandbox, generators for golden traces and mock data                                                         |
-| `fixtures/mock/mock-data.json`       | Ready mock data so Track C never waits                                                                                                |
-| root configs, `.github/`             | TypeScript, Vitest, ESLint, Prettier, CI, CODEOWNERS                                                                                  |
+---
 
-## The first hour
+## 🚀 30-Second Quickstart
 
-1. Create the GitHub repo; copy this kit into it; `npm install && npm run check` (expect **17 passing tests**). This is card **P0-X01**.
-2. All three: 90-minute call for **P0-X02** (review and freeze contracts v1, fill `docs/TEAM.md`).
-3. Each: **P0-X03** (accounts and keys, your own). Then the spikes in **P0-X04** (humans, not agents).
-4. Start Phase 1 cards in parallel: A01, B01, B03, C01 have no cross-track dependencies.
+PayClinic requires **Node.js (>= 20.6)**. It runs **100% offline out-of-the-box with $0 and zero external API keys needed**.
 
-## Telling an agent to work (paste, replace the id)
+```bash
+# 1. Install dependencies
+npm ci
 
-```
-Implement card <CARD-ID> from docs/plan/<PHASE FILE>.
-First read AGENTS.md, then the card, then the TECH_DESIGN sections and contract files it names.
-Check "Depends on" (stop and report if something is not merged). Write the tests first and show
-them failing, then implement, then run `npm run check`. Touch only the files listed on the card.
-Finish with the report format from AGENTS.md section 9. Do not start another card.
+# 2. Initialize environment & database
+npm run setup
+
+# 3. Seed demo runs & launch dashboard
+npm run demo
 ```
 
-Review each card's diff yourself before merging; read **[HARD]** cards line by line.
+Once started, open **[http://localhost:4000](http://localhost:4000)** in your browser.
 
-## Dates
+---
 
-Today: Sun Oct 18. Phase 0: Oct 18 to 19. Phase 1: Oct 19 to 23. Phase 2: Oct 24 to 30 (MVP Wed Oct 28). Phase 3: Oct 31 to Nov 6 (freeze Fri Nov 6). Phase 4: Nov 7 to 10 (**submit Tue Nov 10**). Hard deadline Thu Nov 12, 12:00 PM PST.
+## 🎯 What You'll See First: The 3 Seeded Runs
+
+When you open the **Runs** dashboard, PayClinic displays three pre-computed runs so you can inspect the full end-to-end lifecycle immediately:
+
+| Run                                     | Type  | Initial Score | Final Score |   Status    | What Happened                                                                                                                                                                                                          |
+| --------------------------------------- | ----- | :-----------: | :---------: | :---------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Store Diagnosis (Before Fix)**     | Store |    **61**     |   **61**    | `Finished`  | PayClinic attacked the demo checkout with scenarios `B1`–`B5`. Pure invariants detected 5 vulnerabilities (double captures, price tampering, unverified webhooks, premature fulfillment, currency decimals).           |
+| **2. Store Diagnosis (After Fix)**      | Store |    **61**     |   **100**   |  `Patched`  | PayClinic used Google Gemini to explain each bug, synthesize exact-string code patches, and proved the fixes in an ephemeral sandbox. All 5 findings are `verified`.                                                   |
+| **3. Agent Attack & Spending Firewall** | Agent |    **78**     |   **100**   | `Protected` | An autonomous shopping agent was attacked by a prompt injection in a product description (`A1`). PayClinic synthesized a runtime spending firewall (`policy.yaml`) that blocked the malicious tool calls in real time. |
+
+---
+
+## 🕹️ Interactive Guided Tour
+
+Follow these steps to experience every capability of the application:
+
+### Step 1: Trigger a Live Diagnosis
+
+1. On the **Runs** page, click the blue **"Diagnose Store"** button in the top action panel.
+2. Watch the **Live Run Telemetry**:
+   - The segmented gauge animates to show the running score.
+   - Progress steps stream in real-time via Server-Sent Events (SSE).
+   - Once completed, the run appears in your history with an initial score of **61/100**.
+
+### Step 2: Inspect a Finding
+
+1. Click on the run to open its detail page.
+2. Use the **AG Grid** findings table to filter by severity or search for `I-02` (Client Price Tampering).
+3. Click on finding `fnd-b2` to open the **Finding Detail Page**:
+   - **Root Cause & Impact**: Read the structured explanation generated by Gemini.
+   - **Where in Code**: See the exact file and line number in `apps/buggy-store/src/orders/capture.ts`.
+   - **Trace Replay**: Inspect the HTTP request and response showing the client passing a tampered `$10.00` price for a `$25.00` item.
+
+### Step 3: Prescribe & Verify a Fix
+
+1. On the Finding Detail page, click the **"Prescribe Fix"** button.
+2. Watch the 4-stage stepper:
+   ```
+   Explaining ➔ Patching ➔ Verifying ➔ Done
+   ```
+3. PayClinic spins up an isolated sandbox in `.payclinic-tmp/`, applies the patch, and re-executes the attack scenario.
+4. Once verified:
+   - The badge flips to **`verified`** (green).
+   - The **Unified Diff Viewer** displays the exact syntax-highlighted code replacement.
+   - The overall run score jumps to **100/100**.
+
+### Step 4: Guard an AI Shopping Agent with the Spending Firewall
+
+1. Return to the **Runs** page and select the **Agent Run** (`A1: Prompt injection in product description`).
+2. Scroll to the **Protect Section**:
+   - Observe the initial attack: A poisoned product description tricked the agent into attempting unauthorized high-dollar purchases.
+   - View the generated **`policy.yaml`** enforcing:
+     - `perTransactionCap: '25.00'`
+     - `sessionBudget: '30.00'`
+     - `merchantAllowlist: ['trusted-merchant.com']`
+     - `dedupeWindowSeconds: 60`
+3. Click **"Protect Agent"**:
+   - PayClinic wraps the agent's payment tools (`GuardedPayTools`).
+   - The attack is re-run.
+   - The **Decision Log (AG Grid)** shows each blocked transaction, the triggering rule (e.g. `R1: perTransactionCap exceeded`), and the score returning to **100/100**.
+
+### Step 5: Explore the Settings Page
+
+Navigate to **Settings** in the top navigation bar:
+
+- **AI Card**: Switch between `fixture` (cached offline outputs) and `gemini` (live Google AI Studio).
+- **Mode Card**: Toggle between `Offline demo` (local simulator) and `Live sandbox` (real PayPal sandbox).
+- **PayPal & GitHub Cards**: Test connections directly in the browser.
+
+---
+
+## 💡 Important Tips & Troubleshooting
+
+### 1. Zero Credentials Required (Offline Demo)
+
+You do not need a PayPal account, Gemini key, or GitHub token to run PayClinic.
+
+- Leave **Mode** set to `Offline demo`.
+- Leave **AI Provider** set to `fixture`.
+  Everything runs locally, deterministically, and instantly.
+
+### 2. Clicking "Save" Before "Test Connection"
+
+When configuring settings in the dashboard:
+
+- Any text you type into the input boxes is held in your browser's draft state.
+- **Always click the blue "Save" button first** before clicking "Test connection". This saves the keys to the backend database so the connection test can use them.
+
+### 3. GitHub Repository Format
+
+When setting up GitHub integration:
+
+- Enter your repository in the format **`username/repository-name`** (for example: `octocat/my-store`).
+- Do not enter just the repository name alone.
+
+### 4. International & Bangladesh Developers
+
+- **Google AI Studio (Gemini API)** is officially supported and freely accessible in Bangladesh ([aistudio.google.com](https://aistudio.google.com/)).
+- **GitHub** is fully accessible worldwide.
+- If you don't have PayPal sandbox credentials, the built-in offline simulator provides 100% feature parity for all scans, invariants, and fixes.
+
+---
+
+## 📚 Further Reading
+
+- [Architecture & Process Model](docs/ARCHITECTURE.md)
+- [Technical Design & Invariants Specification](docs/TECH_DESIGN.md)
+- [Connect Your Own Site / Remote Scanning Guide](docs/CONNECT-YOUR-SITE.md)
+- [Performance & Runtime Benchmarks](docs/PERF.md)
+- [Devpost Submission Draft](docs/DEVPOST.md)

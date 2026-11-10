@@ -1,79 +1,205 @@
-# PayClinic architecture
+# PayClinic System Architecture 🩺⚡
 
-This page summarizes `docs/TECH_DESIGN.md` §1 (the source of truth) and adds the
-stage flow a reader needs first. If this file and TECH_DESIGN disagree,
-TECH_DESIGN wins.
+> **Pure Invariant Verification, Transparent Trace Proxies, and Autonomous Agent Spending Firewalls.**  
+> _The architectural blueprint for the PayClinic payment-safety scanner._
 
-## The three stages
+---
+
+## 🏛️ Core Design Principles
+
+1. **AI Generates and Explains. Deterministic Code Decides.**  
+   Pass/fail status, security scores, and invariant checks never come from an LLM. Invariants are pure mathematical functions that evaluate immutable HTTP traces.
+2. **Prove the Fix Before Trusting It.**  
+   An AI-generated patch is untrusted code. It is compiled and executed exclusively inside an ephemeral sandbox against the original attack scenario. Only when deterministic code confirms the invariant passes is a patch marked `verified`.
+3. **Defense in Depth for Autonomous Agents.**  
+   AI shopping agents are protected by a deterministic spending firewall (`policy.yaml`) that wraps payment tools and evaluates allowlists, caps, budgets, and deduplication windows before tool calls can reach the network.
+4. **Zero-Live-Secret Boundary.**  
+   Live PayPal credentials and hostnames are banned by runtime guards (`assertSafePayPalBase`). All traces, payloads, and logs automatically redact credentials and authorization tokens at the proxy boundary.
+
+---
+
+## 🔄 The Three-Stage Architecture
+
+```mermaid
+flowchart LR
+    subgraph Stage1["1. DIAGNOSE"]
+        A1["Attack Scenarios<br>(B1-B6, A1-A2)"]
+        A2["Transparent Trace Proxy<br>(Port 0 / Redacts Secrets)"]
+        A3["Pure Invariants Engine<br>(I-01 .. I-09)"]
+        A4["Baseline Safety Score<br>(Score: 61 / 78)"]
+        A1 --> A2 --> A3 --> A4
+    end
+
+    subgraph Stage2["2. PRESCRIBE"]
+        B1["Gemini Root-Cause Analysis<br>(Structured JSON Explanation)"]
+        B2["Targeted Patch Synthesis<br>(Exact Search/Replace)"]
+        B3["Ephemeral Sandbox Verify<br>(.payclinic-tmp/verify-*)"]
+        B4["Verified Proof & PR<br>(Score: 100)"]
+        A4 --> B1 --> B2 --> B3 --> B4
+    end
+
+    subgraph Stage3["3. PROTECT"]
+        C1["Spending Firewall Policy<br>(policy.yaml)"]
+        C2["Runtime Tool Guard<br>(GuardedPayTools)"]
+        C3["Intercept & Block Attacks<br>(Rules R1 .. R5)"]
+        C4["Audit Log & Clean Score<br>(Score: 100)"]
+        A4 --> C1 --> C2 --> C3 --> C4
+    end
+```
+
+---
+
+## 🖥️ Process & Networking Topology
+
+PayClinic runs as a coordinated single-process orchestrator managing ephemeral child processes:
+
+```mermaid
+graph TD
+    Client["Client / Judge Browser<br>(React Dashboard :5173 / :4000)"]
+    API["Fastify REST & SSE Server<br>(Port 4000)"]
+    Orchestrator["Orchestrator Core<br>(Node.js ES Modules)"]
+
+    subgraph IsolatedExecution["Isolated Execution"]
+        StoreProcess["Buggy Store Child Process<br>(apps/buggy-store / Ephemeral Port)"]
+        TraceProxy["In-Process Trace Proxy<br>(Ephemeral Port / Secret Redaction)"]
+        TargetEngine{"Target Engine"}
+        SimEngine["PayPal Simulator<br>(Deterministic Orders v2 / Webhooks)"]
+        LiveSandbox["PayPal Developer Sandbox<br>(api-m.sandbox.paypal.com)"]
+    end
+
+    subgraph VerificationSandbox["Verification Sandbox"]
+        TempCopy["Ephemeral Workspace<br>(.payclinic-tmp/verify-uuid/)"]
+    end
+
+    Client -->|REST & SSE Events| API
+    API --> Orchestrator
+    Orchestrator -->|Spawn / Manage| StoreProcess
+    Orchestrator -->|HTTP Scenarios| StoreProcess
+    StoreProcess -->|PAYPAL_BASE_URL| TraceProxy
+    TraceProxy --> TargetEngine
+    TargetEngine -->|Offline Mode| SimEngine
+    TargetEngine -->|Online Mode| LiveSandbox
+    Orchestrator -->|Verify Patch| TempCopy
+```
+
+### Key Architectural Traits:
+
+- **Ephemeral Port Binding (Port 0)**: Child processes (store, simulator, proxy) are allocated random OS ports during execution to eliminate port collisions and permit concurrent testing.
+- **Process Cleanup Guarantees**: All child processes and HTTP listener sockets are cleaned up inside robust `finally` blocks (`SIGTERM` followed by `SIGKILL` on timeout).
+- **In-Memory Trace Proxy**: Intercepts HTTP traffic between the merchant store and PayPal, capturing request/response bodies, status codes, timestamps, and PayPal debug IDs into SQLite.
+
+---
+
+## 📦 Monorepo Workspace Architecture
 
 ```
-        ┌──────────────┐        ┌───────────────┐        ┌──────────────┐
-        │  1 Diagnose  │ ─────▶ │  2 Prescribe  │ ─────▶ │  3 Protect   │
-        └──────────────┘        └───────────────┘        └──────────────┘
-   attack the target with     AI explains the finding   spending firewall in
-   B1..B5 / A1..A2 scenarios, and proposes an exact-   front of the agent's
-   record every HTTP step      string patch, then      pay tools blocks the
-   as immutable evidence       PROVE it: apply in a    attacks (R1..R5) and
-   and run pure invariants     temp copy, re-run the   the score returns to
-   (I-01..I-09) → score        scenario, invariants    100 — decided by pure
-   drops (61 / 78)             must pass → score 100   code, not by the LLM
+packages/
+├── contracts/          # Shared zod schemas, TypeScript types, and test builders
+├── core/               # Orchestrator, runner, trace proxy, invariants, verify sandbox
+├── sim/                # Pure deterministic PayPal simulator (Orders v2, Webhooks, Mock Responses)
+├── cli/                # payclinic CLI entry point, Fastify API server, static UI host
+├── ai/                 # Gemini API integration, prompt templates, fixture cache
+└── firewall/           # Spending firewall engine, GuardedPayTools, YAML policy validator
+
+apps/
+├── buggy-store/        # Planted vulnerability demo store (B1-B6)
+├── shopping-agent/     # Autonomous AI agent loop with PayTools & prompt injection harnesses
+└── dashboard/          # React 18 + Vite 5 + AG Grid dark-themed developer UI
+
+scenarios/              # Deterministic attack scenarios (B1-B6, A1, A2)
+fixtures/               # Golden trace captures, AI explanation fixtures, reference diffs
 ```
 
-Pass/fail **never** comes from an LLM. AI generates and explains; deterministic
-code (invariants, verify loop, firewall `evaluate()`) decides.
+---
 
-## Process model (TECH_DESIGN §1)
+## 🔬 Deterministic Invariant Engine (`packages/core/src/invariants`)
 
-```
-                        ┌───────────────────────── one Node process: the Orchestrator ─────────────────────────┐
- Scenario Runner ──HTTP─▶ Buggy Store (child process, ephemeral port)                                          │
-   (ctx.http records     │        │ HTTP (PAYPAL_BASE_URL = trace proxy)                                       │
-    actor "runner")      │        ▼                                                                            │
-                         │   Trace Proxy (in-process http server, ephemeral port; records actor "store";       │
-                         │        │        can inject PayPal-Mock-Response)                                    │
-                         │        ▼                                                                            │
-                         │   PayPal target:  offline → Simulator (in-process, ephemeral port)                  │
-                         │                    online  → https://api-m.sandbox.paypal.com                       │
-                         └─────────────────────────────────────────────────────────────────────────────────────┘
- REST API (Fastify) :4000      Mock API :4001      Simulator (standalone dev) :4010      Dashboard (Vite) :5173
+PayClinic evaluates 9 pure invariant functions against the recorded trace:
+
+```typescript
+export interface InvariantResult {
+  passed: boolean;
+  severity?: 'critical' | 'high' | 'medium';
+  finding?: InvariantFinding;
+}
+
+export type InvariantFn = (trace: TraceRecord) => InvariantResult;
 ```
 
-- Everything the orchestrator starts uses **port 0** and reports the real port;
-  fixed ports are only for long-running dev servers.
-- Child processes are always killed in `finally` (SIGTERM, then SIGKILL).
-- The trace proxy records every request/response (headers redacted) as steps —
-  the evidence the invariants and the AI both read.
+### Invariant Catalog:
 
-## Package map
+- **`I-01` Single Capture per Cart (`critical`, -20 pts)**: Ensures that for any shopping cart session, at most one successful `orders/:id/capture` occurs.
+- **`I-02` Authoritative Price Integrity (`critical`, -20 pts)**: Verifies that the captured order amount equals the server-calculated sum of catalog items, preventing client price tampering.
+- **`I-03` Non-Negative Refund Bounds (`high`, -12 pts)**: Verifies that cumulative refunded amounts never exceed captured amounts (`refundedTotal <= capturedTotal`).
+- **`I-04` Strict Payment State Synchronization (`critical`, -20 pts)**: Ensures a store order is marked `PAID` if and only if PayPal returned `status === 'COMPLETED'`.
+- **`I-05` Webhook Cryptographic Verification (`high`, -12 pts)**: Rejects forged webhooks and duplicate webhook replay deliveries.
+- **`I-06` Currency Conformance (`medium`, -8 pts)**: Rejects decimal amounts for zero-decimal currencies (JPY) and malformed ISO-4217 strings.
+- **`I-07` Agent Spending Ceilings (`high`, -12 pts)**: Enforces per-transaction caps and session budgets on agent tool actions.
+- **`I-08` Agent Intent & Merchant Allowlists (`critical`, -20 pts)**: Enforces that agent tool calls stay within allowed merchant domains and declared product items.
+- **`I-09` Temporal Deduplication Window (`high`, -12 pts)**: Blocks duplicate agent purchases of the same SKU within a 60-second window.
 
-| Package / app         | Role                                                                    |
-| --------------------- | ----------------------------------------------------------------------- |
-| `packages/contracts`  | frozen zod schemas and types shared by everything                       |
-| `packages/core`       | runner, trace proxy, invariants, score, verify loop, db, orchestrator   |
-| `packages/sim`        | deterministic PayPal Orders v2 simulator (ids from counters, no random) |
-| `packages/cli`        | `payclinic` CLI, REST + SSE API, static dashboard hosting               |
-| `packages/ai`         | Gemini provider, disk cache, fixture/recording providers, prompts       |
-| `packages/firewall`   | policy engine (`evaluate` R1..R5), `GuardedPayTools`, policy YAML       |
-| `apps/buggy-store`    | the demo store with the five planted bugs (B1..B5, B6 optional)         |
-| `apps/shopping-agent` | agent loop, brains (scripted / LLM / recorded), guarded pay tools       |
-| `apps/dashboard`      | React + AG Grid UI over the REST/SSE API                                |
-| `scenarios/`          | the attack scenario functions B1..B6, A1, A2                            |
+---
 
-## Verify loop (why the fix is proven)
+## 🧪 Ephemeral Sandbox Verification Pipeline (`packages/core/src/verify`)
 
-1. Copy `apps/buggy-store/` into `.payclinic-tmp/verify-<uuid>/` (excluding
-   `node_modules` and databases).
-2. Safety checks: at most 5 edits, every file inside `apps/buggy-store/src/`,
-   `replace` ≤ 4000 chars, denylist (`child_process`, `eval(`, `process.env`,
-   …) — any failure stops before anything runs.
-3. Apply each exact-string edit; `search` must occur exactly once.
-4. Start the patched copy and re-run the same scenario; invariants must pass.
+When Gemini prescribes a code patch, PayClinic subjects the fix to rigorous verification:
 
-The working tree is never touched by an AI patch.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Orch as Orchestrator
+    participant AI as Gemini AI Provider
+    participant Guard as AST Safety Denylist
+    participant Disk as .payclinic-tmp/
+    participant Runner as Scenario Runner
 
-## Firewall rule order (first hit decides)
+    Orch->>AI: Send trace evidence & source file
+    AI-->>Orch: Return search/replace patch tuples
+    Orch->>Guard: Evaluate patch AST safety
+    Note over Guard: Denies eval(), process, child_process, globalThis
+    Guard-->>Orch: Patch Approved
+    Orch->>Disk: Copy apps/buggy-store into temp directory
+    Orch->>Disk: Apply exact string replacements
+    Orch->>Runner: Boot patched store on ephemeral port
+    Runner->>Runner: Re-execute same attack scenario
+    Runner-->>Orch: Return verified trace & invariants pass
+    Orch->>Disk: Clean up temporary sandbox directory
+    Orch-->>Orch: Mark finding VERIFIED & update score to 100
+```
 
-R3 merchant allowlist → R1 per-transaction cap → R2 session budget →
-R5 duplicate within window → R4 approval threshold (escalate) → allow.
-Amounts compare in minor units; `sessionSpent` grows only after a successful
-capture.
+---
+
+## 🛡️ Autonomous Agent Spending Firewall (`packages/firewall`)
+
+For AI shopping agents, PayClinic intercepts payment tool calls at runtime using a declarative spending firewall policy:
+
+```mermaid
+flowchart TD
+    ToolCall["Agent calls capture_order(merchant, amount, currency, items)"] --> R3{"R3: Merchant Allowlist"}
+    R3 -- Unauthorized --> BlockR3["BLOCK: Untrusted merchant domain"]
+    R3 -- Allowed --> R1{"R1: Transaction Cap"}
+    R1 -- Exceeded --> BlockR1["BLOCK: Exceeds per-transaction limit"]
+    R1 -- Allowed --> R2{"R2: Session Budget"}
+    R2 -- Exceeded --> BlockR2["BLOCK: Cumulative budget exhausted"]
+    R2 -- Allowed --> R5{"R5: Dedupe Window"}
+    R5 -- Duplicate within 60s --> BlockR5["BLOCK: Duplicate purchase in window"]
+    R5 -- Clean --> R4{"R4: High-Value Threshold"}
+    R4 -- Exceeds Threshold --> Escalate["ESCALATE: Require human authorization"]
+    R4 -- Within Normal Limits --> Allow["ALLOW: Forward call to PayPal"]
+```
+
+---
+
+## 🔒 Security & SSRF Target Guard
+
+PayClinic includes enterprise-grade guardrails for remote project scanning:
+
+1. **DNS Pinning & Private IP Blocking**:
+   `packages/core/src/runner/target-guard.ts` resolves remote domains and denies requests to:
+   - Loopback (`127.0.0.0/8`, `::1`)
+   - Private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`)
+   - Cloud metadata endpoints (`169.254.169.254`)
+   - IPv4-mapped IPv6 hex addresses (`::ffff:7f00:1`, `::ffff:a9fe:a9fe`)
+2. **Redirect Control**: Recorded HTTP clients use `redirect: 'manual'` to prevent open-redirect SSRF evasions.
+3. **Encrypted Storage**: Sensitive settings are encrypted at rest with AES-256-GCM using keys stored in `data/.secret`.
+4. **Header Redaction**: `SECRET_HEADERS` filters out `authorization`, `paypal-auth-assertion`, `x-payclinic-admin`, and API keys before traces reach SQLite or external LLMs.
