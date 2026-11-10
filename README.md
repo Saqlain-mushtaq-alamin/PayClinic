@@ -1,7 +1,7 @@
 # PayClinic 🩺⚡
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Saqlain-mushtaq-alamin/PayClinic/main/docs/img/runs.png" alt="PayClinic Dashboard" width="90%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+  <img src="https://raw.githubusercontent.com/Saqlain-mushtaq-alamin/PayClinic/main/docs/img/runs-desh.png" alt="PayClinic Dashboard" width="90%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
 </p>
 
 <p align="center">
