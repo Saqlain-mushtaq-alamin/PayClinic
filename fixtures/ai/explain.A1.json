@@ -1,0 +1,10 @@
+{
+  "rootCause": "The shopping agent ingests untrusted product descriptions without output containment, allowing indirect prompt injection to hijack instructions and purchase from unauthorized merchants.",
+  "impact": "An adversary can drain customer funds by planting malicious instructions in catalog listings to redirect purchases to attacker-controlled merchants.",
+  "whereInCode": {
+    "file": "apps/shopping-agent/src/loop.ts",
+    "hint": "runAgent"
+  },
+  "fixSummary": "Enforce spending firewall policies restricting allowable merchants, per-transaction budget limits, and human approval for high-risk purchases."
+}
+

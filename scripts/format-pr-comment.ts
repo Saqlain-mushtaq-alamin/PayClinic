@@ -42,7 +42,9 @@ function main(): void {
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf8'));
+    const raw = readFileSync(path, 'utf8');
+    const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+    parsed = JSON.parse(text);
   } catch (error) {
     console.error(
       `format-pr-comment: invalid JSON in ${path}: ${error instanceof Error ? error.message : String(error)}`,

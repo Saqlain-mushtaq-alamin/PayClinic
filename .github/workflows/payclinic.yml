@@ -26,9 +26,16 @@ jobs:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('payclinic-comment.md', 'utf8');
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
-            const existing = comments.find((c) => c.body && c.body.includes('<!-- payclinic-report -->'));
-            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            await core.summary.addRaw(body).write();
+            try {
+              const { owner, repo } = context.repo;
+              const issue_number = context.issue.number;
+              if (issue_number) {
+                const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+                const existing = comments.find((c) => c.body && c.body.includes('<!-- payclinic-report -->'));
+                if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+                else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+              }
+            } catch (err) {
+              core.warning(`Cannot post PR comment (fork PR or insufficient token permissions): ${err.message}`);
+            }

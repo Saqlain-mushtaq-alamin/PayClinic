@@ -13,9 +13,23 @@ export class UnsafeTargetError extends Error {
 export function isPrivateOrLocalIp(ip: string): boolean {
   const clean = ip.trim().toLowerCase();
 
-  // IPv4-mapped IPv6, e.g. ::ffff:127.0.0.1
-  if (clean.startsWith('::ffff:')) {
-    return isPrivateOrLocalIp(clean.slice(7));
+  // IPv4-mapped IPv6 (dotted decimal or hex representation)
+  const ffffIdx = clean.indexOf(':ffff:');
+  if (ffffIdx !== -1) {
+    const rest = clean.slice(ffffIdx + 6);
+    if (net.isIPv4(rest)) {
+      return isPrivateOrLocalIp(rest);
+    }
+    const hexParts = rest.split(':');
+    if (hexParts.length === 2 && hexParts.every((p) => /^[0-9a-f]{1,4}$/i.test(p))) {
+      const h1 = parseInt(hexParts[0]!, 16);
+      const h2 = parseInt(hexParts[1]!, 16);
+      const b1 = (h1 >> 8) & 0xff;
+      const b2 = h1 & 0xff;
+      const b3 = (h2 >> 8) & 0xff;
+      const b4 = h2 & 0xff;
+      return isPrivateOrLocalIp(`${b1}.${b2}.${b3}.${b4}`);
+    }
   }
 
   // IPv4 address
@@ -137,10 +151,12 @@ export async function assertSafeTarget(
  * redirects to different hosts.
  */
 export async function safeFetch(
-  urlStr: string,
+  input: URL | RequestInfo,
   init?: RequestInit,
   opts?: AssertSafeTargetOptions,
 ): Promise<Response> {
+  const urlStr =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
   const { url: initialUrl } = await assertSafeTarget(urlStr, opts);
 
   // Manual redirect handling to enforce no redirects to a different host

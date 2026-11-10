@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
@@ -29,7 +30,13 @@ export function openDb(path: string): Database {
     db.prepare(
       `INSERT OR IGNORE INTO projects (id, name, kind, proxy_token, created_at)
        VALUES (?, ?, ?, ?, ?)`,
-    ).run('builtin', 'Demo store', 'builtin', 'builtin', new Date().toISOString());
+    ).run(
+      'builtin',
+      'Demo store',
+      'builtin',
+      randomUUID().replace(/-/g, ''),
+      new Date().toISOString(),
+    );
   }
 
   return db;

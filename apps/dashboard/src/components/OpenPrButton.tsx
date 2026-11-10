@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { api, type ApiClient } from '../api/client';
+import { isSafeHttpUrl } from '../lib/url';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
 
@@ -69,11 +70,14 @@ export function OpenPrButton({ findingId, client = api, onPrOpened }: OpenPrButt
           'Open PR'
         )}
       </Button>
-      {state.kind === 'opened' && (
-        <a data-testid="open-pr-link" href={state.url} target="_blank" rel="noreferrer">
-          View pull request
-        </a>
-      )}
+      {state.kind === 'opened' &&
+        (isSafeHttpUrl(state.url) ? (
+          <a data-testid="open-pr-link" href={state.url} target="_blank" rel="noreferrer">
+            View pull request
+          </a>
+        ) : (
+          <span data-testid="open-pr-link">{state.url}</span>
+        ))}
       {state.kind === 'reason' && <span data-testid="open-pr-reason">{state.message}</span>}
       {state.kind === 'error' && <p role="alert">{state.message}</p>}
     </div>

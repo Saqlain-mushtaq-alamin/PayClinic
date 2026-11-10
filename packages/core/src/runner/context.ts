@@ -130,6 +130,7 @@ export function createRecordedHttp(o: {
         const response = await fetchImpl(url, {
           method,
           headers,
+          redirect: 'manual',
           ...(body === undefined || method === 'GET' || method === 'HEAD'
             ? {}
             : { body: JSON.stringify(body) }),

@@ -4,15 +4,24 @@ import type { PatchEdit } from '@payclinic/contracts';
 const STORE_SRC_PREFIX = 'apps/buggy-store/src/';
 const DEFAULT_MAX_EDITS = 5;
 const MAX_REPLACE_CHARS = 4000;
-const DENYLIST = [
-  'child_process',
-  'eval(',
-  'new Function',
-  'process.env',
-  'require(',
-  'import(',
-  'fs.',
-  'writeFile',
+const DENYLIST_PATTERNS: RegExp[] = [
+  /\bchild_process\b/i,
+  /\bcluster\b/i,
+  /\bworker_threads\b/i,
+  /\bvm\b/i,
+  /\b(fs|node:fs)\b/i,
+  /\bwriteFile\b/i,
+  /\bprocess\b/i,
+  /\bglobalThis\b/i,
+  /\bwindow\b/i,
+  /\b__proto__\b/i,
+  /\.constructor\s*\(/i,
+  /\[['"`]constructor['"`]\]/i,
+  /\beval\s*\(/i,
+  /\bFunction\s*\(/i,
+  /\brequire\s*\(/i,
+  /\bimport\s*[\(\{]/i,
+  /https?:\/\//i,
 ];
 
 export interface CheckEditsSafetyOptions {
@@ -61,14 +70,13 @@ export function checkEditsSafety(
       };
     }
 
-    for (const token of DENYLIST) {
-      if (edit.replace.includes(token)) {
-        return { ok: false, reason: `Edit ${index + 1} replace text contains "${token}"` };
+    for (const pattern of DENYLIST_PATTERNS) {
+      if (pattern.test(edit.replace)) {
+        return {
+          ok: false,
+          reason: `Edit ${index + 1} replace text matches restricted pattern ${pattern.toString()}`,
+        };
       }
-    }
-
-    if (/https?:\/\//i.test(edit.replace)) {
-      return { ok: false, reason: `Edit ${index + 1} replace text contains a literal URL` };
     }
   }
 

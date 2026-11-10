@@ -45,7 +45,11 @@ export class SettingsStore {
       { value_encrypted: string } | undefined;
 
     if (!row) return null;
-    return decrypt(row.value_encrypted);
+    try {
+      return decrypt(row.value_encrypted);
+    } catch {
+      return null;
+    }
   }
 
   /** Encrypts and persists a whitelisted setting. */
@@ -58,8 +62,8 @@ export class SettingsStore {
       throw new Error(`Invalid mode: must be 'offline' or 'online'`);
     }
 
-    if (key === 'aiProvider' && val !== 'fixture' && val !== 'gemini') {
-      throw new Error(`Invalid aiProvider: must be 'fixture' or 'gemini'`);
+    if (key === 'aiProvider' && val !== 'fixture' && val !== 'gemini' && val !== 'fake') {
+      throw new Error(`Invalid aiProvider: must be 'fixture', 'gemini', or 'fake'`);
     }
 
     const encrypted = encrypt(val);

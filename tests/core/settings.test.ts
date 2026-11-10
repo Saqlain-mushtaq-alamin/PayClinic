@@ -127,6 +127,21 @@ describe('Settings Backend & Crypto', () => {
       'online mode requires PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET',
     );
   });
+
+  it('SettingsStore.get() fails gracefully when ciphertext cannot be decrypted', () => {
+    const db = openDb(':memory:');
+    const store = new SettingsStore(db);
+    // Directly insert an invalid/un-decryptable ciphertext payload
+    db.prepare('INSERT INTO settings (key, value_encrypted, updated_at) VALUES (?, ?, ?)').run(
+      'geminiApiKey',
+      'invalid.base64.cipher',
+      new Date().toISOString(),
+    );
+
+    expect(store.get('geminiApiKey')).toBeNull();
+    const masked = store.masked();
+    expect(masked.geminiApiKey).toEqual({ configured: false, hint: '' });
+  });
 });
 
 describe('Settings API Routes & Admin Gate', () => {

@@ -29,10 +29,24 @@ async function setup() {
 }
 
 describe('redaction', () => {
-  it('masks authorization and secret headers', () => {
+  it('masks authorization, admin, and secret headers', () => {
     expect(
-      redactHeaders({ Authorization: 'Bearer x', 'x-client-secret': 'y', accept: 'a' }),
-    ).toEqual({ authorization: '***', 'x-client-secret': '***', accept: 'a' });
+      redactHeaders({
+        Authorization: 'Bearer x',
+        'x-client-secret': 'y',
+        'x-payclinic-admin': 'super-secret-admin',
+        'api-key': 'secret-key-123',
+        'paypal-auth-assertion': 'jwt-assertion',
+        accept: 'a',
+      }),
+    ).toEqual({
+      authorization: '***',
+      'x-client-secret': '***',
+      'x-payclinic-admin': '***',
+      'api-key': '***',
+      'paypal-auth-assertion': '***',
+      accept: 'a',
+    });
   });
 });
 

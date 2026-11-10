@@ -90,4 +90,10 @@ describe('firewall engine', () => {
         hist(),
       ).action,
     ).toBe('allow'));
+  it('blocks when request currency does not match policy currency', () =>
+    expect(fw.evaluate(req({ currency: 'EUR' }), policy, hist())).toMatchObject({
+      action: 'block',
+      ruleId: 'R1',
+      reason: expect.stringContaining('Currency EUR does not match policy currency USD'),
+    }));
 });

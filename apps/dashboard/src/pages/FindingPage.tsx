@@ -17,6 +17,7 @@ import { Badge, type BadgeTone } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { ErrorState } from '../components/ui/ErrorState';
 import { Spinner } from '../components/ui/Spinner';
+import { isSafeHttpUrl } from '../lib/url';
 
 export interface FindingPageProps {
   client?: Pick<ApiClient, 'getFinding' | 'getRun' | 'prescribe'> &
@@ -239,16 +240,26 @@ export function FindingPage({ client: injectedClient, eventSourceCtor }: Finding
                 {prUrl && (
                   <div className="mt-3 text-sm" data-testid="finding-pr-url-box">
                     <span className="text-muted">Pull Request: </span>
-                    <a
-                      data-testid="finding-pr-link"
-                      href={prUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium underline"
-                      style={{ wordBreak: 'break-all' }}
-                    >
-                      {prUrl}
-                    </a>
+                    {isSafeHttpUrl(prUrl) ? (
+                      <a
+                        data-testid="finding-pr-link"
+                        href={prUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium underline"
+                        style={{ wordBreak: 'break-all' }}
+                      >
+                        {prUrl}
+                      </a>
+                    ) : (
+                      <span
+                        data-testid="finding-pr-link"
+                        className="font-medium"
+                        style={{ wordBreak: 'break-all' }}
+                      >
+                        {prUrl}
+                      </span>
+                    )}
                   </div>
                 )}
               </Card>

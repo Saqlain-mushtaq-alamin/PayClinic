@@ -26,6 +26,7 @@ import type {
   ProjectUpdateRequest,
 } from '@payclinic/contracts';
 import { api, onAuthRequired, setAdminToken, type ApiClient } from '../api/client';
+import { isSafeHttpUrl } from '../lib/url';
 import { useProjects } from '../api/hooks';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -300,6 +301,26 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
         </div>
       </div>
 
+      <div
+        className="projects-privacy-notice"
+        data-testid="projects-privacy-notice"
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          marginBottom: '1.5rem',
+          fontSize: '0.84rem',
+          color: '#94a3b8',
+          lineHeight: '1.4',
+        }}
+      >
+        <strong>Data Privacy Disclosure:</strong> Diagnostic traces and relevant store source files
+        are transmitted to Google Gemini for root-cause analysis and patch proposals. When you open
+        a PR, PayClinic commits changes to your configured GitHub repo. Credentials and tokens are
+        always masked and never sent to external AI models.
+      </div>
+
       {loading && (
         <div className="projects-loading" data-testid="projects-loading">
           <Spinner label="Loading projects…" />
@@ -342,15 +363,19 @@ export function ProjectsPage({ client = api }: ProjectsPageProps) {
                     <span className="project-card__label">Base URL</span>
                     <span className="project-card__value">
                       {p.baseUrl ? (
-                        <a
-                          href={p.baseUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="project-card__link"
-                        >
-                          {p.baseUrl}
-                          <ExternalLink size={12} />
-                        </a>
+                        isSafeHttpUrl(p.baseUrl) ? (
+                          <a
+                            href={p.baseUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="project-card__link"
+                          >
+                            {p.baseUrl}
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <span className="project-card__link text-muted">{p.baseUrl}</span>
+                        )
                       ) : (
                         <span className="text-muted">None (local test store)</span>
                       )}

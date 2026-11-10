@@ -12,6 +12,7 @@ export default function App() {
     <Shell>
       <Routes>
         <Route path="/" element={<RunsPage />} />
+        <Route path="/runs" element={<RunsPage />} />
         <Route path="/runs/:id" element={<RunPage />} />
         <Route path="/runs/:id/findings/:fid" element={<FindingPage />} />
         <Route path="/projects" element={<ProjectsPage />} />

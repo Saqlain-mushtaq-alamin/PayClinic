@@ -11,7 +11,7 @@ import type {
 import { startSim } from '@payclinic/sim';
 import type { Config } from '../config';
 import type { Repos } from '../db/repos';
-import { INVARIANTS, runInvariants } from '../invariants';
+import { runInvariants } from '../invariants';
 import { decrypt } from '../settings/crypto';
 import { createRecorder, type StepRecorder } from '../trace/recorder';
 import {
@@ -22,6 +22,7 @@ import {
 } from '../trace/proxy';
 import { createApprover as selectApprover, type BuyerApprover } from './approvers';
 import { buildContext, createRecordedHttp, type RecordedHttp, type ScenarioFn } from './context';
+import { safeFetch } from './target-guard';
 import { startStore, type RunningStore, type StartStoreOptions } from './store-process';
 import { assertSafeTarget } from './target-guard';
 
@@ -256,7 +257,7 @@ export async function executeScenarios(
         }
       }
 
-      http = createRecordedHttp({ recorder, baseUrl: remoteStoreUrl });
+      http = createRecordedHttp({ recorder, baseUrl: remoteStoreUrl, fetchImpl: safeFetch });
       approver = createApprover(http, activeSimUrl);
 
       try {
@@ -353,9 +354,7 @@ export async function executeScenarios(
           ...(declared.agent === undefined ? {} : { agent: declared.agent }),
         };
 
-        const invariantKeys = SCENARIO_META[key].invariantKeys.filter(
-          (invariantKey) => INVARIANTS[invariantKey] !== undefined,
-        );
+        const invariantKeys = SCENARIO_META[key].invariantKeys;
 
         const runnerSteps = drain(recorder);
         const proxySteps = isRemote && env.repos ? env.repos.listSteps(env.runId, scenarioId) : [];

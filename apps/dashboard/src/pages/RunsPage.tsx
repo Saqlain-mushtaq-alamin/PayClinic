@@ -155,8 +155,8 @@ export function RunsPage({ client }: RunsPageProps) {
                   type="text"
                   data-testid="search-input"
                   className="recent-runs__search-input"
-                  placeholder="Search runs, findings, traces…"
-                  aria-label="Search runs, findings, traces"
+                  placeholder="Search runs by ID, target, or scenario…"
+                  aria-label="Search runs by ID, target, or scenario"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

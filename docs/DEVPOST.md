@@ -1,9 +1,14 @@
-# Devpost draft
+# Devpost Submission Form Draft
 
-Plain text for the Devpost submission form. Numbers are measured, not hoped
-for: store score 61 → 100 with 5/5 bugs fixed and verified, agent score
-78 → 100, offline diagnose of B1..B5 in about a second, prescribe+verify of a
-single finding in under a second (see `docs/PERF.md`).
+**Tagline:** Attack a PayPal checkout, prove what broke, let AI propose the fix — then prove the fix.
+
+**Built With:**
+`PayPal Orders v2 API`, `PayPal Sandbox`, `Google Gemini API`, `TypeScript`, `Node.js`, `Fastify`, `React`, `Vite`, `AG Grid Community`, `SQLite`, `Vitest`, `Zod`, `Better-Sqlite3`, `Render`
+
+**Try-it Link (Live Demo):** `https://payclinic.onrender.com` (Note: on Render free tier, initial cold start after idle takes ~50s)  
+**GitHub Repository:** `https://github.com/payclinic/PayClinic` (Public, MIT Licensed, zero secrets)
+
+---
 
 ## Inspiration
 
@@ -118,7 +123,7 @@ code path — only the base URL and provider change.
 - **Zero-key demo**: a stranger can clone, run two commands, and see the whole
   product offline; the same pipeline runs against the real PayPal sandbox in
   online mode.
-- **~445 tests** across 74 files, all green in CI on every pull request, with
+- **554 tests** across 89 files, all green in CI on every pull request, with
   the offline pipeline itself running in CI and its findings table posted as a
   PR comment.
 - A deployed free-tier Render instance serving the API and dashboard from one
