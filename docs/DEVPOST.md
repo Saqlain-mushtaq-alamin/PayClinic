@@ -1,155 +1,92 @@
 # Devpost Submission Form Draft
 
-**Tagline:** Attack a PayPal checkout, prove what broke, let AI propose the fix — then prove the fix.
+**Tagline:** Attack a PayPal checkout, prove what broke with pure invariants, let AI prescribe the fix — then prove the fix.
 
 **Built With:**
-`PayPal Orders v2 API`, `PayPal Sandbox`, `Google Gemini API`, `TypeScript`, `Node.js`, `Fastify`, `React`, `Vite`, `AG Grid Community`, `SQLite`, `Vitest`, `Zod`, `Better-Sqlite3`, `Render`
+`PayPal Orders v2 API`, `PayPal Sandbox`, `Google Gemini API (2.5 Flash)`, `TypeScript 5.6`, `Node.js`, `Fastify v4`, `React 18`, `Vite 5`, `AG Grid Community`, `SQLite (WAL mode)`, `Vitest v2`, `Zod`, `Better-Sqlite3`, `Render`
 
-**Try-it Link (Live Demo):** `https://payclinic.onrender.com` (Note: on Render free tier, initial cold start after idle takes ~50s)  
-**GitHub Repository:** `https://github.com/payclinic/PayClinic` (Public, MIT Licensed, zero secrets)
+**Try-it Link (Live Demo):** `https://payclinic.onrender.com` _(Note: on Render free tier, initial cold start after idle takes ~50s)_  
+**GitHub Repository:** `https://github.com/Saqlain-mushtaq-alamin/PayClinic` _(Public, MIT Licensed, zero secrets)_
 
 ---
 
 ## Inspiration
 
-Every checkout integration ships the same fear: money state that quietly goes
-wrong. Double charges, wrong amounts, orders marked paid when PayPal said no.
-Usually you find these bugs with a handful of integration tests — and the tests
-only cover the paths someone remembered to test.
+Every checkout integration ships with the same fear: money state quietly going wrong in production. Double charges, client-tampered amounts, orders marked paid when PayPal declined, or forged webhooks triggering unauthorized fulfillment. Most teams rely on a handful of integration tests that only cover the narrow paths someone remembered to write.
 
-We wanted the opposite: a small set of **business invariants** that must hold
-for _any_ trace — "one cart is never captured twice", "the captured amount
-equals what the cart costs", "an order is paid if and only if PayPal said
-COMPLETED" — and an engine that attacks the checkout, records everything, and
-lets those invariants judge the result. And because finding a bug is only half
-the work, we added an AI layer that explains the finding and proposes a patch —
-but the patch only counts if the engine can **prove** it: same attack, clean
-trace.
+We wanted the exact opposite: a small set of **pure mathematical business invariants** that must hold for _any_ transaction trace:
 
-The same lens applies to AI shopping agents, which is this hackathon's new
-attack surface: an agent with a payment tool can be talked into overspending by
-a poisoned product description. So PayClinic also ships a spending firewall
-that decides with code, not prompts.
+- _"One cart is never captured twice"_
+- _"The captured amount equals what the server calculated"_
+- _"An order is marked paid if and only if PayPal returned COMPLETED"_
+- _"Webhooks are cryptographically authenticated and idempotent"_
+
+We built an engine that attacks the checkout in an isolated sandbox, records every HTTP step as immutable evidence, and lets pure invariant code pass or fail the integration. Because discovering a vulnerability is only half the battle, we added an AI prescription layer with Google Gemini that explains the failure and proposes targeted code patches. Crucially, the patch only counts if the engine can **prove** it: PayClinic re-runs the attack against the patched code inside an ephemeral sandbox before marking the finding verified.
+
+The same principles protect autonomous AI shopping agents—the newest attack surface. An agent with payment tools can easily be manipulated by prompt injections in product descriptions. PayClinic synthesizes an enforceable runtime **spending firewall** (`policy.yaml`) that governs payment tools with deterministic code, not prompts.
+
+---
 
 ## What it does
 
-PayClinic runs three stages against a demo store (and an AI shopping agent):
+PayClinic operates across three automated stages:
 
-1. **Diagnose** — scripted scenarios attack the checkout: double-click creates
-   two orders for one cart (B1), the browser-supplied total is trusted (B2), a
-   webhook is replayed and forged (B3), an order is marked paid before the
-   capture result is checked (B4), a zero-decimal currency is sent with
-   decimals (B5). Every HTTP step is recorded as immutable evidence. Nine pure
-   invariants (I-01..I-09) read the trace and report findings: the store lands
-   at **61/100**, the agent at **78/100**.
-2. **Prescribe** — the AI layer explains each finding (root cause, impact,
-   where in the code) and proposes a patch as exact-string edits. PayClinic
-   then **verifies** the patch in a temp copy of the store: apply, restart,
-   re-run the same attack, invariants must pass. All five store bugs fix and
-   verify — **5/5, score 100** — and the whole offline loop is fast: diagnosing
-   B1..B5 takes about 0.9 s, prescribing and verifying one finding about 0.7 s.
-3. **Protect** — a spending firewall wraps the agent's payment tools. A prompt
-   injection hidden in a product description tells the agent to overspend from
-   a non-allowlisted merchant (A1); a runaway retry loop buys the same item
-   five times (A2). With the firewall generated from the findings, both attacks
-   are blocked — **78 → 100** — with every decision logged with its rule id.
+1. **🩺 Diagnose** — Scripted attacks simulate real-world vulnerabilities against the store (`B1`–`B5`) and the AI agent (`A1`, `A2`):
+   - `B1`: Double-click race conditions producing multiple captures.
+   - `B2`: Client-side price tampering (trusting browser-supplied totals).
+   - `B3`: Unverified and replayed PayPal webhook events.
+   - `B4`: Premature fulfillment before verifying capture completion.
+   - `B5`: Formatting errors in zero-decimal currencies (`JPY`).
+     Every HTTP request and response is captured through a transparent recording proxy. Nine pure invariants (`I-01`..`I-09`) grade the trace: the store demo starts at **61/100**, and the agent at **78/100**.
 
-The dashboard shows runs, findings, the recorded trace step-by-step, the AI
-explanation and diff, the verify result, and the firewall decision log. From a
-verified finding it can open a pull request with the fix on a demo repository.
+2. **💊 Prescribe** — Google Gemini analyzes the trace and source code to produce structured root-cause explanations and targeted code patches. PayClinic then **proves** the patch inside an ephemeral sandbox (`.payclinic-tmp/`): applies the edit, starts the patched store, and re-executes the attack scenario. All five store vulnerabilities verify cleanly — **5/5 verified, score elevates from 61 ➔ 100**. Diagnosing all five bugs takes ~0.9s offline; prescribing and proving a fix takes ~0.7s.
 
-Everything runs **offline with zero API keys**: a deterministic PayPal
-simulator implements the Orders v2 subset, and AI outputs come from recorded
-fixtures. Online mode with a real PayPal sandbox and a Gemini key is the same
-code path — only the base URL and provider change.
+3. **🛡️ Protect** — A runtime spending firewall wraps autonomous agent payment tools (`GuardedPayTools`). When a prompt injection hidden in a product description manipulates the agent into overspending (`A1`), or a runaway retry loop buys the same item repeatedly (`A2`), the firewall intercepts and blocks the tool calls before they reach the network. The agent score returns from **78 ➔ 100**, with every decision logged in real-time.
+
+### Interactive Dashboard Features:
+
+- **Real-Time Telemetry (SSE)**: Watch diagnostics stream live with zero page refreshes.
+- **Segmented Animated Gauges**: Smooth visual score transitions between runs.
+- **AG Grid Findings & Decision Logs**: High-density interactive data grids with filtering, sorting, and severity badges.
+- **HTTP Trace Timeline & Replay**: Inspect every request, response, and PayPal debug ID with automatic credential masking.
+- **Unified Diff Viewer**: Side-by-side and inline syntax-highlighted code patches.
+- **One-Click GitHub Pull Requests**: Automatically create branches and open PRs with verified fixes.
+- **Remote Store Scanner**: Scan external stores via reverse proxy URLs (`/paypal-proxy/:token/*`) protected by SSRF target guards.
+
+---
 
 ## How we built it
 
-- **TypeScript end to end**, strict mode, Node ≥ 20.6. Workspaces:
-  `contracts` (frozen zod schemas), `core` (runner, trace proxy, invariants,
-  score, verify loop, SQLite persistence, orchestrator), `sim` (PayPal
-  simulator), `cli` (CLI + Fastify REST/SSE API), `ai`, `firewall`,
-  `buggy-store`, `shopping-agent`, and a React + **AG Grid Community**
-  dashboard.
-- **The trace proxy** sits between the store and PayPal, records every
-  request/response (redacting authorization headers and tokens), and can inject
-  PayPal-Mock-Response headers so scenarios can force declines deterministically.
-- **Invariants are pure functions** over the recorded trace plus declared cart
-  ground truth; money is handled in minor units with bigint, never floats.
-- **Patches are exact-string edits** (`file`, `search`, `replace`), not unified
-  diffs — LLMs are reliable at "replace this exact text" and bad at hunk line
-  numbers. The verify loop applies them to a copy in a temp directory, with a
-  denylist and path checks before anything runs.
-- **The AI layer** uses the Gemini API in JSON mode with schema validation and
-  one retry, a disk cache, fixture and recording providers, and a template
-  fallback so the pipeline never returns an unappliable patch.
-- **The firewall** is a pure `evaluate()` (rule order R3 allowlist → R1
-  per-transaction cap → R2 budget → R5 dedupe → R4 escalation) wrapped around
-  the agent's pay tools; policies serialize to readable YAML.
-- **CI**: every pull request runs typecheck, lint and ~445 tests; a separate
-  workflow runs the offline pipeline through the real orchestrator, a bot posts
-  the findings table as a PR comment, and the report is uploaded as an artifact.
-  The demo deploys to Render from a blueprint (`render.yaml`).
-- **Development process**: a card-based plan (`docs/plan/`) with
-  tests-first cards, one branch per card, and a rule that AI-generated code
-  never decides pass/fail. Built with AI coding agents (OpenCode) under that
-  constraint.
+- **TypeScript End-to-End**: Strict mode across 6 modular packages (`contracts`, `core`, `sim`, `cli`, `ai`, `firewall`) and 3 apps (`buggy-store`, `shopping-agent`, `dashboard`).
+- **Transparent Trace Proxy**: In-process proxy capturing raw HTTP exchanges, injecting `PayPal-Mock-Response` headers for negative testing, and sanitizing authorization secrets before persistence.
+- **Pure Invariant Code**: Evaluates immutable trace records with integer minor units (`bigint`), completely eliminating floating-point rounding bugs.
+- **Deterministic Verification Loop**: Clones the target codebase into temporary isolation, runs an AST denylist check (blocking `eval`, `process`, `globalThis`), applies exact string replacements, and re-tests against the attack.
+- **AI Diagnostics & Prescriptions**: Google Gemini (via `@google/genai` and `gemini-2.5-flash`) structured outputs, combined with offline fixture fallbacks for instant $0 zero-credential execution.
+- **Declarative Spending Firewall**: Evaluates rule order (`R3 allowlist` ➔ `R1 transaction cap` ➔ `R2 session budget` ➔ `R5 dedupe window` ➔ `R4 approval escalation`) on agent payment tool invocations.
+- **Comprehensive Test Suite**: **554 tests across 89 test suites** covering invariants, crypto, proxy routing, firewall evaluation, and UI interactions with 100% green CI.
 
-## Challenges
+---
 
-- **Keeping the LLM out of the judgment seat.** It was tempting to let the
-  model "confirm" fixes. We enforced the boundary structurally: invariants,
-  score and the firewall are pure code; the AI only explains and proposes.
-- **Determinism.** Tests and demos must not depend on wall-clock time, random
-  ids, ports or the network. The simulator issues ids from counters
-  (`ORD0001`, `CAP0001`), clocks are injected, servers listen on port 0.
-- **Trustworthy patches.** Early designs used unified diffs; models kept
-  getting hunk offsets wrong. Exact-string edits with an "exactly once" rule
-  made failures loud and verification honest.
-- **Making failure observable.** A declined capture that still marks the order
-  paid (B4) taught us to record _state_ (merchant orders, webhook deliveries)
-  alongside the HTTP trace, so invariants can check both.
-- **Performance without cheating.** The first naive design booted a store
-  process per scenario. Reusing one process, excluding `node_modules` from
-  verify copies, and keeping everything in-memory on loopback brought the full
-  offline diagnose down to under a second.
+## Challenges we overcame
 
-## Accomplishments
+- **Keeping the LLM out of the judge's seat**: It was tempting to let Gemini decide if a fix was good. We strictly forbade LLM pass/fail decisions: pure invariant code is the sole authority; AI only suggests and explains.
+- **True Determinism**: Tests and demos cannot depend on unpredictable wall-clock time, random IDs, or open ports. The simulator uses monotonic sequence counters (`ORD0001`, `CAP0001`), clocks are injected, and processes bind to ephemeral port 0.
+- **Trustworthy Code Patches**: Early prototypes attempted unified diffs, but LLMs frequently miscalculated hunk line offsets. We pioneered exact-string replacement tuples (`file`, `search`, `replace`) with strict "occurs exactly once" validation.
+- **SSRF Hardening**: External store scanning required robust defense against DNS rebinding, internal subnets, and hex-encoded IPv4-mapped IPv6 evasions.
 
-- **5/5 planted bugs** found by the invariants, explained by the AI layer,
-  patched, and **proven fixed** by the verify loop: store score **61 → 100**.
-- **Both agent attacks** (prompt injection, runaway retry) blocked by the
-  spending firewall with logged decisions: agent score **78 → 100**.
-- **Zero-key demo**: a stranger can clone, run two commands, and see the whole
-  product offline; the same pipeline runs against the real PayPal sandbox in
-  online mode.
-- **554 tests** across 89 files, all green in CI on every pull request, with
-  the offline pipeline itself running in CI and its findings table posted as a
-  PR comment.
-- A deployed free-tier Render instance serving the API and dashboard from one
-  process.
+---
 
-## What we learned
+## Accomplishments that we're proud of
 
-- **Invariants beat test cases for money state.** One invariant ("one capture
-  per cart") catches bug classes that many point-tests miss, and it keeps
-  working on code you did not write.
-- **Verification is the product.** An AI-suggested patch is a hypothesis; the
-  re-run in a temp copy is what turns it into a fix. This also made the AI
-  layer easier to trust: bad proposals simply fail loudly.
-- **Determinism is a feature, not a constraint.** Because everything is
-  deterministic, CI, the demo, and the verify loop all run in seconds with no
-  credentials — and the recorded fixtures make the "AI" part reproducible.
-- **Treat model output as data.** Schema-validate everything, redact evidence,
-  state in the prompt that content is untrusted — and keep a code-only fallback.
+- **100% Automated Proof of Fixes**: 5/5 planted checkout vulnerabilities detected, explained, patched, and proven fixed by deterministic code (**61 ➔ 100**).
+- **Novel Agent Guardrails**: Demonstrated a working spending firewall that stops real prompt injection attacks against autonomous shopping agents (**78 ➔ 100**).
+- **Instant $0 Zero-Key Demo**: A judge or developer can clone the repo and run the full stack offline without entering API keys or spending money.
+- **Production-Grade Engineering**: 554 tests, strict TypeScript, zero secret leaks across full git history, AG Grid integration, and clean Render deployment.
 
-## What's next
+---
 
-- Browser-based buyer approval in online mode (Playwright approver) and card
-  payments, completing the real-sandbox story.
-- An MCP wrapper so the spending firewall can guard any agent framework's
-  payment tools, not just our in-process agent.
-- More scenarios and invariants (partial captures, multi-currency carts,
-  disputes), and B6 (refund over-capture) in the demo path.
-- The open-PR flow hardened for real forks, and a hosted demo with persistent
-  storage beyond the free tier.
+## What's next for PayClinic
+
+- **Multi-Tenant Team Workspace**: Role-based access control (RBAC) and team projects for enterprise security teams.
+- **Model Context Protocol (MCP) Server**: Expose the spending firewall as a universal MCP tool server to guard Claude Desktop, Cursor, and LangChain agents.
+- **Passive Webhook Traffic Sniffer**: Continuous staging/production monitoring that evaluates live payment streams without active penetration testing.
